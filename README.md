@@ -1,2 +1,1 @@
-# Aurora
-极光 - Aurora
+# Aurora - 极光
