@@ -1,0 +1,425 @@
+{
+  "$defs": {
+    "DocumentType": {
+      "enum": [
+        "web_article",
+        "news",
+        "pdf",
+        "video",
+        "audio",
+        "markdown",
+        "text",
+        "spreadsheet",
+        "company_filing",
+        "research_report",
+        "user_note",
+        "unknown"
+      ],
+      "title": "DocumentType",
+      "type": "string"
+    },
+    "HumanReview": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/HumanReviewStatus",
+          "default": "not_reviewed"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "HumanReview",
+      "type": "object"
+    },
+    "HumanReviewStatus": {
+      "enum": [
+        "not_reviewed",
+        "reviewed",
+        "approved",
+        "rejected",
+        "needs_revision"
+      ],
+      "title": "HumanReviewStatus",
+      "type": "string"
+    },
+    "LifecycleStatus": {
+      "enum": [
+        "active",
+        "archived",
+        "superseded",
+        "deleted"
+      ],
+      "title": "LifecycleStatus",
+      "type": "string"
+    },
+    "OriginType": {
+      "enum": [
+        "original",
+        "imported",
+        "derived",
+        "user_created"
+      ],
+      "title": "OriginType",
+      "type": "string"
+    },
+    "ParseStatus": {
+      "enum": [
+        "discovered",
+        "queued",
+        "collected",
+        "parsed",
+        "partially_parsed",
+        "failed",
+        "archived",
+        "superseded"
+      ],
+      "title": "ParseStatus",
+      "type": "string"
+    },
+    "PrivacyLevel": {
+      "enum": [
+        "public",
+        "internal",
+        "private",
+        "sensitive",
+        "restricted"
+      ],
+      "title": "PrivacyLevel",
+      "type": "string"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "origin_type": {
+          "$ref": "#/$defs/OriginType",
+          "default": "original"
+        },
+        "origin_object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Origin Object Ids",
+          "type": "array"
+        },
+        "processing_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Run Id"
+        },
+        "human_review": {
+          "$ref": "#/$defs/HumanReview"
+        },
+        "derivation_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Derivation Note"
+        },
+        "source_locator_required": {
+          "default": false,
+          "title": "Source Locator Required",
+          "type": "boolean"
+        }
+      },
+      "title": "Provenance",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "const": "document",
+      "default": "document",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LifecycleStatus",
+      "default": "active"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "created_by": {
+      "default": "system",
+      "title": "Created By",
+      "type": "string"
+    },
+    "workspace_id": {
+      "default": "default",
+      "title": "Workspace Id",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "zh-CN",
+      "title": "Language"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "source_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "privacy_level": {
+      "$ref": "#/$defs/PrivacyLevel",
+      "default": "internal"
+    },
+    "deleted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deleted At"
+    },
+    "external_ids": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "External Ids",
+      "type": "object"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "source_id": {
+      "title": "Source Id",
+      "type": "string"
+    },
+    "document_type": {
+      "$ref": "#/$defs/DocumentType"
+    },
+    "title": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "original_url": {
+      "anyOf": [
+        {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Original Url"
+    },
+    "published_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Published At"
+    },
+    "collected_at": {
+      "format": "date-time",
+      "title": "Collected At",
+      "type": "string"
+    },
+    "authors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Authors",
+      "type": "array"
+    },
+    "content_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Content Hash"
+    },
+    "normalized_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Normalized Url"
+    },
+    "mime_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mime Type"
+    },
+    "raw_storage_uri": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Raw Storage Uri"
+    },
+    "parse_status": {
+      "$ref": "#/$defs/ParseStatus",
+      "default": "discovered"
+    },
+    "copyright_note": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Copyright Note"
+    },
+    "parent_document_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Document Id"
+    },
+    "duplicate_of_document_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duplicate Of Document Id"
+    }
+  },
+  "required": [
+    "source_id",
+    "document_type",
+    "title"
+  ],
+  "title": "Document",
+  "type": "object",
+  "$id": "https://aurora.local/schemas/v1/document.schema.json"
+}

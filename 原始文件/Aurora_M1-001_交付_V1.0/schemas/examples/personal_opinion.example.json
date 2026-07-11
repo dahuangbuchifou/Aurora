@@ -1,0 +1,16 @@
+{
+  "object_type": "personal_opinion",
+  "title": "半导体设备长期逻辑与短期约束",
+  "statement": "长期国产替代方向明确，但短期需关注下游资本开支和库存周期。",
+  "as_of_date": "2026-07-11",
+  "opinion_status": "active",
+  "confirmed_by_user": true,
+  "confirmed_at": "2026-07-11T08:00:00Z",
+  "supporting_ids": ["ins_001"],
+  "key_assumptions": ["下游资本开支保持稳定"],
+  "invalidation_conditions": ["关键客户资本开支持续大幅下降"],
+  "review_due_at": "2026-10-11",
+  "provenance": {
+    "origin_type": "user_created"
+  }
+}
