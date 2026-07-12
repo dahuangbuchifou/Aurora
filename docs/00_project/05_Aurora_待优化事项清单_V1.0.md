@@ -1,42 +1,79 @@
-# Aurora 待优化事项清单
+# Aurora 待优化事项清单 V1.0
 
-> 发现的问题不能只在聊天中提一下，必须登记。
-> 格式：编号 · 严重等级 · 发现阶段 · 真实案例 · 影响对象 · 建议方案 · 兼容影响 · 目标阶段 · 处理状态
+> 用途：集中记录模型缺陷、工程债务、性能、安全、协作和产品优化。  
+> 原则：记录不等于立即实现；进入开发前必须评审。
 
-**严重等级：** BLOCKER → MAJOR → MINOR → ENHANCEMENT  
-**状态：** 📝 待处理 · ⏳ 处理中 · ✅ 已完成 · ❌ 搁置
+## 1. 等级与状态
 
----
+严重等级：
 
-## 当前待处理
+```text
+BLOCKER / MAJOR / MINOR / ENHANCEMENT
+```
 
-| ID | 问题 | 等级 | 发现阶段 | 案例 | 影响对象 | 目标阶段 | 状态 |
-|----|------|------|----------|------|----------|----------|------|
-| OPT-001 | DataPoint 缺少币种、数量级、会计准则、归属/合并范围 | MAJOR | M1-002 | Case C | DataPoint | M1-003 | 📝 |
-| OPT-002 | Evidence 独立性仅有标签，无法程序化去重 | MAJOR | M1-002 | Case A+C | Evidence | M1-003 | 📝 |
-| OPT-003 | Claim 缺少增长/估值/风险/行动建议等分析维度 | MAJOR | M1-002 | Case A+B | Claim | M1-003 | 📝 |
-| OPT-004 | Provenance 无法结构化区分 summarizes/reposts/calculated_from | MAJOR | M1-002 | Case A+C | Provenance | M1-003 | 📝 |
-| OPT-005 | Claim 缺少原子性约束，可混入风险判断+可验证数值 | MAJOR | M1-002 | Case B | Claim | M1-003 | 📝 |
-| OPT-006 | SQLite 锁等待策略缺失（busy_timeout） | MINOR | M1-001 | — | session.py | M1-003 | 📝 |
-| OPT-007 | schema_registry.py / session.py 单元测试覆盖不足 | MINOR | M1-001 | — | 测试 | M1-003 | 📝 |
-| OPT-008 | PersonalOpinion 缺少快速记录低门槛模式 | ENHANCEMENT | M1-001 | — | PersonalOpinion | M2+ | 📝 |
-| OPT-009 | 单表 JSON 长期查询效率 — 后续需规范化部分高频表 | ENHANCEMENT | M1-001 | — | DB | M3 | 📝 |
-| OPT-010 | dangling reference 检查对 ProcessingRun 类审计引用过于严格 | MINOR | M1-002 | All | traceability.py | M1-003 | 📝 |
-| OPT-011 | object_repository.py 覆盖率 85%, 部分异常分支未测 | MINOR | M1-001 | — | repository | M2 | 📝 |
-| OPT-012 | PersonalOpinion 激活门槛 6 条件，日常场景略繁琐 | MINOR | M1-001 | — | PersonalOpinion | M2+ | 📝 |
-| OPT-013 | 黄金测试集不足 20 条 | ENHANCEMENT | M1-002 | — | 测试 | M3 | 📝 |
-| OPT-014 | Evidence Role 边界容易混淆（QUALIFY vs REFUTE vs CONTEXT） | MAJOR | M1-002 | Case B | Evidence, enums | M1-003 | 📝 |
-| OPT-015 | V1.0 → V1.1 兼容策略未成文 | MINOR | M1-002 | — | 全部 | M1-003 | 📝 |
+状态：
 
----
+```text
+NEW / UNDER_REVIEW / APPROVED / PLANNED / IN_PROGRESS / DONE / REJECTED / DEFERRED
+```
 
-## 已完成
+## 2. 当前清单
 
-| ID | 问题 | 等级 | 完成阶段 | 备注 |
-|----|------|------|----------|------|
-| — | _（暂无已关闭项）_ | | | |
+| ID | 等级 | 类别 | 问题 | 建议方向 | 目标阶段 | 状态 |
+|---|---|---|---|---|---|---|
+| OPT-001 | MAJOR | DataPoint | 缺少币种、数量级、会计准则、归属和合并范围 | 增加结构化财务口径 | M1-003 | UNDER_REVIEW |
+| OPT-002 | MAJOR | Evidence | independence_group不能阻止重复计数 | 增加独立组验证和聚合规则 | M1-003 | UNDER_REVIEW |
+| OPT-003 | MAJOR | Claim | 缺少增长、估值、风险、行动建议维度 | 评估claim_dimension | M1-003 | UNDER_REVIEW |
+| OPT-004 | MAJOR | Provenance | 无法表达summarizes/reposts/calculated_from | 增加派生关系类型 | M1-003 | UNDER_REVIEW |
+| OPT-005 | MAJOR | Claim | 缺少原子性约束 | 建立原子Claim规范和测试 | M1-003 | UNDER_REVIEW |
+| OPT-006 | MINOR | Database | SQLite锁等待策略未标准化 | Engine配置timeout/busy_timeout | M1-003/M2 | NEW |
+| OPT-007 | MINOR | Testing | schema_registry和session测试不足 | 补充异常与事务测试 | M1-003 | NEW |
+| OPT-008 | ENHANCEMENT | Opinion | 快速记录观点门槛较高 | 评估QUICK_CAPTURE/Inbox状态 | M2/M3 | DEFERRED |
+| OPT-009 | ENHANCEMENT | Persistence | 单表JSON后期查询效率有限 | 按真实负载逐步规范化 | M3 | DEFERRED |
+| OPT-010 | ENHANCEMENT | Collaboration | 大G无法直接写私有仓库 | 评估自动化中转 | M2 | DEFERRED |
+| OPT-011 | MINOR | Governance | 缺少统一进度看板 | ✅ 已建立 | 当前 | DONE | | 使用项目总进度看板 | 当前 | DONE |
+| OPT-012 | MINOR | Governance | 每轮缺少上下轮评估和要求 | ✅ 已建立 | 当前 | DONE | | 使用双助手协作协议 | 当前 | DONE |
+| OPT-013 | ENHANCEMENT | Quality | 真实案例仅3条 | 扩展至20条黄金测试集 | M1/M2 | PLANNED |
+| OPT-014 | MAJOR | Semantics | support/refute/qualify/context容易混淆 | 定义Evidence Role判定标准 | M1-003 | UNDER_REVIEW |
+| OPT-015 | MINOR | Versioning | V1.0到V1.1兼容策略未成文 | 建立兼容矩阵和迁移规则 | M1-003 | NEW |
 
----
+## 3. 新增事项模板
 
-_最后更新：2026-07-12 · M1-002 QA 后_
-_维护规则：发现即登记，处理完打 ✅ 并移至「已完成」_
+```markdown
+## OPT-XXX：标题
+- 等级：
+- 类别：
+- 发现阶段：
+- 发现人：
+- 当前状态：
+- 影响对象：
+- 问题描述：
+- 真实案例：
+- 当前绕行方案：
+- 推荐方案：
+- 兼容影响：
+- 数据迁移：
+- 测试要求：
+- 目标阶段：
+- 是否需要项目负责人确认：
+```
+
+## 4. 进入开发的条件
+
+- 有真实案例或测试证据
+- 影响范围明确
+- 有验收标准
+- 有兼容性判断
+- 有迁移方案或明确无需迁移
+- 婉儿和大G共同评审
+- 重大事项由项目负责人确认
+
+## 5. 维护规则
+
+每轮结束前：
+
+1. 婉儿补充产品和QA发现；
+2. 大G补充架构和工程发现；
+3. 合并重复项；
+4. 更新状态和目标阶段；
+5. 已完成项保留历史记录。
