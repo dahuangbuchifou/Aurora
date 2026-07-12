@@ -1,0 +1,1715 @@
+{
+  "case_id": "case_c_pdf",
+  "schema_version": "1.0",
+  "objects": [
+    {
+      "id": "src_m1002_smic_annual_report",
+      "object_type": "source",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "original",
+        "origin_object_ids": [],
+        "derivation_note": null,
+        "source_locator_required": false
+      },
+      "name": "中芯国际2025年年度报告",
+      "source_type": "company_announcement",
+      "publisher": "中芯国际",
+      "homepage_url": "https://www.smics.com/",
+      "domain": "semiconductor",
+      "source_quality_tier": "S1"
+    },
+    {
+      "id": "doc_m1002_case_c",
+      "object_type": "document",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "imported",
+        "origin_object_ids": [],
+        "derivation_note": "仓库测试素材中的年报P15-P18摘录",
+        "source_locator_required": false
+      },
+      "source_id": "src_m1002_smic_annual_report",
+      "document_type": "company_filing",
+      "title": "中芯国际2025年年度报告（P15-P18测试摘录）",
+      "published_at": "2026-03-27T00:00:00Z",
+      "collected_at": "2026-07-12T00:00:00Z",
+      "authors": [
+        "中芯国际"
+      ],
+      "mime_type": "application/pdf",
+      "raw_storage_uri": "m1_002_materials/case_c_pdf/README.md",
+      "parse_status": "parsed",
+      "copyright_note": "仅用于M1-002对象模型验证"
+    },
+    {
+      "id": "cu_m1002_c_p15",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工摘录年报第15页",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_c",
+      "unit_type": "table",
+      "sequence_no": 1,
+      "text": "2025年营业收入578.3亿元，净利润86.5亿元，毛利率24.5%，资本开支75.6亿美元等主要财务指标。",
+      "locator": {
+        "page_no": 15,
+        "block_no": 1
+      }
+    },
+    {
+      "id": "cu_m1002_c_p16",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工摘录年报第16页",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_c",
+      "unit_type": "table",
+      "sequence_no": 2,
+      "text": "2025年28nm及以上收入占比76%，14nm/12nm FinFET收入占比18%。",
+      "locator": {
+        "page_no": 16,
+        "block_no": 1
+      }
+    },
+    {
+      "id": "cu_m1002_c_p17_regions",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工摘录年报第17页地区结构",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_c",
+      "unit_type": "table",
+      "sequence_no": 3,
+      "text": "2025年中国大陆收入占比82%，北美11%，欧亚及其他7%。",
+      "locator": {
+        "page_no": 17,
+        "block_no": 1
+      }
+    },
+    {
+      "id": "cu_m1002_c_p17_shipments",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工摘录年报第17页出货量",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_c",
+      "unit_type": "table",
+      "sequence_no": 4,
+      "text": "2025年晶圆出货量折合8英寸为882万片，同比增长13.6%。",
+      "locator": {
+        "page_no": 17,
+        "block_no": 2
+      }
+    },
+    {
+      "id": "cu_m1002_c_p18_util",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工摘录年报第18页产能利用率",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_c",
+      "unit_type": "table",
+      "sequence_no": 5,
+      "text": "2025年综合产能利用率86.3%，其中8英寸产线76.5%。",
+      "locator": {
+        "page_no": 18,
+        "block_no": 1
+      }
+    },
+    {
+      "id": "cu_m1002_c_p18_mda",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工摘录年报第18页管理层讨论",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_c",
+      "unit_type": "quote",
+      "sequence_no": 6,
+      "text": "展望2026年，公司目标全年销售收入同比增长10%-15%，毛利率维持23%-26%，中芯南方二期目标2026Q3量产爬坡；消费电子和工业领域需求复苏低于年初预期。",
+      "locator": {
+        "page_no": 18,
+        "block_no": 2
+      },
+      "speaker": "中芯国际管理层"
+    },
+    {
+      "id": "ent_m1002_smic",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "company",
+      "canonical_name": "中芯国际",
+      "aliases": [
+        "SMIC",
+        "688981.SH",
+        "00981.HK"
+      ]
+    },
+    {
+      "id": "ent_m1002_semiconductor_foundry",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "industry",
+      "canonical_name": "半导体晶圆代工行业",
+      "aliases": [
+        "半导体代工"
+      ]
+    },
+    {
+      "id": "ent_m1002_ai_chip",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "technology",
+      "canonical_name": "AI芯片",
+      "aliases": [
+        "人工智能芯片"
+      ]
+    },
+    {
+      "id": "ent_m1002_smic_south_phase2",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "project",
+      "canonical_name": "中芯南方二期",
+      "aliases": [
+        "中芯南方二期项目"
+      ]
+    },
+    {
+      "id": "ent_m1002_us_export_control",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "policy",
+      "canonical_name": "美国半导体出口管制",
+      "aliases": [
+        "美国出口管制"
+      ]
+    },
+    {
+      "id": "evt_m1002_annual_report_release",
+      "object_type": "event",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "由年度报告发布时间生成事件",
+        "source_locator_required": false,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "event_type": "annual_report_release",
+      "title": "中芯国际发布2025年年度报告",
+      "event_time": {
+        "start": "2026-03-27",
+        "end": "2026-03-27",
+        "precision": "day"
+      },
+      "entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "description": "发布2025年年度报告测试摘录。",
+      "event_status": "confirmed"
+    },
+    {
+      "id": "dat_m1002_c_revenue",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "revenue",
+      "value": 578.3,
+      "unit": "CNY_100_million",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p15",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_revenue",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_revenue",
+      "source_ref": "cu_m1002_c_p15",
+      "summary": "年报对应页披露指标 revenue。",
+      "independence_group": "smic_fy2025_revenue",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_revenue",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_revenue",
+          "evi_m1002_c_revenue"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 revenue 为 578.3 CNY_100_million。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_revenue"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_net_profit",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "net_profit",
+      "value": 86.5,
+      "unit": "CNY_100_million",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p15",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_net_profit",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_net_profit",
+      "source_ref": "cu_m1002_c_p15",
+      "summary": "年报对应页披露指标 net_profit。",
+      "independence_group": "smic_fy2025_net_profit",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_net_profit",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_net_profit",
+          "evi_m1002_c_net_profit"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 net_profit 为 86.5 CNY_100_million。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_net_profit"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_gross_margin",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "gross_margin",
+      "value": 0.245,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p15",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_gross_margin",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_gross_margin",
+      "source_ref": "cu_m1002_c_p15",
+      "summary": "年报对应页披露指标 gross_margin。",
+      "independence_group": "smic_fy2025_gross_margin",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_gross_margin",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_gross_margin",
+          "evi_m1002_c_gross_margin"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 gross_margin 为 0.245 ratio。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_gross_margin"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_capex",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "capital_expenditure",
+      "value": 75.6,
+      "unit": "USD_100_million",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p15",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_capex",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_capex",
+      "source_ref": "cu_m1002_c_p15",
+      "summary": "年报对应页披露指标 capital_expenditure。",
+      "independence_group": "smic_fy2025_capex",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_capex",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_capex",
+          "evi_m1002_c_capex"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 capital_expenditure 为 75.6 USD_100_million。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_capex"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_shipments",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p17_shipments"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "wafer_shipments_8inch_equivalent",
+      "value": 882,
+      "unit": "10k_wafers",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p17_shipments",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_shipments",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p17_shipments"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_shipments",
+      "source_ref": "cu_m1002_c_p17_shipments",
+      "summary": "年报对应页披露指标 wafer_shipments_8inch_equivalent。",
+      "independence_group": "smic_fy2025_shipments",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_shipments",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_shipments",
+          "evi_m1002_c_shipments"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 wafer_shipments_8inch_equivalent 为 882 10k_wafers。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_shipments"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_mature_share",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p16"
+        ],
+        "derivation_note": "从年报制程结构表人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "revenue_share_28nm_and_above",
+      "value": 0.76,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p16",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_mature_share",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p16"
+        ],
+        "derivation_note": "年报页码为制程结构数据提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_mature_share",
+      "source_ref": "cu_m1002_c_p16",
+      "summary": "年报第16页披露28nm及以上收入占比76%。",
+      "independence_group": "smic_fy2025_process_mix",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "dat_m1002_c_finfet_share",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p16"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "revenue_share_14_12nm_finfet",
+      "value": 0.18,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p16",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_finfet_share",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p16"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_finfet_share",
+      "source_ref": "cu_m1002_c_p16",
+      "summary": "年报对应页披露指标 revenue_share_14_12nm_finfet。",
+      "independence_group": "smic_fy2025_finfet_share",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_finfet_share",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_finfet_share",
+          "evi_m1002_c_finfet_share"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 revenue_share_14_12nm_finfet 为 0.18 ratio。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_finfet_share"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_china_share",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p17_regions"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "revenue_share_mainland_china",
+      "value": 0.82,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p17_regions",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_china_share",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p17_regions"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_china_share",
+      "source_ref": "cu_m1002_c_p17_regions",
+      "summary": "年报对应页披露指标 revenue_share_mainland_china。",
+      "independence_group": "smic_fy2025_china_share",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_china_share",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_china_share",
+          "evi_m1002_c_china_share"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 revenue_share_mainland_china 为 0.82 ratio。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_china_share"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_utilization",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_util"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "capacity_utilization_total",
+      "value": 0.863,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p18_util",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_utilization",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_util"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_utilization",
+      "source_ref": "cu_m1002_c_p18_util",
+      "summary": "年报对应页披露指标 capacity_utilization_total。",
+      "independence_group": "smic_fy2025_utilization",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_utilization",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_utilization",
+          "evi_m1002_c_utilization"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 capacity_utilization_total 为 0.863 ratio。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_utilization"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "dat_m1002_c_utilization_8in",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_util"
+        ],
+        "derivation_note": "从年报表格人工结构化",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "capacity_utilization_8inch",
+      "value": 0.765,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_c_p18_util",
+      "audited": true
+    },
+    {
+      "id": "evi_m1002_c_utilization_8in",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_util"
+        ],
+        "derivation_note": "年报页码为数据点提供一手证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "company_filing",
+      "target_object_id": "dat_m1002_c_utilization_8in",
+      "source_ref": "cu_m1002_c_p18_util",
+      "summary": "年报对应页披露指标 capacity_utilization_8inch。",
+      "independence_group": "smic_fy2025_8inch_utilization",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "fac_m1002_c_utilization_8in",
+      "object_type": "fact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_utilization_8in",
+          "evi_m1002_c_utilization_8in"
+        ],
+        "derivation_note": "由经定位的数据点与证据形成事实记录",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "statement": "测试素材记录中芯国际2025年度 capacity_utilization_8inch 为 0.765 ratio。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "valid_time": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "evidence_ids": [
+        "evi_m1002_c_utilization_8in"
+      ],
+      "verification_status": "verified",
+      "reviewed_by": "manual_fixture_reviewer"
+    },
+    {
+      "id": "clm_m1002_c13",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "从管理层讨论摘录提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "prediction",
+      "statement": "2026年全年销售收入目标同比增长10%-15%。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_c_p18_mda",
+      "direct_quote": false,
+      "epistemic_status": "asserted",
+      "time_horizon": {
+        "start": "2026-01-01",
+        "end": "2026-12-31",
+        "precision": "year"
+      }
+    },
+    {
+      "id": "evi_m1002_c13",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "管理层讨论原文支持主张归属",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_c13",
+      "source_ref": "cu_m1002_c_p18_mda",
+      "summary": "年报管理层讨论摘录支持该主张确由管理层提出。",
+      "independence_group": "smic_fy2025_management_outlook",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E3"
+    },
+    {
+      "id": "clm_m1002_c14",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "从管理层讨论摘录提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "prediction",
+      "statement": "2026年毛利率目标维持在23%-26%。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_c_p18_mda",
+      "direct_quote": false,
+      "epistemic_status": "asserted",
+      "time_horizon": {
+        "start": "2026-01-01",
+        "end": "2026-12-31",
+        "precision": "year"
+      }
+    },
+    {
+      "id": "evi_m1002_c14",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "管理层讨论原文支持主张归属",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_c14",
+      "source_ref": "cu_m1002_c_p18_mda",
+      "summary": "年报管理层讨论摘录支持该主张确由管理层提出。",
+      "independence_group": "smic_fy2025_management_outlook",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E3"
+    },
+    {
+      "id": "clm_m1002_c15",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "从管理层讨论摘录提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "prediction",
+      "statement": "中芯南方二期目标在2026Q3开始量产爬坡。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [
+        "基于当前建设和设备搬入进度"
+      ],
+      "source_ref": "cu_m1002_c_p18_mda",
+      "direct_quote": false,
+      "epistemic_status": "asserted",
+      "time_horizon": {
+        "start": "2026-07-01",
+        "end": "2026-09-30",
+        "precision": "quarter"
+      }
+    },
+    {
+      "id": "evi_m1002_c15",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "管理层讨论原文支持主张归属",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_c15",
+      "source_ref": "cu_m1002_c_p18_mda",
+      "summary": "年报管理层讨论摘录支持该主张确由管理层提出。",
+      "independence_group": "smic_fy2025_management_outlook",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E3"
+    },
+    {
+      "id": "clm_m1002_c16",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "从管理层讨论摘录提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "interpretation",
+      "statement": "消费电子和工业领域需求复苏低于年初预期。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_c_p18_mda",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_c16",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "管理层讨论原文支持主张归属",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_c16",
+      "source_ref": "cu_m1002_c_p18_mda",
+      "summary": "年报管理层讨论摘录支持该主张确由管理层提出。",
+      "independence_group": "smic_fy2025_management_outlook",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E3"
+    },
+    {
+      "id": "tml_m1002_annual_report",
+      "object_type": "timeline_entry",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "evt_m1002_annual_report_release",
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "由报告发布事件生成时间线",
+        "source_locator_required": false,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "target_object_id": "ent_m1002_smic",
+      "event_time": {
+        "start": "2026-03-27",
+        "end": "2026-03-27",
+        "precision": "day"
+      },
+      "title": "发布2025年年度报告",
+      "summary": "年度报告披露经营数据和2026年管理层展望。",
+      "referenced_object_ids": [
+        "evt_m1002_annual_report_release",
+        "doc_m1002_case_c"
+      ],
+      "sequence_key": "2026-03-27"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "id": "ins_m1002_growth_vs_valuation",
+  "object_type": "insight",
+  "schema_version": "1.0",
+  "created_by": "manual_fixture",
+  "workspace_id": "m1_002",
+  "language": "zh-CN",
+  "privacy_level": "public",
+  "tags": [
+    "M1-002",
+    "中芯国际"
+  ],
+  "provenance": {
+    "origin_type": "derived",
+    "origin_object_ids": [
+      "knw_m1002_smic_topic",
+      "evi_m1002_valuation_qualifies_growth"
+    ],
+    "derivation_note": "从知识卡形成可解释推断",
+    "source_locator_required": false,
+    "processing_run_id": "run_m1002_manual_mapping"
+  },
+  "title": "增长展望与短期估值谨慎可以同时成立",
+  "statement": "测试素材支持经营增长和先进制程投入延续，但成熟制程竞争、资本开支、出口管制和估值构成限制；管理层增长展望与UP主短期谨慎并非直接逻辑矛盾。",
+  "supporting_object_ids": [
+    "knw_m1002_smic_topic",
+    "fac_m1002_c_revenue",
+    "fac_m1002_c_net_profit",
+    "clm_m1002_c13"
+  ],
+  "counter_evidence_ids": [
+    "evi_m1002_valuation_qualifies_growth",
+    "evi_m1002_b_c08",
+    "evi_m1002_b_c09",
+    "evi_m1002_utilization_refutes_pr_claim"
+  ],
+  "reasoning_steps": [
+    "年报测试数据体现2025年经营改善。",
+    "管理层提出2026年增长和毛利率目标，但这些仍属于预测。",
+    "视频观点主要评价估值、现金流和政策风险，而非直接否定收入增长。",
+    "因此需要按分析维度组织观点，而不是简单标记为互相反驳。"
+  ],
+  "alternative_explanations": [
+    "视频观点基于特定价格时点，价格变化可能改变其估值结论。",
+    "测试素材未经过独立外部核验，数据误差可能改变推断。"
+  ],
+  "confidence_level": "medium",
+  "validity": {
+    "as_of_date": "2026-07-12",
+    "review_due_at": "2026-10-12"
+  },
+  "insight_status": "draft"
+}

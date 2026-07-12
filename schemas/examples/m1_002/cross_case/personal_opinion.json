@@ -1,0 +1,58 @@
+{
+  "id": "opn_m1002_smic_draft",
+  "object_type": "personal_opinion",
+  "schema_version": "1.0",
+  "created_by": "system_draft",
+  "workspace_id": "m1_002",
+  "language": "zh-CN",
+  "privacy_level": "public",
+  "tags": [
+    "M1-002",
+    "中芯国际"
+  ],
+  "provenance": {
+    "origin_type": "derived",
+    "origin_object_ids": [
+      "ins_m1002_growth_vs_valuation"
+    ],
+    "derivation_note": "由Insight生成未确认个人观点草案",
+    "source_locator_required": false,
+    "processing_run_id": "run_m1002_manual_mapping"
+  },
+  "title": "中芯国际研究观点草案",
+  "statement": "在测试素材范围内，经营增长与国产替代逻辑值得持续跟踪，但短期判断必须同时考虑估值、成熟制程竞争、资本开支和出口管制风险；当前不形成买卖或仓位结论。",
+  "topic_ids": [
+    "ent_m1002_smic",
+    "ent_m1002_semiconductor_foundry"
+  ],
+  "supporting_ids": [
+    "ins_m1002_growth_vs_valuation",
+    "knw_m1002_smic_topic"
+  ],
+  "counter_evidence_ids": [
+    "evi_m1002_valuation_qualifies_growth",
+    "evi_m1002_b_c08",
+    "evi_m1002_b_c09"
+  ],
+  "key_assumptions": [
+    "管理层增长指引具备可执行性。",
+    "先进制程和特色工艺投入能逐步转化为收入。"
+  ],
+  "unknown_variables": [
+    "2026年实际订单和价格。",
+    "出口管制政策变化。",
+    "资本开支对自由现金流的影响。"
+  ],
+  "invalidation_conditions": [
+    "后续正式披露显示增长指引明显下调。",
+    "成熟制程利用率和价格持续恶化。",
+    "关键设备限制显著影响产线推进。"
+  ],
+  "confidence_level": "medium",
+  "opinion_status": "draft",
+  "confirmed_by_user": false,
+  "confirmed_at": null,
+  "as_of_date": "2026-07-12",
+  "review_due_at": "2026-10-12",
+  "version_no": 1
+}

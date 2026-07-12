@@ -1,0 +1,1118 @@
+{
+  "case_id": "case_b_video",
+  "schema_version": "1.0",
+  "objects": [
+    {
+      "id": "src_m1002_bilibili_up",
+      "object_type": "source",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "original",
+        "origin_object_ids": [],
+        "derivation_note": null,
+        "source_locator_required": false
+      },
+      "name": "半导体观察日记",
+      "source_type": "video_channel",
+      "publisher": "B站UP主 半导体观察日记",
+      "author": "半导体观察日记",
+      "homepage_url": "https://www.bilibili.com/",
+      "domain": "finance",
+      "source_quality_tier": "S4",
+      "ownership_or_interest": "自媒体观点，持仓和商业利益未在测试素材中核验"
+    },
+    {
+      "id": "doc_m1002_case_b",
+      "object_type": "document",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "imported",
+        "origin_object_ids": [],
+        "derivation_note": "仓库提供的人工时间戳转写片段",
+        "source_locator_required": false
+      },
+      "source_id": "src_m1002_bilibili_up",
+      "document_type": "video",
+      "title": "半导体板块及中芯国际估值分析（测试片段）",
+      "original_url": "https://www.bilibili.com/video/BV1jdNJ6NEDH/",
+      "collected_at": "2026-07-12T00:00:00Z",
+      "authors": [
+        "半导体观察日记"
+      ],
+      "mime_type": "video/mp4",
+      "raw_storage_uri": "m1_002_materials/case_b_video/README.md",
+      "parse_status": "parsed",
+      "copyright_note": "仅使用测试素材中的人工转写片段"
+    },
+    {
+      "id": "cu_m1002_b_s1",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_b"
+        ],
+        "derivation_note": "人工时间戳转写",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_b",
+      "unit_type": "transcript_segment",
+      "sequence_no": 1,
+      "text": "中芯国际股价173元，按2025年净利润计算PE约50倍；当前价格反映不少乐观预期，但地缘政治风险定价不足。",
+      "locator": {
+        "start_seconds": 45,
+        "end_seconds": 130
+      },
+      "speaker": "半导体观察日记"
+    },
+    {
+      "id": "cu_m1002_b_s2",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_b"
+        ],
+        "derivation_note": "人工时间戳转写",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_b",
+      "unit_type": "transcript_segment",
+      "sequence_no": 2,
+      "text": "国产替代逻辑成立，但76%收入来自成熟制程，竞争和价格战压力较大。",
+      "locator": {
+        "start_seconds": 270,
+        "end_seconds": 345
+      },
+      "speaker": "半导体观察日记"
+    },
+    {
+      "id": "cu_m1002_b_s3",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_b"
+        ],
+        "derivation_note": "人工时间戳转写",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_b",
+      "unit_type": "transcript_segment",
+      "sequence_no": 3,
+      "text": "长期看好，但短期170以上不加仓；140-150考虑逐步建仓，制裁落地的最坏情形可能回到120附近。",
+      "locator": {
+        "start_seconds": 500,
+        "end_seconds": 600
+      },
+      "speaker": "半导体观察日记"
+    },
+    {
+      "id": "cu_m1002_b_s4",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_b"
+        ],
+        "derivation_note": "人工时间戳转写",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_b",
+      "unit_type": "transcript_segment",
+      "sequence_no": 4,
+      "text": "相比代工更看好半导体设备板块，但设备公司也存在技术差距和关键零部件受限问题。",
+      "locator": {
+        "start_seconds": 670,
+        "end_seconds": 735
+      },
+      "speaker": "半导体观察日记"
+    },
+    {
+      "id": "ent_m1002_video_author",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_b"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "person",
+      "canonical_name": "半导体观察日记",
+      "aliases": [
+        "B站UP主"
+      ]
+    },
+    {
+      "id": "ent_m1002_naura",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "company",
+      "canonical_name": "北方华创",
+      "aliases": []
+    },
+    {
+      "id": "ent_m1002_willsemi",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "company",
+      "canonical_name": "韦尔股份",
+      "aliases": []
+    },
+    {
+      "id": "ent_m1002_amec",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s4"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "company",
+      "canonical_name": "中微公司",
+      "aliases": []
+    },
+    {
+      "id": "ent_m1002_tsmc",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s2"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "company",
+      "canonical_name": "台积电",
+      "aliases": [
+        "TSMC"
+      ]
+    },
+    {
+      "id": "ent_m1002_umc",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s2"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "company",
+      "canonical_name": "联电",
+      "aliases": [
+        "UMC"
+      ]
+    },
+    {
+      "id": "ent_m1002_gfs",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s2"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "company",
+      "canonical_name": "格芯",
+      "aliases": [
+        "GlobalFoundries"
+      ]
+    },
+    {
+      "id": "ent_m1002_semiconductor_equipment",
+      "object_type": "entity",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s4"
+        ],
+        "derivation_note": "人工实体归一化",
+        "source_locator_required": false
+      },
+      "entity_type": "industry",
+      "canonical_name": "半导体设备板块",
+      "aliases": []
+    },
+    {
+      "id": "dat_m1002_b_price",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "从UP主转写提取，未独立核验",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "share_price",
+      "value": 173,
+      "unit": "CNY_per_share",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2026-07-12",
+        "end": "2026-07-12",
+        "precision": "day"
+      },
+      "reported_at": "2026-07-12T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_b_s1",
+      "audited": false
+    },
+    {
+      "id": "evi_m1002_b_price",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "视频原话支持数据归属，不验证市场数据准确性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "dat_m1002_b_price",
+      "source_ref": "cu_m1002_b_s1",
+      "summary": "视频转写中出现该数值。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "dat_m1002_b_pe_smic",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "从UP主转写提取，未独立核验",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "price_earnings_ratio",
+      "value": 50,
+      "unit": "multiple",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2026-07-12",
+        "end": "2026-07-12",
+        "precision": "day"
+      },
+      "reported_at": "2026-07-12T00:00:00Z",
+      "calculation_method": "calculated",
+      "source_ref": "cu_m1002_b_s1",
+      "audited": false,
+      "calculation_expression": "股价与测试素材中的2025年净利润估算"
+    },
+    {
+      "id": "evi_m1002_b_pe_smic",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "视频原话支持数据归属，不验证市场数据准确性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "derived_calculation",
+      "target_object_id": "dat_m1002_b_pe_smic",
+      "source_ref": "cu_m1002_b_s1",
+      "summary": "视频转写中出现该数值。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "dat_m1002_b_pe_naura",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "从UP主转写提取，未独立核验",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "price_earnings_ratio",
+      "value": 80,
+      "unit": "multiple",
+      "entity_id": "ent_m1002_naura",
+      "period": {
+        "start": "2026-07-12",
+        "end": "2026-07-12",
+        "precision": "day"
+      },
+      "reported_at": "2026-07-12T00:00:00Z",
+      "calculation_method": "estimated",
+      "source_ref": "cu_m1002_b_s1",
+      "audited": false
+    },
+    {
+      "id": "evi_m1002_b_pe_naura",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "视频原话支持数据归属，不验证市场数据准确性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "dat_m1002_b_pe_naura",
+      "source_ref": "cu_m1002_b_s1",
+      "summary": "视频转写中出现该数值。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "dat_m1002_b_pe_willsemi",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "从UP主转写提取，未独立核验",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "price_earnings_ratio",
+      "value": 60,
+      "unit": "multiple",
+      "entity_id": "ent_m1002_willsemi",
+      "period": {
+        "start": "2026-07-12",
+        "end": "2026-07-12",
+        "precision": "day"
+      },
+      "reported_at": "2026-07-12T00:00:00Z",
+      "calculation_method": "estimated",
+      "source_ref": "cu_m1002_b_s1",
+      "audited": false
+    },
+    {
+      "id": "evi_m1002_b_pe_willsemi",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "视频原话支持数据归属，不验证市场数据准确性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "dat_m1002_b_pe_willsemi",
+      "source_ref": "cu_m1002_b_s1",
+      "summary": "视频转写中出现该数值。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "clm_m1002_b_c06",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "从UP主转写提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "fact_claim",
+      "statement": "中芯国际PE约50倍。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "asserted_by": "ent_m1002_video_author",
+      "asserted_at": "2026-07-12T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_b_s1",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_b_c06",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "视频转写支持观点归属，不代表观点为事实",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_b_c06",
+      "source_ref": "cu_m1002_b_s1",
+      "summary": "时间戳转写支持该观点确由UP主提出。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "clm_m1002_b_c07",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "从UP主转写提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "interpretation",
+      "statement": "当前股价已反映不少乐观预期，但尚未充分定价地缘政治风险。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "asserted_by": "ent_m1002_video_author",
+      "asserted_at": "2026-07-12T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_b_s1",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_b_c07",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "视频转写支持观点归属，不代表观点为事实",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_b_c07",
+      "source_ref": "cu_m1002_b_s1",
+      "summary": "时间戳转写支持该观点确由UP主提出。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "clm_m1002_b_c08",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "从UP主转写提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "prediction",
+      "statement": "如果出口管制进一步收紧，14nm以下产线扩产将受到直接冲击。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "asserted_by": "ent_m1002_video_author",
+      "asserted_at": "2026-07-12T00:00:00Z",
+      "conditions": [
+        "出口管制进一步收紧"
+      ],
+      "source_ref": "cu_m1002_b_s1",
+      "direct_quote": false,
+      "epistemic_status": "asserted",
+      "time_horizon": {
+        "start": "2026-07-12",
+        "end": "2028-12-31",
+        "precision": "year"
+      }
+    },
+    {
+      "id": "evi_m1002_b_c08",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1"
+        ],
+        "derivation_note": "视频转写支持观点归属，不代表观点为事实",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_b_c08",
+      "source_ref": "cu_m1002_b_s1",
+      "summary": "时间戳转写支持该观点确由UP主提出。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "clm_m1002_b_c09",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s2"
+        ],
+        "derivation_note": "从UP主转写提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "risk_claim",
+      "statement": "成熟制程竞争加剧，价格战压力较大。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "asserted_by": "ent_m1002_video_author",
+      "asserted_at": "2026-07-12T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_b_s2",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_b_c09",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s2"
+        ],
+        "derivation_note": "视频转写支持观点归属，不代表观点为事实",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_b_c09",
+      "source_ref": "cu_m1002_b_s2",
+      "summary": "时间戳转写支持该观点确由UP主提出。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "clm_m1002_b_c10",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s4"
+        ],
+        "derivation_note": "从UP主转写提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "value_judgment",
+      "statement": "相较晶圆代工，半导体设备板块更值得关注。",
+      "subject_entity_ids": [
+        "ent_m1002_semiconductor_equipment",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_video_author",
+      "asserted_at": "2026-07-12T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_b_s4",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_b_c10",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s4"
+        ],
+        "derivation_note": "视频转写支持观点归属，不代表观点为事实",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_b_c10",
+      "source_ref": "cu_m1002_b_s4",
+      "summary": "时间戳转写支持该观点确由UP主提出。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "clm_m1002_b_c11",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s3"
+        ],
+        "derivation_note": "从UP主转写提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "recommendation",
+      "statement": "若股价回调至140-150元区间，考虑逐步建仓。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "asserted_by": "ent_m1002_video_author",
+      "asserted_at": "2026-07-12T00:00:00Z",
+      "conditions": [
+        "价格进入140-150元区间"
+      ],
+      "source_ref": "cu_m1002_b_s3",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_b_c11",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s3"
+        ],
+        "derivation_note": "视频转写支持观点归属，不代表观点为事实",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_b_c11",
+      "source_ref": "cu_m1002_b_s3",
+      "summary": "时间戳转写支持该观点确由UP主提出。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "clm_m1002_b_c12",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s3"
+        ],
+        "derivation_note": "从UP主转写提取主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "prediction",
+      "statement": "若美国新一轮制裁落地，最坏情形股价可能回到120元附近。",
+      "subject_entity_ids": [
+        "ent_m1002_smic"
+      ],
+      "asserted_by": "ent_m1002_video_author",
+      "asserted_at": "2026-07-12T00:00:00Z",
+      "conditions": [
+        "美国新一轮制裁落地"
+      ],
+      "source_ref": "cu_m1002_b_s3",
+      "direct_quote": false,
+      "epistemic_status": "asserted",
+      "time_horizon": {
+        "start": "2026-07-12",
+        "end": "2028-12-31",
+        "precision": "year"
+      }
+    },
+    {
+      "id": "evi_m1002_b_c12",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s3"
+        ],
+        "derivation_note": "视频转写支持观点归属，不代表观点为事实",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_b_c12",
+      "source_ref": "cu_m1002_b_s3",
+      "summary": "时间戳转写支持该观点确由UP主提出。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "direct",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "case_id": "case_c_pdf",
+  "fact_to_source_paths": [
+    {
+      "fact_id": "fac_m1002_c_revenue",
+      "via": [
+        "evi_m1002_c_revenue",
+        "cu_m1002_c_p15",
+        "doc_m1002_case_c"
+      ],
+      "source_id": "src_m1002_smic_annual_report"
+    },
+    {
+      "fact_id": "fac_m1002_c_utilization_8in",
+      "via": [
+        "evi_m1002_c_utilization_8in",
+        "cu_m1002_c_p18_util",
+        "doc_m1002_case_c"
+      ],
+      "source_id": "src_m1002_smic_annual_report"
+    }
+  ]
+}

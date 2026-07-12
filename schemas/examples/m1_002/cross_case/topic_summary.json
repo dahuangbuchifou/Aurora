@@ -1,0 +1,301 @@
+{
+  "case_id": "cross_case",
+  "schema_version": "1.0",
+  "objects": [
+    {
+      "id": "run_m1002_manual_mapping",
+      "object_type": "processing_run",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture_pipeline",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "original",
+        "origin_object_ids": [],
+        "derivation_note": null,
+        "source_locator_required": false
+      },
+      "task_type": "m1_002_manual_case_mapping",
+      "input_object_ids": [
+        "doc_m1002_case_a",
+        "doc_m1002_case_b",
+        "doc_m1002_case_c"
+      ],
+      "output_object_ids": [
+        "knw_m1002_smic_topic",
+        "ins_m1002_growth_vs_valuation",
+        "opn_m1002_smic_draft",
+        "out_m1002_research_brief"
+      ],
+      "processor": {
+        "module": "manual.m1_002_mapping",
+        "model_provider": null,
+        "model_name": null,
+        "prompt_version": "M1-002-Issue",
+        "code_version": "feature/m1-002-case-validation"
+      },
+      "started_at": "2026-07-12T08:00:00Z",
+      "finished_at": "2026-07-12T09:00:00Z",
+      "run_status": "success",
+      "quality_flags": [
+        "fixture_not_independently_verified"
+      ]
+    },
+    {
+      "id": "evi_m1002_valuation_qualifies_growth",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_b_s1",
+          "cu_m1002_b_s3"
+        ],
+        "derivation_note": "视频观点对增长展望形成估值和风险限定",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "qualify",
+      "evidence_type": "expert_testimony",
+      "target_object_id": "clm_m1002_a_c01",
+      "source_ref": "cu_m1002_b_s3",
+      "summary": "UP主并未直接否定公司增长目标，而是认为当前估值和政策风险降低短期吸引力。",
+      "independence_group": "bilibili_BV1jdNJ6NEDH",
+      "directness": "indirect",
+      "source_quality_tier": "S4",
+      "evidence_strength": "E1"
+    },
+    {
+      "id": "evi_m1002_utilization_refutes_pr_claim",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_util"
+        ],
+        "derivation_note": "年报利用率数据与PR复合主张中的低于70%表述不一致",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "refute",
+      "evidence_type": "company_filing",
+      "target_object_id": "clm_m1002_a_c03",
+      "source_ref": "cu_m1002_c_p18_util",
+      "summary": "年报测试摘录记录8英寸产线利用率为76.5%，与PR主张中的“低于70%”不一致。",
+      "independence_group": "smic_fy2025_8inch_utilization",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E4"
+    },
+    {
+      "id": "knw_m1002_smic_topic",
+      "object_type": "knowledge_object",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "clm_m1002_a_c01",
+          "fac_m1002_c_revenue",
+          "fac_m1002_c_net_profit",
+          "clm_m1002_c13",
+          "clm_m1002_b_c07",
+          "clm_m1002_b_c09"
+        ],
+        "derivation_note": "三来源人工汇总为主题知识卡",
+        "source_locator_required": false,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "knowledge_type": "company_profile",
+      "title": "中芯国际2025经营表现、2026展望与估值约束",
+      "topic_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "summary": "测试素材显示公司2025年经营指标改善并提出2026年增长目标；外部视频观点认可长期逻辑，但从估值、成熟制程竞争、资本开支和出口管制角度提出限制。",
+      "fact_ids": [
+        "fac_m1002_c_revenue",
+        "fac_m1002_c_net_profit",
+        "fac_m1002_c_gross_margin",
+        "fac_m1002_c_capex",
+        "fac_m1002_c_shipments",
+        "fac_m1002_c_finfet_share",
+        "fac_m1002_c_china_share",
+        "fac_m1002_c_utilization",
+        "fac_m1002_c_utilization_8in"
+      ],
+      "data_point_ids": [
+        "dat_m1002_c_revenue",
+        "dat_m1002_c_net_profit",
+        "dat_m1002_c_gross_margin",
+        "dat_m1002_c_capex",
+        "dat_m1002_b_price",
+        "dat_m1002_b_pe_smic",
+        "dat_m1002_c_mature_share"
+      ],
+      "claim_ids": [
+        "clm_m1002_a_c01",
+        "clm_m1002_c13",
+        "clm_m1002_c14",
+        "clm_m1002_c15",
+        "clm_m1002_c16",
+        "clm_m1002_b_c07",
+        "clm_m1002_b_c08",
+        "clm_m1002_b_c09",
+        "clm_m1002_b_c11",
+        "clm_m1002_b_c12",
+        "clm_m1002_a_c03"
+      ],
+      "evidence_ids": [
+        "evi_m1002_a_c01",
+        "evi_m1002_c_revenue",
+        "evi_m1002_c_net_profit",
+        "evi_m1002_c13",
+        "evi_m1002_b_c07",
+        "evi_m1002_b_c09",
+        "evi_m1002_valuation_qualifies_growth",
+        "evi_m1002_utilization_refutes_pr_claim"
+      ],
+      "related_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry",
+        "ent_m1002_ai_chip",
+        "ent_m1002_us_export_control",
+        "ent_m1002_smic_south_phase2",
+        "ent_m1002_video_author"
+      ],
+      "validity": {
+        "as_of_date": "2026-07-12",
+        "review_due_at": "2026-10-12"
+      },
+      "knowledge_status": "active"
+    },
+    {
+      "id": "rel_m1002_pr_summarizes_report",
+      "object_type": "relation",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_a",
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "显式记录PR与年报的派生关系",
+        "source_locator_required": false,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "subject_id": "doc_m1002_case_a",
+      "predicate": "summarizes",
+      "object_id": "doc_m1002_case_c",
+      "evidence_ids": [
+        "evi_m1002_a_revenue"
+      ],
+      "relation_status": "asserted"
+    },
+    {
+      "id": "fbk_m1002_datapoint_scope_gap",
+      "object_type": "feedback",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "dat_m1002_c_revenue",
+          "dat_m1002_c_net_profit"
+        ],
+        "derivation_note": "真实案例暴露DataPoint口径字段不足",
+        "source_locator_required": false,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "feedback_type": "quality_issue",
+      "target_object_id": "knw_m1002_smic_topic",
+      "content": "DataPoint当前缺少独立的currency、scale、accounting_standard、attribution_scope、consolidation_scope和observed_at字段，应进入M1-003评审。",
+      "effect": "challenge",
+      "recommended_action": "review_required"
+    },
+    {
+      "id": "out_m1002_research_brief",
+      "object_type": "output_artifact",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "knw_m1002_smic_topic",
+          "ins_m1002_growth_vs_valuation",
+          "opn_m1002_smic_draft"
+        ],
+        "derivation_note": "由知识、洞察和观点草案生成Markdown简报",
+        "source_locator_required": false,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "output_type": "research_brief",
+      "title": "中芯国际三来源对象模型验证简报",
+      "purpose": "验证Aurora认知链和来源追溯，不作为投资建议。",
+      "audience": "Aurora M1-002 QA",
+      "content_uri": "schemas/examples/m1_002/cross_case/research_brief.md",
+      "knowledge_refs": [
+        "knw_m1002_smic_topic"
+      ],
+      "insight_refs": [
+        "ins_m1002_growth_vs_valuation"
+      ],
+      "opinion_refs": [
+        "opn_m1002_smic_draft"
+      ],
+      "as_of_date": "2026-07-12",
+      "review_status": "reviewed"
+    }
+  ]
+}

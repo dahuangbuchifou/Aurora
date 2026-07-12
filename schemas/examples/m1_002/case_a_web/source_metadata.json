@@ -1,0 +1,10 @@
+{
+  "case_id": "case_a_web",
+  "source_type": "web",
+  "title": "中芯国际2025年报新闻稿（测试素材）",
+  "source_url": "https://www.smics.com/site/news_read/5100",
+  "published_at": "2026-03-27",
+  "collected_at": "2026-07-12",
+  "fixture_notice": "基于仓库人工测试素材，未在M1-002中独立核验事实准确性。",
+  "derived_from_case": "case_c_pdf"
+}
