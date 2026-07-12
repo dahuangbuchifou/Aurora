@@ -9,11 +9,6 @@ from .evidence_aggregation import (
     group_independent_evidence,
     validate_independence_groups,
 )
-from .evidence_role_rules import (
-    EvidenceRoleAssessment,
-    EvidenceScope,
-    assess_evidence_role,
-)
 from .object_repository import (
     ConcurrentUpdateError,
     DuplicateObjectError,
@@ -57,7 +52,4 @@ __all__ = [
     "ClaimLintIssue",
     "LintSeverity",
     "lint_claim_atomicity",
-    "EvidenceScope",
-    "EvidenceRoleAssessment",
-    "assess_evidence_role",
 ]
