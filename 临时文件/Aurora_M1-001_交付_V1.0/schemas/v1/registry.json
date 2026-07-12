@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "objects": {
+    "source": "source.schema.json",
+    "document": "document.schema.json",
+    "content_unit": "content_unit.schema.json",
+    "entity": "entity.schema.json",
+    "event": "event.schema.json",
+    "data_point": "data_point.schema.json",
+    "claim": "claim.schema.json",
+    "evidence": "evidence.schema.json",
+    "fact": "fact.schema.json",
+    "knowledge_object": "knowledge_object.schema.json",
+    "relation": "relation.schema.json",
+    "timeline_entry": "timeline_entry.schema.json",
+    "insight": "insight.schema.json",
+    "personal_opinion": "personal_opinion.schema.json",
+    "output_artifact": "output_artifact.schema.json",
+    "feedback": "feedback.schema.json",
+    "processing_run": "processing_run.schema.json"
+  }
+}

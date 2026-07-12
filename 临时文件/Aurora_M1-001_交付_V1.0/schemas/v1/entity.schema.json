@@ -1,0 +1,298 @@
+{
+  "$defs": {
+    "EntityType": {
+      "enum": [
+        "person",
+        "company",
+        "organization",
+        "industry",
+        "product",
+        "technology",
+        "policy",
+        "location",
+        "security",
+        "paper",
+        "project",
+        "concept",
+        "unknown"
+      ],
+      "title": "EntityType",
+      "type": "string"
+    },
+    "HumanReview": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/HumanReviewStatus",
+          "default": "not_reviewed"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "HumanReview",
+      "type": "object"
+    },
+    "HumanReviewStatus": {
+      "enum": [
+        "not_reviewed",
+        "reviewed",
+        "approved",
+        "rejected",
+        "needs_revision"
+      ],
+      "title": "HumanReviewStatus",
+      "type": "string"
+    },
+    "LifecycleStatus": {
+      "enum": [
+        "active",
+        "archived",
+        "superseded",
+        "deleted"
+      ],
+      "title": "LifecycleStatus",
+      "type": "string"
+    },
+    "OriginType": {
+      "enum": [
+        "original",
+        "imported",
+        "derived",
+        "user_created"
+      ],
+      "title": "OriginType",
+      "type": "string"
+    },
+    "PrivacyLevel": {
+      "enum": [
+        "public",
+        "internal",
+        "private",
+        "sensitive",
+        "restricted"
+      ],
+      "title": "PrivacyLevel",
+      "type": "string"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "origin_type": {
+          "$ref": "#/$defs/OriginType",
+          "default": "original"
+        },
+        "origin_object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Origin Object Ids",
+          "type": "array"
+        },
+        "processing_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Run Id"
+        },
+        "human_review": {
+          "$ref": "#/$defs/HumanReview"
+        },
+        "derivation_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Derivation Note"
+        },
+        "source_locator_required": {
+          "default": false,
+          "title": "Source Locator Required",
+          "type": "boolean"
+        }
+      },
+      "title": "Provenance",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "const": "entity",
+      "default": "entity",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LifecycleStatus",
+      "default": "active"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "created_by": {
+      "default": "system",
+      "title": "Created By",
+      "type": "string"
+    },
+    "workspace_id": {
+      "default": "default",
+      "title": "Workspace Id",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "zh-CN",
+      "title": "Language"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "source_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "privacy_level": {
+      "$ref": "#/$defs/PrivacyLevel",
+      "default": "internal"
+    },
+    "deleted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deleted At"
+    },
+    "external_ids": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "External Ids",
+      "type": "object"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "entity_type": {
+      "$ref": "#/$defs/EntityType"
+    },
+    "canonical_name": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Canonical Name",
+      "type": "string"
+    },
+    "aliases": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Aliases",
+      "type": "array"
+    },
+    "attributes": {
+      "additionalProperties": true,
+      "title": "Attributes",
+      "type": "object"
+    },
+    "possible_same_as": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Possible Same As",
+      "type": "array"
+    }
+  },
+  "required": [
+    "entity_type",
+    "canonical_name"
+  ],
+  "title": "Entity",
+  "type": "object",
+  "$id": "https://aurora.local/schemas/v1/entity.schema.json"
+}
