@@ -1,0 +1,14 @@
+{
+  "migration_id": "payload_1_0_to_1_1",
+  "from_version": "1.0",
+  "to_version": "1.1",
+  "dry_run": true,
+  "started_at": "2026-07-12T07:59:00.136377+00:00",
+  "finished_at": "2026-07-12T07:59:00.149785+00:00",
+  "selected_count": 0,
+  "migrated_count": 0,
+  "skipped_count": 0,
+  "failed_count": 0,
+  "backup_manifest": null,
+  "errors": []
+}
