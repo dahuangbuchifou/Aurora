@@ -1,0 +1,7 @@
+{
+  "manifest": "data/qa/migration_backup/manifest.json",
+  "restored_count": 1,
+  "failed_count": 0,
+  "errors": [],
+  "finished_at": "2026-07-12T08:26:07.040921+00:00"
+}

@@ -1,0 +1,10 @@
+{
+  "migration_id": "pre_restore_payload_1_0_to_1_1",
+  "created_at": "2026-07-12T08:26:07.036187+00:00",
+  "database_url_redacted": "sqlite:///./data/m1_003b_nonempty.db",
+  "from_version": "1.1",
+  "to_version": "1.0",
+  "object_count": 1,
+  "data_file": "objects_v1_1.jsonl",
+  "sha256": "8142276593748337f69bbb1a6ace349722bc822821b915bc7d274c08151f753d"
+}
