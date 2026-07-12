@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import os
+import sys
 from logging.config import fileConfig
+from pathlib import Path
+
+# Ensure src/ is importable (for both dev and test environments)
+_src = Path(__file__).resolve().parents[1] / "src"
+if str(_src) not in sys.path:
+    sys.path.insert(0, str(_src))
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool

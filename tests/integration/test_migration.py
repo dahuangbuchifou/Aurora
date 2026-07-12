@@ -5,9 +5,12 @@ from alembic.config import Config
 from sqlalchemy import create_engine, inspect
 
 
-def test_alembic_upgrade_and_downgrade(tmp_path):
+def test_alembic_upgrade_and_downgrade(tmp_path, monkeypatch):
     project_root = Path(__file__).resolve().parents[2]
     db_path = tmp_path / "migration.db"
+
+    # Prevent AURORA_DATABASE_URL env var from overriding test db path
+    monkeypatch.delenv("AURORA_DATABASE_URL", raising=False)
 
     config = Config(str(project_root / "alembic.ini"))
     config.set_main_option("script_location", str(project_root / "alembic"))
