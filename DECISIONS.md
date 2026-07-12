@@ -50,3 +50,24 @@
 
 - 状态：Proposed
 - 决定：Alembic处理DDL，Payload使用显式迁移命令。
+# DECISIONS.md 追加：M1 Exit
+
+## ADR-015：Aurora V1.1作为M2 MVP对象契约冻结
+
+- 状态：Accepted
+- 决定：17类核心对象及MeasurementContext、ClaimDimension、DerivationLink作为M2冻结契约。
+- 影响：M2模块围绕该契约开发，不得直接改变已有语义。
+- 变更门槛：Issue、ADR、兼容矩阵、Migration判断、QA和项目负责人确认。
+
+## ADR-016：M2先建立离线确定性输入链
+
+- 状态：Accepted
+- 决定：M2-001只支持本地Markdown、纯文本和结构化分段JSON。
+- 原因：先解决幂等、分段、定位、事务和ProcessingRun，再引入网络、PDF、ASR和LLM。
+- 非目标：网页抓取、PDF解析、ASR、LLM和向量数据库。
+
+## ADR-017：应用DTO不进入核心对象注册表
+
+- 状态：Accepted
+- 决定：IngestionRequest、ParserResult、WorkflowState等属于模块DTO，不成为第18类核心对象。
+- 原因：避免将传输和执行状态污染知识对象契约。
