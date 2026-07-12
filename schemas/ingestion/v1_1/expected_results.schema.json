@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aurora.schemas/expected-results-v1",
+  "title": "Gate 0 Expected Extraction Results",
+  "description": "M2-003A 人工期望提取结果的结构定义。每个案例对应一份 JSON 文件。",
+  "type": "object",
+  "required": [
+    "annotated_by", "annotated_at", "reviewed_by", "reviewed_at",
+    "disagreements", "adjudication_note", "fixture_source_hash",
+    "case_id", "case_title", "material_path",
+    "expected_entities", "expected_data_points", "expected_claims",
+    "expected_evidence", "expected_fact_candidates",
+    "expected_warnings", "expected_rejects", "validation_report"
+  ],
+  "properties": {
+    "annotated_by": {"type": "string", "description": "初稿标注人姓名"},
+    "annotated_at": {"type": "string", "format": "date-time"},
+    "reviewed_by": {"type": ["string", "null"], "description": "复核人姓名"},
+    "reviewed_at": {"type": ["string", "null"], "format": "date-time"},
+    "disagreements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "target_id": {"type": "string"},
+          "raised_by": {"type": "string"},
+          "description": {"type": "string"},
+          "resolution": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "adjudication_note": {"type": ["string", "null"]},
+    "fixture_source_hash": {"type": "string", "description": "原始输入材料的 SHA-256"},
+    "case_id": {"type": "string"},
+    "case_title": {"type": "string"},
+    "material_path": {"type": "string"},
+
+    "expected_entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "entity_type", "canonical_name"],
+        "properties": {
+          "id": {"type": "string"},
+          "entity_type": {"type": "string"},
+          "canonical_name": {"type": "string"}
+        }
+      }
+    },
+
+    "expected_data_points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "metric", "value", "unit", "entity_id", "period", "measurement_context", "source_quote"],
+        "properties": {
+          "id": {"type": "string"},
+          "metric": {"type": "string"},
+          "value": {"type": "number"},
+          "unit": {"type": "string"},
+          "entity_id": {"type": "string"},
+          "period": {"type": "string"},
+          "measurement_context": {
+            "type": "object",
+            "required": ["measurement_kind"],
+            "properties": {
+              "measurement_kind": {"type": "string"},
+              "currency": {"type": ["string", "null"]},
+              "scale_multiplier": {"type": "integer", "minimum": 1},
+              "reporting_standard": {"type": ["string", "null"]},
+              "attribution_scope": {"type": "string"},
+              "consolidation_scope": {"type": "string"}
+            }
+          },
+          "source_quote": {"type": "string"},
+          "quote_locator_hint": {"type": "string"},
+          "note": {"type": "string"}
+        }
+      }
+    },
+
+    "expected_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "claim_type", "claim_dimension", "source_quote"],
+        "properties": {
+          "id": {"type": "string"},
+          "statement": {"type": "string"},
+          "claim_type": {"type": "string"},
+          "claim_dimension": {"type": "string"},
+          "claimant_id": {"type": ["string", "null"]},
+          "claimant_name": {"type": "string"},
+          "source_quote": {"type": "string"},
+          "quote_locator_hint": {"type": "string"},
+          "note": {"type": "string"}
+        }
+      }
+    },
+
+    "expected_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "evidence_type", "evidence_role", "target_object_id", "independence_group", "source_quote"],
+        "properties": {
+          "id": {"type": "string"},
+          "evidence_type": {"type": "string"},
+          "evidence_role": {"type": "string"},
+          "target_object_id": {"type": "string"},
+          "independence_group": {"type": "string"},
+          "source_quote": {"type": "string"},
+          "note": {"type": "string"}
+        }
+      }
+    },
+
+    "expected_fact_candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "promotable"],
+        "properties": {
+          "id": {"type": "string"},
+          "target_data_point_id": {"type": "string"},
+          "target_claim_id": {"type": "string"},
+          "supporting_evidence_ids": {"type": "array", "items": {"type": "string"}},
+          "statement": {"type": "string"},
+          "valid_time": {"type": ["object", "null"]},
+          "confidence_rationale": {"type": ["string", "null"]},
+          "promotable": {"type": "boolean"},
+          "rejection_reason": {"type": "string"}
+        }
+      }
+    },
+
+    "expected_warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["target_id", "warning_type", "note"],
+        "properties": {
+          "target_id": {"type": "string"},
+          "warning_type": {"type": "string"},
+          "note": {"type": "string"}
+        }
+      }
+    },
+
+    "expected_rejects": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+
+    "validation_report": {
+      "type": "object",
+      "required": [
+        "claim_type_coverage", "claim_dimension_coverage",
+        "measurement_context_coverage", "quote_gate_executable",
+        "fact_promotion_rules_sufficient", "review_bundle_usable",
+        "core_schema_change_needed", "new_core_object_needed"
+      ],
+      "properties": {
+        "claim_type_coverage": {"type": "string"},
+        "claim_dimension_coverage": {"type": "string"},
+        "measurement_context_coverage": {"type": "string"},
+        "quote_gate_executable": {"type": "boolean"},
+        "fact_promotion_rules_sufficient": {"type": "boolean"},
+        "review_bundle_usable": {"type": "boolean"},
+        "core_schema_change_needed": {"type": "boolean"},
+        "new_core_object_needed": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

@@ -1,0 +1,145 @@
+{
+  "annotated_by": "婉儿",
+  "annotated_at": "2026-07-12T22:10:00+08:00",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "disagreements": [],
+  "adjudication_note": null,
+  "fixture_source_hash": "0d189817a12fcf27e4cdfb4994d6635ec57baf112d9db096d7042ea0579ca360",
+  "case_id": "case_b_video",
+  "case_title": "成熟制程竞争格局分析（视频转写）",
+  "material_path": "tests/fixtures/m2_002/case_b_video.srt",
+
+  "expected_entities": [
+    {
+      "id": "expected_entity_b_001",
+      "entity_type": "organization",
+      "canonical_name": "中芯国际"
+    },
+    {
+      "id": "expected_entity_b_002",
+      "entity_type": "organization",
+      "canonical_name": "联电"
+    },
+    {
+      "id": "expected_entity_b_003",
+      "entity_type": "organization",
+      "canonical_name": "格芯"
+    },
+    {
+      "id": "expected_entity_b_004",
+      "entity_type": "organization",
+      "canonical_name": "台积电"
+    }
+  ],
+
+  "expected_data_points": [],
+
+  "expected_claims": [
+    {
+      "id": "expected_cl_b_001",
+      "statement": "成熟制程需求仍然存在",
+      "claim_type": "fact_claim",
+      "claim_dimension": "market_expectation",
+      "claimant_id": null,
+      "claimant_name": "UP主",
+      "source_quote": "成熟制程需求仍然存在",
+      "quote_locator_hint": "cue 1",
+      "note": "前半句是对市场现状的事实性描述"
+    },
+    {
+      "id": "expected_cl_b_002",
+      "statement": "竞争格局需要持续观察",
+      "claim_type": "risk_claim",
+      "claim_dimension": "competition",
+      "claimant_id": null,
+      "claimant_name": "UP主",
+      "source_quote": "竞争格局需要持续观察",
+      "quote_locator_hint": "cue 1",
+      "note": "后半句是对不确定性的表达。这是一个单句包含两个不同维度的 Claim——前一个可被证据支持，后一个是风险判断。不应被合并为一条复合 Claim。"
+    },
+    {
+      "id": "expected_cl_b_003",
+      "statement": "联电、格芯和台积电都在成熟制程市场保持投入",
+      "claim_type": "fact_claim",
+      "claim_dimension": "competition",
+      "claimant_id": null,
+      "claimant_name": "UP主",
+      "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
+      "quote_locator_hint": "cue 2",
+      "note": "对竞争格局的事实性描述，提及了三个具体竞争对手"
+    },
+    {
+      "id": "expected_cl_b_004",
+      "statement": "当前估值已经反映了较多乐观预期",
+      "claim_type": "value_judgment",
+      "claim_dimension": "valuation",
+      "claimant_id": null,
+      "claimant_name": "UP主",
+      "source_quote": "当前估值已经反映了较多乐观预期。",
+      "quote_locator_hint": "cue 3",
+      "note": "价值判断——不是事实也不是预测，是对当前估值水平的定性评价。cue 3 与 cue 2 有 300ms 时间重叠，属于 overlapping cue 场景。"
+    }
+  ],
+
+  "expected_evidence": [
+    {
+      "id": "expected_ev_b_001",
+      "evidence_type": "observed_event",
+      "evidence_role": "support",
+      "target_object_id": "expected_cl_b_003",
+      "independence_group": "up_analysis",
+      "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
+      "note": "分析师的观察陈述，可作为竞争格局的参考证据"
+    }
+  ],
+
+  "expected_fact_candidates": [
+    {
+      "id": "expected_fc_b_001",
+      "target_claim_id": "expected_cl_b_003",
+      "supporting_evidence_ids": ["expected_ev_b_001"],
+      "statement": "联电、格芯和台积电在成熟制程市场保持投入",
+      "valid_time": {"period": "2025"},
+      "confidence_rationale": "可公开查证的竞争格局信息，但有单一来源风险",
+      "promotable": true
+    },
+    {
+      "id": "expected_fc_b_002",
+      "target_claim_id": "expected_cl_b_004",
+      "supporting_evidence_ids": [],
+      "statement": "当前估值已经反映了较多乐观预期",
+      "valid_time": null,
+      "confidence_rationale": null,
+      "promotable": false,
+      "rejection_reason": "value_judgment 不可晋级为 Fact"
+    }
+  ],
+
+  "expected_warnings": [
+    {
+      "target_id": "expected_cl_b_001",
+      "warning_type": "CLAIM_COMPOUND_SPLIT_SUGGESTED",
+      "note": "cue 1 包含两个独立判断（需求存在 vs 格局需观察），建议拆分为两条 Claim"
+    },
+    {
+      "target_id": "cue_3",
+      "warning_type": "TRANSCRIPT_OVERLAPPING_CUES",
+      "note": "cue 2 与 cue 3 存在 300ms 时间重叠"
+    }
+  ],
+
+  "expected_rejects": [],
+
+  "validation_report": {
+    "claim_type_coverage": "SUFFICIENT",
+    "claim_dimension_coverage": "SUFFICIENT",
+    "measurement_context_coverage": "N/A",
+    "quote_gate_executable": true,
+    "fact_promotion_rules_sufficient": true,
+    "review_bundle_usable": true,
+    "core_schema_change_needed": false,
+    "new_core_object_needed": false,
+    "notes": "Case B 是三个案例中最有挑战性的：cue 1 是复合句需要拆分、cue 3 是 value_judgment 且与 cue 2 有时序重叠。ClaimDimension 覆盖了 market_expectation / competition / valuation 三个维度。Value Judgment 被正确阻止晋级为 Fact。"
+  }
+}
