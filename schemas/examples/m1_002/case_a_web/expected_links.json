@@ -1,0 +1,36 @@
+{
+  "case_id": "case_a_web",
+  "required_links": [
+    {
+      "from": "doc_m1002_case_a",
+      "field": "parent_document_id",
+      "to": "doc_m1002_case_c"
+    },
+    {
+      "from": "dat_m1002_a_revenue",
+      "field": "provenance.origin_object_ids",
+      "to": "dat_m1002_c_revenue"
+    },
+    {
+      "from": "clm_m1002_a_c01",
+      "field": "source_ref",
+      "to": "cu_m1002_a_p3"
+    }
+  ],
+  "shared_independence_groups": [
+    {
+      "group": "smic_fy2025_revenue",
+      "evidence_ids": [
+        "evi_m1002_a_revenue",
+        "evi_m1002_c_revenue"
+      ]
+    },
+    {
+      "group": "smic_fy2025_net_profit",
+      "evidence_ids": [
+        "evi_m1002_a_net_profit",
+        "evi_m1002_c_net_profit"
+      ]
+    }
+  ]
+}

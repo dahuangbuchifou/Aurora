@@ -1,0 +1,14 @@
+{
+  "case_id": "case_c_pdf",
+  "source_type": "pdf",
+  "title": "中芯国际2025年年度报告P15-P18测试摘录",
+  "published_at": "2026-03-27",
+  "collected_at": "2026-07-12",
+  "pages": [
+    15,
+    16,
+    17,
+    18
+  ],
+  "fixture_notice": "基于仓库提供的摘录文本，M1-002不对原始年报真实性和口径进行外部核验。"
+}

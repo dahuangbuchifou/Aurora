@@ -1,0 +1,22 @@
+{
+  "case_id": "case_b_video",
+  "speaker_entity_id": "ent_m1002_video_author",
+  "claim_ids": [
+    "clm_m1002_b_c06",
+    "clm_m1002_b_c07",
+    "clm_m1002_b_c08",
+    "clm_m1002_b_c09",
+    "clm_m1002_b_c10",
+    "clm_m1002_b_c11",
+    "clm_m1002_b_c12"
+  ],
+  "must_not_be_facts": [
+    "clm_m1002_b_c06",
+    "clm_m1002_b_c07",
+    "clm_m1002_b_c08",
+    "clm_m1002_b_c09",
+    "clm_m1002_b_c10",
+    "clm_m1002_b_c11",
+    "clm_m1002_b_c12"
+  ]
+}

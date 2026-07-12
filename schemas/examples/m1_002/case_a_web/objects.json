@@ -1,0 +1,997 @@
+{
+  "case_id": "case_a_web",
+  "schema_version": "1.0",
+  "objects": [
+    {
+      "id": "src_m1002_smic_news",
+      "object_type": "source",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "original",
+        "origin_object_ids": [],
+        "derivation_note": null,
+        "source_locator_required": false
+      },
+      "name": "中芯国际官网新闻中心",
+      "source_type": "official_website",
+      "publisher": "中芯国际",
+      "homepage_url": "https://www.smics.com/site/news",
+      "domain": "semiconductor",
+      "source_quality_tier": "S1"
+    },
+    {
+      "id": "doc_m1002_case_a",
+      "object_type": "document",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "公司PR稿是年报的二次传播",
+        "source_locator_required": false,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "source_id": "src_m1002_smic_news",
+      "document_type": "news",
+      "title": "中芯国际2025年报新闻稿（测试素材）",
+      "original_url": "https://www.smics.com/site/news_read/5100",
+      "published_at": "2026-03-27T00:00:00Z",
+      "collected_at": "2026-07-12T00:00:00Z",
+      "authors": [
+        "中芯国际"
+      ],
+      "mime_type": "text/html",
+      "raw_storage_uri": "m1_002_materials/case_a_web/README.md",
+      "parse_status": "parsed",
+      "copyright_note": "仅用于M1-002对象模型验证",
+      "parent_document_id": "doc_m1002_case_c"
+    },
+    {
+      "id": "cu_m1002_a_p1",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15",
+          "cu_m1002_c_p17_shipments"
+        ],
+        "derivation_note": "PR段落由年报内容摘要而来",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_a",
+      "unit_type": "paragraph",
+      "sequence_no": 1,
+      "text": "中芯国际发布2025年年度报告：销售收入约578.3亿元，净利润约86.5亿元，晶圆出货量882万片，毛利率24.5%。",
+      "locator": {
+        "paragraph_no": 1
+      },
+      "speaker": "中芯国际"
+    },
+    {
+      "id": "cu_m1002_a_p2",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p15",
+          "cu_m1002_c_p16"
+        ],
+        "derivation_note": "PR段落由年报内容摘要而来",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_a",
+      "unit_type": "paragraph",
+      "sequence_no": 2,
+      "text": "28nm及以上成熟制程收入占比76%，14nm/12nm FinFET占比18%；资本开支75.6亿美元。",
+      "locator": {
+        "paragraph_no": 2
+      },
+      "speaker": "中芯国际"
+    },
+    {
+      "id": "cu_m1002_a_p3",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_c_p18_mda"
+        ],
+        "derivation_note": "PR段落由年报内容摘要而来",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_a",
+      "unit_type": "paragraph",
+      "sequence_no": 3,
+      "text": "管理层认为行业温和复苏、AI芯片需求强劲，同时成熟制程存在过剩风险，并预计2026年销售收入保持两位数增长。",
+      "locator": {
+        "paragraph_no": 3
+      },
+      "speaker": "中芯国际"
+    },
+    {
+      "id": "cu_m1002_a_p4",
+      "object_type": "content_unit",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "doc_m1002_case_c"
+        ],
+        "derivation_note": "PR段落由年报内容摘要而来",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "document_id": "doc_m1002_case_a",
+      "unit_type": "paragraph",
+      "sequence_no": 4,
+      "text": "公司提示地缘政治、出口管制和汇率波动风险。",
+      "locator": {
+        "paragraph_no": 4
+      },
+      "speaker": "中芯国际"
+    },
+    {
+      "id": "dat_m1002_a_revenue",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_revenue"
+        ],
+        "derivation_note": "PR稿复述年报数据，不形成独立证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "revenue",
+      "value": 578.3,
+      "unit": "CNY_100_million",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_a_p1",
+      "audited": null
+    },
+    {
+      "id": "evi_m1002_a_revenue",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_revenue"
+        ],
+        "derivation_note": "PR证据与年报属于相同独立证据组",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "context",
+      "evidence_type": "official_data",
+      "target_object_id": "dat_m1002_a_revenue",
+      "source_ref": "cu_m1002_a_p1",
+      "summary": "官网PR复述年报数据，仅作为传播层上下文。",
+      "independence_group": "smic_fy2025_revenue",
+      "directness": "indirect",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "dat_m1002_a_net_profit",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_net_profit"
+        ],
+        "derivation_note": "PR稿复述年报数据，不形成独立证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "net_profit",
+      "value": 86.5,
+      "unit": "CNY_100_million",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_a_p1",
+      "audited": null
+    },
+    {
+      "id": "evi_m1002_a_net_profit",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_net_profit"
+        ],
+        "derivation_note": "PR证据与年报属于相同独立证据组",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "context",
+      "evidence_type": "official_data",
+      "target_object_id": "dat_m1002_a_net_profit",
+      "source_ref": "cu_m1002_a_p1",
+      "summary": "官网PR复述年报数据，仅作为传播层上下文。",
+      "independence_group": "smic_fy2025_net_profit",
+      "directness": "indirect",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "dat_m1002_a_gross_margin",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_gross_margin"
+        ],
+        "derivation_note": "PR稿复述年报数据，不形成独立证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "gross_margin",
+      "value": 0.245,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_a_p1",
+      "audited": null
+    },
+    {
+      "id": "evi_m1002_a_gross_margin",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_gross_margin"
+        ],
+        "derivation_note": "PR证据与年报属于相同独立证据组",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "context",
+      "evidence_type": "official_data",
+      "target_object_id": "dat_m1002_a_gross_margin",
+      "source_ref": "cu_m1002_a_p1",
+      "summary": "官网PR复述年报数据，仅作为传播层上下文。",
+      "independence_group": "smic_fy2025_gross_margin",
+      "directness": "indirect",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "dat_m1002_a_shipments",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_shipments"
+        ],
+        "derivation_note": "PR稿复述年报数据，不形成独立证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "wafer_shipments_8inch_equivalent",
+      "value": 882,
+      "unit": "10k_wafers",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_a_p1",
+      "audited": null
+    },
+    {
+      "id": "evi_m1002_a_shipments",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p1",
+          "dat_m1002_c_shipments"
+        ],
+        "derivation_note": "PR证据与年报属于相同独立证据组",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "context",
+      "evidence_type": "official_data",
+      "target_object_id": "dat_m1002_a_shipments",
+      "source_ref": "cu_m1002_a_p1",
+      "summary": "官网PR复述年报数据，仅作为传播层上下文。",
+      "independence_group": "smic_fy2025_shipments",
+      "directness": "indirect",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "dat_m1002_a_capex",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p2",
+          "dat_m1002_c_capex"
+        ],
+        "derivation_note": "PR稿复述年报数据，不形成独立证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "capital_expenditure",
+      "value": 75.6,
+      "unit": "USD_100_million",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_a_p2",
+      "audited": null
+    },
+    {
+      "id": "evi_m1002_a_capex",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p2",
+          "dat_m1002_c_capex"
+        ],
+        "derivation_note": "PR证据与年报属于相同独立证据组",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "context",
+      "evidence_type": "official_data",
+      "target_object_id": "dat_m1002_a_capex",
+      "source_ref": "cu_m1002_a_p2",
+      "summary": "官网PR复述年报数据，仅作为传播层上下文。",
+      "independence_group": "smic_fy2025_capex",
+      "directness": "indirect",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "dat_m1002_a_mature_share",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p2",
+          "dat_m1002_c_mature_share"
+        ],
+        "derivation_note": "PR稿复述年报数据，不形成独立证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "revenue_share_28nm_and_above",
+      "value": 0.76,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_a_p2",
+      "audited": null
+    },
+    {
+      "id": "evi_m1002_a_mature_share",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p2",
+          "dat_m1002_c_mature_share"
+        ],
+        "derivation_note": "PR证据与年报属于相同独立证据组",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "context",
+      "evidence_type": "official_data",
+      "target_object_id": "dat_m1002_a_mature_share",
+      "source_ref": "cu_m1002_a_p2",
+      "summary": "官网PR复述年报数据，仅作为传播层上下文。",
+      "independence_group": "smic_fy2025_process_mix",
+      "directness": "indirect",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "dat_m1002_a_finfet_share",
+      "object_type": "data_point",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p2",
+          "dat_m1002_c_finfet_share"
+        ],
+        "derivation_note": "PR稿复述年报数据，不形成独立证据",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "metric": "revenue_share_14_12nm_finfet",
+      "value": 0.18,
+      "unit": "ratio",
+      "entity_id": "ent_m1002_smic",
+      "period": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "precision": "year"
+      },
+      "reported_at": "2026-03-27T00:00:00Z",
+      "calculation_method": "reported",
+      "source_ref": "cu_m1002_a_p2",
+      "audited": null
+    },
+    {
+      "id": "evi_m1002_a_finfet_share",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p2",
+          "dat_m1002_c_finfet_share"
+        ],
+        "derivation_note": "PR证据与年报属于相同独立证据组",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "context",
+      "evidence_type": "official_data",
+      "target_object_id": "dat_m1002_a_finfet_share",
+      "source_ref": "cu_m1002_a_p2",
+      "summary": "官网PR复述年报数据，仅作为传播层上下文。",
+      "independence_group": "smic_fy2025_finfet_share",
+      "directness": "indirect",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "clm_m1002_a_c01",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "从PR段落提取管理层/公司主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "prediction",
+      "statement": "2026年全年销售收入将保持两位数增长。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_a_p3",
+      "direct_quote": false,
+      "epistemic_status": "asserted",
+      "time_horizon": {
+        "start": "2026-01-01",
+        "end": "2026-12-31",
+        "precision": "year"
+      }
+    },
+    {
+      "id": "evi_m1002_a_c01",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "PR原文支持主张归属，但不自动验证主张真实性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_a_c01",
+      "source_ref": "cu_m1002_a_p3",
+      "summary": "PR段落证明该主张由公司/管理层提出。",
+      "independence_group": "smic_fy2025_management_outlook",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "clm_m1002_a_c02",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "从PR段落提取管理层/公司主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "interpretation",
+      "statement": "全球半导体行业处于温和复苏通道。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_a_p3",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_a_c02",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "PR原文支持主张归属，但不自动验证主张真实性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_a_c02",
+      "source_ref": "cu_m1002_a_p3",
+      "summary": "PR段落证明该主张由公司/管理层提出。",
+      "independence_group": "smic_fy2025_management_outlook",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "clm_m1002_a_c03",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "从PR段落提取管理层/公司主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "fact_claim",
+      "statement": "成熟制程存在产能过剩风险，部分8英寸产线利用率降至70%以下。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_a_p3",
+      "direct_quote": false,
+      "epistemic_status": "disputed"
+    },
+    {
+      "id": "evi_m1002_a_c03",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "PR原文支持主张归属，但不自动验证主张真实性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_a_c03",
+      "source_ref": "cu_m1002_a_p3",
+      "summary": "PR段落证明该主张由公司/管理层提出。",
+      "independence_group": "smic_pr_risk_statement",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "clm_m1002_a_c04",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "从PR段落提取管理层/公司主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "interpretation",
+      "statement": "AI芯片需求持续强劲。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [],
+      "source_ref": "cu_m1002_a_p3",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_a_c04",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p3"
+        ],
+        "derivation_note": "PR原文支持主张归属，但不自动验证主张真实性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_a_c04",
+      "source_ref": "cu_m1002_a_p3",
+      "summary": "PR段落证明该主张由公司/管理层提出。",
+      "independence_group": "smic_fy2025_management_outlook",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    },
+    {
+      "id": "clm_m1002_a_c05",
+      "object_type": "claim",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p4"
+        ],
+        "derivation_note": "从PR段落提取管理层/公司主张",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "claim_type": "risk_claim",
+      "statement": "美国出口管制进一步收紧可能制约先进制程研发。",
+      "subject_entity_ids": [
+        "ent_m1002_smic",
+        "ent_m1002_semiconductor_foundry"
+      ],
+      "asserted_by": "ent_m1002_smic",
+      "asserted_at": "2026-03-27T00:00:00Z",
+      "conditions": [
+        "美国出口管制进一步收紧"
+      ],
+      "source_ref": "cu_m1002_a_p4",
+      "direct_quote": false,
+      "epistemic_status": "asserted"
+    },
+    {
+      "id": "evi_m1002_a_c05",
+      "object_type": "evidence",
+      "schema_version": "1.0",
+      "created_by": "manual_fixture",
+      "workspace_id": "m1_002",
+      "language": "zh-CN",
+      "privacy_level": "public",
+      "tags": [
+        "M1-002",
+        "中芯国际"
+      ],
+      "provenance": {
+        "origin_type": "derived",
+        "origin_object_ids": [
+          "cu_m1002_a_p4"
+        ],
+        "derivation_note": "PR原文支持主张归属，但不自动验证主张真实性",
+        "source_locator_required": true,
+        "processing_run_id": "run_m1002_manual_mapping"
+      },
+      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "target_object_id": "clm_m1002_a_c05",
+      "source_ref": "cu_m1002_a_p4",
+      "summary": "PR段落证明该主张由公司/管理层提出。",
+      "independence_group": "smic_pr_risk_statement",
+      "directness": "direct",
+      "source_quality_tier": "S1",
+      "evidence_strength": "E2"
+    }
+  ]
+}
