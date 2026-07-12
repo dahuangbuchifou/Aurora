@@ -262,6 +262,73 @@ class ObjectRepository:
         self.session.flush()
         return validated
 
+
+    def find_by_external_id(
+        self,
+        *,
+        object_type: ObjectType,
+        key: str,
+        value: str,
+        workspace_id: str = "default",
+        include_deleted: bool = False,
+    ) -> list[BaseObject]:
+        """Find objects by an application-level external id.
+
+        M2 uses this generic audit-safe lookup for source identity and
+        document idempotency. The current JSON persistence is intentionally
+        scanned in Python; normalization/indexing remains a later optimization.
+        """
+
+        if not key:
+            raise ValueError("external id key is required")
+        statement: Select[tuple[ObjectRecord]] = select(ObjectRecord).where(
+            ObjectRecord.object_type == object_type.value,
+            ObjectRecord.workspace_id == workspace_id,
+        )
+        if not include_deleted:
+            statement = statement.where(ObjectRecord.deleted_at.is_(None))
+        records: Sequence[ObjectRecord] = self.session.scalars(
+            statement.order_by(ObjectRecord.created_at, ObjectRecord.id)
+        ).all()
+        result: list[BaseObject] = []
+        for record in records:
+            external_ids = record.payload.get("external_ids", {})
+            if isinstance(external_ids, dict) and external_ids.get(key) == value:
+                result.append(parse_object(record.payload))
+        return result
+
+    def find_by_payload_field(
+        self,
+        *,
+        object_type: ObjectType,
+        field_name: str,
+        value: Any,
+        workspace_id: str = "default",
+        include_deleted: bool = False,
+    ) -> list[BaseObject]:
+        """Find objects by a top-level payload field.
+
+        This is a generic MVP query helper, not parser-specific repository
+        logic. It keeps M2-001 compatible with the single-table JSON design.
+        """
+
+        if not field_name or "." in field_name:
+            raise ValueError("field_name must be a non-empty top-level field")
+        statement: Select[tuple[ObjectRecord]] = select(ObjectRecord).where(
+            ObjectRecord.object_type == object_type.value,
+            ObjectRecord.workspace_id == workspace_id,
+        )
+        if not include_deleted:
+            statement = statement.where(ObjectRecord.deleted_at.is_(None))
+        records: Sequence[ObjectRecord] = self.session.scalars(
+            statement.order_by(ObjectRecord.created_at, ObjectRecord.id)
+        ).all()
+        return [
+            parse_object(record.payload)
+            for record in records
+            if record.payload.get(field_name) == value
+        ]
+
     def count(
         self,
         *,

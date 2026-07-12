@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "workspace_id": "default",
+  "source": {
+    "name": "中芯国际2025年报测试摘录",
+    "source_type": "company_announcement",
+    "canonical_key": "smic-2025-annual-report-test"
+  },
+  "document": {
+    "title": "Case C 年报测试摘录索引",
+    "document_type": "research_report",
+    "language": "zh-CN",
+    "tags": [
+      "SMIC",
+      "annual-report"
+    ]
+  },
+  "segments": [
+    {
+      "sequence_no": 0,
+      "unit_type": "heading",
+      "text": "Case C 年报测试摘录索引",
+      "locator": {
+        "page_no": 15,
+        "heading_path": [
+          "Case C 年报测试摘录索引"
+        ]
+      }
+    },
+    {
+      "sequence_no": 1,
+      "unit_type": "list_item",
+      "text": "P15：营业收入、净利润、毛利率、资本开支等。",
+      "locator": {
+        "page_no": 15,
+        "block_no": 1
+      }
+    },
+    {
+      "sequence_no": 2,
+      "unit_type": "list_item",
+      "text": "P16：制程收入结构。",
+      "locator": {
+        "page_no": 16,
+        "block_no": 1
+      }
+    },
+    {
+      "sequence_no": 3,
+      "unit_type": "list_item",
+      "text": "P17：地区收入结构与晶圆出货量。",
+      "locator": {
+        "page_no": 17,
+        "block_no": 1
+      }
+    },
+    {
+      "sequence_no": 4,
+      "unit_type": "list_item",
+      "text": "P18：产能利用率与管理层2026年展望。",
+      "locator": {
+        "page_no": 18,
+        "block_no": 1
+      }
+    }
+  ]
+}

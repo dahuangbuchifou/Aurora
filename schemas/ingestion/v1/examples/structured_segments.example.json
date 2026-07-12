@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "workspace_id": "default",
+  "source": {
+    "name": "Example Research Desk",
+    "source_type": "research_institution",
+    "canonical_key": "example-research-desk"
+  },
+  "document": {
+    "title": "Structured Segments Example",
+    "document_type": "text",
+    "language": "zh-CN",
+    "tags": [
+      "example"
+    ]
+  },
+  "segments": [
+    {
+      "sequence_no": 0,
+      "unit_type": "heading",
+      "text": "示例标题",
+      "locator": {
+        "line_start": 1,
+        "line_end": 1,
+        "heading_path": [
+          "示例标题"
+        ]
+      }
+    },
+    {
+      "sequence_no": 1,
+      "unit_type": "paragraph",
+      "text": "这是一个结构化内容单元。",
+      "locator": {
+        "paragraph_no": 1,
+        "line_start": 3,
+        "line_end": 3
+      }
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+{
+  "$defs": {
+    "DocumentType": {
+      "enum": [
+        "web_article",
+        "news",
+        "pdf",
+        "video",
+        "audio",
+        "markdown",
+        "text",
+        "spreadsheet",
+        "company_filing",
+        "research_report",
+        "user_note",
+        "unknown"
+      ],
+      "title": "DocumentType",
+      "type": "string"
+    },
+    "DuplicateStrategy": {
+      "enum": [
+        "reuse",
+        "reject",
+        "new_version"
+      ],
+      "title": "DuplicateStrategy",
+      "type": "string"
+    },
+    "IngestionInputType": {
+      "enum": [
+        "markdown",
+        "text",
+        "structured_segments"
+      ],
+      "title": "IngestionInputType",
+      "type": "string"
+    },
+    "SourceType": {
+      "enum": [
+        "official_website",
+        "company_announcement",
+        "government_database",
+        "academic_journal",
+        "research_institution",
+        "news_media",
+        "video_channel",
+        "podcast",
+        "social_media",
+        "blog",
+        "api",
+        "local_file",
+        "user_note",
+        "unknown"
+      ],
+      "title": "SourceType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "path": {
+      "format": "path",
+      "title": "Path",
+      "type": "string"
+    },
+    "input_type": {
+      "$ref": "#/$defs/IngestionInputType"
+    },
+    "workspace_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Workspace Id"
+    },
+    "source_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Name"
+    },
+    "source_type": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SourceType"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "source_key": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Key"
+    },
+    "source_homepage_url": {
+      "anyOf": [
+        {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Homepage Url"
+    },
+    "title": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Title"
+    },
+    "document_type": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DocumentType"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "published_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Published At"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Language"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "idempotency_key": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Idempotency Key"
+    },
+    "duplicate_strategy": {
+      "$ref": "#/$defs/DuplicateStrategy",
+      "default": "reuse"
+    },
+    "max_bytes": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Bytes"
+    },
+    "dry_run": {
+      "default": false,
+      "title": "Dry Run",
+      "type": "boolean"
+    },
+    "created_by": {
+      "default": "system",
+      "title": "Created By",
+      "type": "string"
+    }
+  },
+  "required": [
+    "path",
+    "input_type"
+  ],
+  "title": "IngestionRequest",
+  "type": "object",
+  "$id": "https://aurora.local/schemas/ingestion/v1/ingestion_request.schema.json"
+}

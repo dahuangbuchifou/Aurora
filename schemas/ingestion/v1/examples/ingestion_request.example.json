@@ -1,0 +1,13 @@
+{
+  "path": "examples/research.md",
+  "input_type": "markdown",
+  "workspace_id": "default",
+  "source_name": "Local Research",
+  "source_type": "local_file",
+  "source_key": "local-research",
+  "title": "Example Research Note",
+  "duplicate_strategy": "reuse",
+  "max_bytes": 10485760,
+  "dry_run": false,
+  "created_by": "example"
+}

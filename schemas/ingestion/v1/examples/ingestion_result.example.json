@@ -1,0 +1,20 @@
+{
+  "status": "success",
+  "processing_run_id": "run_example",
+  "source_id": "src_example",
+  "document_id": "doc_example",
+  "content_unit_ids": [
+    "cu_001",
+    "cu_002"
+  ],
+  "content_unit_count": 2,
+  "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "idempotency_key": "1111111111111111111111111111111111111111111111111111111111111111",
+  "reused": false,
+  "dry_run": false,
+  "parser": {
+    "name": "markdown",
+    "version": "1.0.0"
+  },
+  "warnings": []
+}
