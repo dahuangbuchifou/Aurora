@@ -1,0 +1,18 @@
+{
+  "status": "success",
+  "processing_run_id": "run_example",
+  "source_id": "src_example",
+  "document_id": "doc_example",
+  "content_unit_ids": ["cu_1", "cu_2"],
+  "content_unit_count": 2,
+  "content_hash": "semantic-sha256",
+  "raw_content_hash": "raw-sha256",
+  "parser_config_hash": "config-sha256",
+  "parse_status": "parsed",
+  "idempotency_key": "dedupe-key",
+  "reused": false,
+  "dry_run": false,
+  "parser": {"name": "html", "version": "1.0.0"},
+  "warnings": [],
+  "metrics": {"html_element_count": 2}
+}

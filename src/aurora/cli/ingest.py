@@ -1,4 +1,4 @@
-"""Command-line interface for M2-001 offline ingestion."""
+"""Command-line interface for deterministic Aurora ingestion."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from aurora.ingestion.contracts import (
     IngestionInputType,
     IngestionRequest,
     IngestionResult,
+    PdfTableMode,
 )
 from aurora.ingestion.errors import IngestionError, UnsupportedInputError
 from aurora.workflow import IngestionService
@@ -29,13 +30,29 @@ def _input_type_from_path(path: Path, explicit: str | None) -> IngestionInputTyp
     if explicit:
         return IngestionInputType(explicit)
     suffix = path.suffix.lower()
-    if suffix in {".md", ".markdown"}:
-        return IngestionInputType.MARKDOWN
-    if suffix in {".txt", ".text"}:
-        return IngestionInputType.TEXT
+    mapping = {
+        ".md": IngestionInputType.MARKDOWN,
+        ".markdown": IngestionInputType.MARKDOWN,
+        ".txt": IngestionInputType.TEXT,
+        ".text": IngestionInputType.TEXT,
+    }
+    if suffix in mapping:
+        return mapping[suffix]
     raise UnsupportedInputError(
         "file extension is not supported; use --input-type markdown|text",
         context={"path": str(path), "suffix": suffix},
+    )
+
+
+def _transcript_type(path: Path, explicit: str | None) -> IngestionInputType:
+    value = explicit or path.suffix.lower().lstrip(".")
+    if value == "srt":
+        return IngestionInputType.SRT
+    if value in {"vtt", "webvtt"}:
+        return IngestionInputType.VTT
+    raise UnsupportedInputError(
+        "transcript must be SRT or WebVTT",
+        context={"path": str(path), "format": value},
     )
 
 
@@ -56,74 +73,126 @@ def _add_common_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--created-by", default="cli")
 
 
+def _add_source_options(
+    parser: argparse.ArgumentParser,
+    *,
+    required: bool = True,
+    default_source_type: SourceType = SourceType.LOCAL_FILE,
+) -> None:
+    parser.add_argument("--source-name", required=required)
+    parser.add_argument(
+        "--source-type",
+        choices=[item.value for item in SourceType],
+        default=default_source_type.value if required else None,
+    )
+    parser.add_argument("--source-key")
+    parser.add_argument("--source-homepage-url")
+    parser.add_argument("--title")
+    parser.add_argument(
+        "--document-type",
+        choices=[item.value for item in DocumentType],
+    )
+    parser.add_argument("--language")
+    parser.add_argument("--tag", action="append", default=[])
+    parser.add_argument("--idempotency-key")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="aurora-ingest",
-        description="Import local deterministic content into Aurora",
+        description="Import deterministic local and static content into Aurora",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     file_parser = subparsers.add_parser(
-        "file",
-        help="Import a Markdown or UTF-8 plain-text file",
+        "file", help="Import a Markdown or UTF-8 plain-text file"
     )
     file_parser.add_argument("path", type=Path)
     file_parser.add_argument("--input-type", choices=["markdown", "text"])
-    file_parser.add_argument("--source-name", required=True)
-    file_parser.add_argument(
-        "--source-type",
-        choices=[item.value for item in SourceType],
-        default=SourceType.LOCAL_FILE.value,
-    )
-    file_parser.add_argument("--source-key")
-    file_parser.add_argument("--source-homepage-url")
-    file_parser.add_argument("--title")
-    file_parser.add_argument(
-        "--document-type",
-        choices=[item.value for item in DocumentType],
-    )
-    file_parser.add_argument("--language")
-    file_parser.add_argument("--tag", action="append", default=[])
-    file_parser.add_argument("--idempotency-key")
+    _add_source_options(file_parser)
     _add_common_options(file_parser)
 
     segments_parser = subparsers.add_parser(
-        "segments",
-        help="Import a Structured Segments JSON manifest",
+        "segments", help="Import a Structured Segments JSON manifest"
     )
     segments_parser.add_argument("path", type=Path)
-    segments_parser.add_argument("--source-name")
-    segments_parser.add_argument(
-        "--source-type",
-        choices=[item.value for item in SourceType],
-    )
-    segments_parser.add_argument("--source-key")
-    segments_parser.add_argument("--source-homepage-url")
-    segments_parser.add_argument("--title")
-    segments_parser.add_argument(
-        "--document-type",
-        choices=[item.value for item in DocumentType],
-    )
-    segments_parser.add_argument("--language")
-    segments_parser.add_argument("--tag", action="append", default=[])
-    segments_parser.add_argument("--idempotency-key")
+    _add_source_options(segments_parser, required=False)
     _add_common_options(segments_parser)
+
+    html_parser = subparsers.add_parser("html", help="Import a local static HTML file")
+    html_parser.add_argument("path", type=Path)
+    html_parser.add_argument("--content-selector")
+    _add_source_options(html_parser)
+    _add_common_options(html_parser)
+
+    url_parser = subparsers.add_parser("url", help="Fetch and import one static HTML URL")
+    url_parser.add_argument("url")
+    url_parser.add_argument("--content-selector")
+    url_parser.add_argument(
+        "--allow-private-network",
+        action="store_true",
+        help="Explicitly allow private network targets; disabled by default",
+    )
+    _add_source_options(
+        url_parser,
+        default_source_type=SourceType.OFFICIAL_WEBSITE,
+    )
+    _add_common_options(url_parser)
+
+    pdf_parser = subparsers.add_parser(
+        "pdf", help="Import a local machine-generated PDF"
+    )
+    pdf_parser.add_argument("path", type=Path)
+    pdf_parser.add_argument("--pages")
+    pdf_parser.add_argument(
+        "--table-mode",
+        choices=[item.value for item in PdfTableMode],
+        default=PdfTableMode.BEST_EFFORT.value,
+    )
+    pdf_parser.add_argument("--max-pages", type=int)
+    _add_source_options(pdf_parser)
+    _add_common_options(pdf_parser)
+
+    transcript_parser = subparsers.add_parser(
+        "transcript", help="Import an SRT or WebVTT transcript"
+    )
+    transcript_parser.add_argument("path", type=Path)
+    transcript_parser.add_argument("--format", choices=["srt", "vtt"])
+    _add_source_options(
+        transcript_parser,
+        default_source_type=SourceType.VIDEO_CHANNEL,
+    )
+    _add_common_options(transcript_parser)
     return parser
 
 
 def _request_from_args(args: argparse.Namespace) -> IngestionRequest:
-    input_type = (
-        _input_type_from_path(args.path, args.input_type)
-        if args.command == "file"
-        else IngestionInputType.STRUCTURED_SEGMENTS
-    )
+    path: Path | None = getattr(args, "path", None)
+    url: str | None = getattr(args, "url", None)
+    if args.command == "file":
+        input_type = _input_type_from_path(path, args.input_type)  # type: ignore[arg-type]
+    elif args.command == "segments":
+        input_type = IngestionInputType.STRUCTURED_SEGMENTS
+    elif args.command == "html":
+        input_type = IngestionInputType.HTML
+    elif args.command == "url":
+        input_type = IngestionInputType.URL
+    elif args.command == "pdf":
+        input_type = IngestionInputType.PDF
+    elif args.command == "transcript":
+        input_type = _transcript_type(path, args.format)  # type: ignore[arg-type]
+    else:  # pragma: no cover - argparse prevents this.
+        raise ValueError(f"unknown command: {args.command}")
+
     max_bytes = None
     if args.max_size_mb is not None:
         if args.max_size_mb <= 0:
             raise ValueError("--max-size-mb must be positive")
         max_bytes = int(args.max_size_mb * 1024 * 1024)
+
     return IngestionRequest(
-        path=args.path,
+        path=path,
+        url=url,
         input_type=input_type,
         workspace_id=args.workspace,
         source_name=args.source_name,
@@ -139,21 +208,32 @@ def _request_from_args(args: argparse.Namespace) -> IngestionRequest:
         idempotency_key=args.idempotency_key,
         duplicate_strategy=DuplicateStrategy(args.duplicate_strategy),
         max_bytes=max_bytes,
+        max_pages=getattr(args, "max_pages", None),
+        page_selection=getattr(args, "pages", None),
+        table_mode=PdfTableMode(
+            getattr(args, "table_mode", PdfTableMode.BEST_EFFORT.value)
+        ),
+        content_selector=getattr(args, "content_selector", None),
+        allow_private_network=getattr(args, "allow_private_network", False),
         dry_run=args.dry_run,
         created_by=args.created_by,
     )
 
 
 def _result_text(result: IngestionResult) -> str:
-    verb = "Would reuse" if result.dry_run and result.reused else (
-        "Would import" if result.dry_run else (
-            "Reused" if result.reused else "Imported"
+    verb = (
+        "Would reuse"
+        if result.dry_run and result.reused
+        else (
+            "Would import"
+            if result.dry_run
+            else ("Reused" if result.reused else "Imported")
         )
     )
     return (
         f"{verb} {result.content_unit_count} content units from 1 document "
-        f"(document_id={result.document_id}, "
-        f"run_id={result.processing_run_id}, reused={str(result.reused).lower()})"
+        f"(document_id={result.document_id}, run_id={result.processing_run_id}, "
+        f"reused={str(result.reused).lower()}, parse_status={result.parse_status.value})"
     )
 
 
@@ -186,10 +266,7 @@ def _print_error(error: Exception, output: str) -> None:
     if output == "json":
         print(json.dumps(payload, ensure_ascii=False, default=str), file=sys.stderr)
     else:
-        print(
-            f"{payload['error_code']}: {payload['error_message']}",
-            file=sys.stderr,
-        )
+        print(f"{payload['error_code']}: {payload['error_message']}", file=sys.stderr)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

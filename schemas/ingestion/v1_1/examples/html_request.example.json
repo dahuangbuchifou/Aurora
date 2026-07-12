@@ -1,0 +1,11 @@
+{
+  "path": "article.html",
+  "input_type": "html",
+  "source_name": "SMIC Website",
+  "source_type": "official_website",
+  "source_homepage_url": "https://www.smics.com/",
+  "content_selector": "article",
+  "duplicate_strategy": "reuse",
+  "dry_run": false,
+  "created_by": "user"
+}

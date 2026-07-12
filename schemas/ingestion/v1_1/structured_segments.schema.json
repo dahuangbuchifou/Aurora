@@ -1,0 +1,405 @@
+{
+  "$defs": {
+    "ContentUnitType": {
+      "enum": [
+        "paragraph",
+        "heading",
+        "transcript_segment",
+        "table",
+        "table_row",
+        "list_item",
+        "quote",
+        "code_block",
+        "note_block",
+        "unknown"
+      ],
+      "title": "ContentUnitType",
+      "type": "string"
+    },
+    "DocumentType": {
+      "enum": [
+        "web_article",
+        "news",
+        "pdf",
+        "video",
+        "audio",
+        "markdown",
+        "text",
+        "spreadsheet",
+        "company_filing",
+        "research_report",
+        "user_note",
+        "unknown"
+      ],
+      "title": "DocumentType",
+      "type": "string"
+    },
+    "SourceLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "start_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Seconds"
+        },
+        "end_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Seconds"
+        },
+        "page_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page No"
+        },
+        "block_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Block No"
+        },
+        "paragraph_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Paragraph No"
+        },
+        "line_start": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Start"
+        },
+        "line_end": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line End"
+        },
+        "heading_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Heading Path",
+          "type": "array"
+        },
+        "sheet_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sheet Name"
+        },
+        "row_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row No"
+        },
+        "column_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Column Name"
+        },
+        "css_selector": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Css Selector"
+        },
+        "xpath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Xpath"
+        }
+      },
+      "title": "SourceLocator",
+      "type": "object"
+    },
+    "SourceType": {
+      "enum": [
+        "official_website",
+        "company_announcement",
+        "government_database",
+        "academic_journal",
+        "research_institution",
+        "news_media",
+        "video_channel",
+        "podcast",
+        "social_media",
+        "blog",
+        "api",
+        "local_file",
+        "user_note",
+        "unknown"
+      ],
+      "title": "SourceType",
+      "type": "string"
+    },
+    "StructuredDocumentMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "document_type": {
+          "$ref": "#/$defs/DocumentType",
+          "default": "text"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published At"
+        },
+        "language": {
+          "default": "zh-CN",
+          "title": "Language",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "idempotency_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idempotency Key"
+        }
+      },
+      "required": [
+        "title"
+      ],
+      "title": "StructuredDocumentMetadata",
+      "type": "object"
+    },
+    "StructuredSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "sequence_no": {
+          "minimum": 0,
+          "title": "Sequence No",
+          "type": "integer"
+        },
+        "unit_type": {
+          "$ref": "#/$defs/ContentUnitType"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "locator": {
+          "$ref": "#/$defs/SourceLocator"
+        },
+        "speaker": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker"
+        }
+      },
+      "required": [
+        "sequence_no",
+        "unit_type",
+        "text",
+        "locator"
+      ],
+      "title": "StructuredSegment",
+      "type": "object"
+    },
+    "StructuredSourceMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "source_type": {
+          "$ref": "#/$defs/SourceType"
+        },
+        "canonical_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canonical Key"
+        },
+        "homepage_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Homepage Url"
+        }
+      },
+      "required": [
+        "name",
+        "source_type"
+      ],
+      "title": "StructuredSourceMetadata",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "workspace_id": {
+      "default": "default",
+      "title": "Workspace Id",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/StructuredSourceMetadata"
+    },
+    "document": {
+      "$ref": "#/$defs/StructuredDocumentMetadata"
+    },
+    "segments": {
+      "items": {
+        "$ref": "#/$defs/StructuredSegment"
+      },
+      "minItems": 1,
+      "title": "Segments",
+      "type": "array"
+    }
+  },
+  "required": [
+    "source",
+    "document",
+    "segments"
+  ],
+  "title": "StructuredSegmentsManifest",
+  "type": "object",
+  "$id": "https://aurora.local/schemas/ingestion/v1_1/structured_segments.schema.json"
+}

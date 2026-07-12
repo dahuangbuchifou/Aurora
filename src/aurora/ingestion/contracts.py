@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, HttpUrl, model_validator
 
@@ -17,6 +17,7 @@ from aurora.core.models.common import AuroraModel, SourceLocator
 from aurora.core.models.enums import (
     ContentUnitType,
     DocumentType,
+    ParseStatus,
     SourceType,
 )
 
@@ -25,6 +26,11 @@ class IngestionInputType(StrEnum):
     MARKDOWN = "markdown"
     TEXT = "text"
     STRUCTURED_SEGMENTS = "structured_segments"
+    HTML = "html"
+    URL = "url"
+    PDF = "pdf"
+    SRT = "srt"
+    VTT = "vtt"
 
 
 class DuplicateStrategy(StrEnum):
@@ -33,13 +39,19 @@ class DuplicateStrategy(StrEnum):
     NEW_VERSION = "new_version"
 
 
+class PdfTableMode(StrEnum):
+    OFF = "off"
+    BEST_EFFORT = "best_effort"
+
+
 class ParserDescriptor(AuroraModel):
     name: str
     version: str
 
 
 class IngestionRequest(AuroraModel):
-    path: Path
+    path: Path | None = None
+    url: HttpUrl | None = None
     input_type: IngestionInputType
     workspace_id: str | None = None
     source_name: str | None = None
@@ -54,16 +66,42 @@ class IngestionRequest(AuroraModel):
     idempotency_key: str | None = None
     duplicate_strategy: DuplicateStrategy = DuplicateStrategy.REUSE
     max_bytes: int | None = Field(default=None, ge=1)
+    max_pages: int | None = Field(default=None, ge=1)
+    page_selection: str | None = None
+    table_mode: PdfTableMode = PdfTableMode.BEST_EFFORT
+    content_selector: str | None = None
+    allow_private_network: bool = False
     dry_run: bool = False
     created_by: str = "system"
 
     @model_validator(mode="after")
-    def validate_source_metadata(self) -> "IngestionRequest":
+    def validate_input_and_source_metadata(self) -> "IngestionRequest":
+        if self.input_type == IngestionInputType.URL:
+            if self.url is None or self.path is not None:
+                raise ValueError("url input requires url and forbids path")
+        else:
+            if self.path is None or self.url is not None:
+                raise ValueError("file input requires path and forbids url")
+
         if self.input_type != IngestionInputType.STRUCTURED_SEGMENTS:
             if not self.source_name or self.source_type is None:
                 raise ValueError(
-                    "source_name and source_type are required for file ingestion"
+                    "source_name and source_type are required for ingestion"
                 )
+
+        if self.input_type != IngestionInputType.PDF:
+            if self.page_selection is not None:
+                raise ValueError("page_selection is only valid for PDF input")
+            if self.max_pages is not None:
+                raise ValueError("max_pages is only valid for PDF input")
+            if self.table_mode != PdfTableMode.BEST_EFFORT:
+                raise ValueError("table_mode is only valid for PDF input")
+
+        if self.input_type not in {IngestionInputType.HTML, IngestionInputType.URL}:
+            if self.content_selector is not None:
+                raise ValueError("content_selector is only valid for HTML or URL input")
+            if self.allow_private_network:
+                raise ValueError("allow_private_network is only valid for URL input")
         return self
 
 
@@ -118,11 +156,15 @@ class IngestionResult(AuroraModel):
     content_unit_ids: list[str] = Field(default_factory=list)
     content_unit_count: int = Field(ge=0)
     content_hash: str
+    raw_content_hash: str | None = None
+    parser_config_hash: str | None = None
+    parse_status: ParseStatus = ParseStatus.PARSED
     idempotency_key: str
     reused: bool = False
     dry_run: bool = False
     parser: ParserDescriptor
     warnings: list[str] = Field(default_factory=list)
+    metrics: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_count(self) -> "IngestionResult":

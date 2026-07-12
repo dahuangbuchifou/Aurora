@@ -63,11 +63,15 @@ def document_dedupe_key(
     content_hash: str,
     parser_name: str,
     parser_version: str,
+    parser_config_hash: str = "default",
 ) -> str:
-    """Return the exact-document identity frozen for M2-001."""
+    """Return exact-document identity including parsing configuration."""
 
-    raw = "\x1f".join((source_id, content_hash, parser_name, parser_version))
-    return sha256_hex(raw.encode("utf-8"))
+    parts = [source_id, content_hash, parser_name, parser_version]
+    # Preserve the exact M2-001 identity for historical/default parsers.
+    if parser_config_hash not in {"", "default"}:
+        parts.append(parser_config_hash)
+    return sha256_hex("\x1f".join(parts).encode("utf-8"))
 
 
 def document_series_key(

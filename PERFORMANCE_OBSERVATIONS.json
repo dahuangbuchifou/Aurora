@@ -1,0 +1,37 @@
+{
+  "benchmark_type": "non_blocking_local_observation",
+  "notes": [
+    "Results depend on host CPU, memory, Python and dependency versions.",
+    "This is not a production SLA or release gate.",
+    "Peak allocation is measured with tracemalloc and excludes native allocations."
+  ],
+  "results": [
+    {
+      "name": "html_10_mib",
+      "input_bytes": 10485760,
+      "elapsed_seconds": 0.459559,
+      "python_peak_allocated_bytes": 44581228,
+      "content_unit_count": 2,
+      "parse_status": "parsed",
+      "warning_count": 0
+    },
+    {
+      "name": "pdf_232_pages",
+      "input_bytes": 125636,
+      "elapsed_seconds": 6.775572,
+      "python_peak_allocated_bytes": 42879237,
+      "content_unit_count": 464,
+      "parse_status": "parsed",
+      "warning_count": 0
+    },
+    {
+      "name": "webvtt_10000_cues",
+      "input_bytes": 488897,
+      "elapsed_seconds": 1.834165,
+      "python_peak_allocated_bytes": 16779056,
+      "content_unit_count": 10000,
+      "parse_status": "parsed",
+      "warning_count": 0
+    }
+  ]
+}

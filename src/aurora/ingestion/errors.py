@@ -55,3 +55,83 @@ class DuplicateIngestionError(IngestionError):
 
 class PersistenceIngestionError(IngestionError):
     code = "INGEST_PERSISTENCE_ERROR"
+
+
+class HtmlParseError(IngestionError):
+    code = "HTML_PARSE_FAILED"
+
+
+class WebInvalidUrlError(IngestionError):
+    code = "WEB_INVALID_URL"
+
+
+class WebPrivateAddressBlockedError(IngestionError):
+    code = "WEB_PRIVATE_ADDRESS_BLOCKED"
+
+
+class WebFetchTimeoutError(IngestionError):
+    code = "WEB_FETCH_TIMEOUT"
+
+
+class WebTooManyRedirectsError(IngestionError):
+    code = "WEB_TOO_MANY_REDIRECTS"
+
+
+class WebHttpError(IngestionError):
+    code = "WEB_HTTP_ERROR"
+
+
+class WebUnsupportedContentTypeError(IngestionError):
+    code = "WEB_UNSUPPORTED_CONTENT_TYPE"
+
+
+class WebResponseTooLargeError(IngestionError):
+    code = "WEB_RESPONSE_TOO_LARGE"
+
+
+class WebEmptyMainContentError(IngestionError):
+    code = "WEB_EMPTY_MAIN_CONTENT"
+
+
+class PdfFileTooLargeError(IngestionError):
+    code = "PDF_FILE_TOO_LARGE"
+
+
+class PdfTooManyPagesError(IngestionError):
+    code = "PDF_TOO_MANY_PAGES"
+
+
+class PdfEncryptedError(IngestionError):
+    code = "PDF_ENCRYPTED_UNSUPPORTED"
+
+
+class PdfInvalidPageRangeError(IngestionError):
+    code = "PDF_INVALID_PAGE_RANGE"
+
+
+class PdfNoExtractableTextError(IngestionError):
+    code = "PDF_NO_EXTRACTABLE_TEXT"
+
+
+class PdfParseError(IngestionError):
+    code = "PDF_PARSE_FAILED"
+
+
+class TranscriptUnsupportedFormatError(IngestionError):
+    code = "TRANSCRIPT_UNSUPPORTED_FORMAT"
+
+
+class TranscriptInvalidTimestampError(IngestionError):
+    code = "TRANSCRIPT_INVALID_TIMESTAMP"
+
+
+class TranscriptNonMonotonicError(IngestionError):
+    code = "TRANSCRIPT_NON_MONOTONIC"
+
+
+class TranscriptEmptyError(IngestionError):
+    code = "TRANSCRIPT_EMPTY"
+
+
+class TranscriptParseError(IngestionError):
+    code = "TRANSCRIPT_PARSE_FAILED"

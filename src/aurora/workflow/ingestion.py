@@ -6,15 +6,21 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Mapping, cast
+from urllib.parse import urlsplit, urlunsplit
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from aurora.collector import LocalFileCollector
+from aurora.collector import (
+    LocalBinaryFileCollector,
+    LocalFileCollector,
+    StaticUrlCollector,
+)
 from aurora.core.models import ContentUnit, Document, ProcessingRun, Source
 from aurora.core.models.common import (
     DerivationLink,
     ProcessorInfo,
     Provenance,
+    QualityAssessment,
     utc_now,
 )
 from aurora.core.models.enums import (
@@ -32,6 +38,7 @@ from aurora.ingestion.contracts import (
     IngestionRequest,
     IngestionResult,
     ParserDescriptor,
+    PdfTableMode,
 )
 from aurora.ingestion.errors import (
     DuplicateIngestionError,
@@ -48,13 +55,21 @@ from aurora.ingestion.identity import (
     document_series_key,
     source_object_id,
 )
-from aurora.ingestion.limits import resolve_max_bytes
+from aurora.ingestion.limits import (
+    resolve_max_bytes_for_input,
+    resolve_max_pdf_pages,
+    resolve_web_max_redirects,
+    resolve_web_timeout_seconds,
+)
 from aurora.parser import (
+    HtmlDocumentParser,
     MarkdownParser,
     ParsedDocument,
     Parser,
+    PdfDocumentParser,
     PlainTextParser,
     StructuredSegmentsParser,
+    TranscriptParser,
 )
 from aurora.repository import ObjectRepository
 
@@ -65,6 +80,10 @@ _VERSION_KEY = "ingestion_version"
 _PARSER_NAME_KEY = "parser_name"
 _PARSER_VERSION_KEY = "parser_version"
 _EXPLICIT_IDEMPOTENCY_KEY = "explicit_idempotency_key"
+_PARSER_CONFIG_HASH_KEY = "parser_config_hash"
+_RAW_CONTENT_HASH_KEY = "raw_content_hash"
+_SEMANTIC_CONTENT_HASH_KEY = "semantic_content_hash"
+_PARSE_STATUS_KEY = "parse_status"
 
 
 @dataclass(frozen=True)
@@ -100,10 +119,14 @@ class IngestionService:
         session_factory: sessionmaker[Session],
         *,
         collector: LocalFileCollector | None = None,
+        binary_collector: LocalBinaryFileCollector | None = None,
+        url_collector: StaticUrlCollector | None = None,
         parsers: Mapping[IngestionInputType, Parser] | None = None,
     ) -> None:
         self.session_factory = session_factory
         self.collector = collector or LocalFileCollector()
+        self.binary_collector = binary_collector or LocalBinaryFileCollector()
+        self.url_collector = url_collector
         self.parsers: dict[IngestionInputType, Parser] = dict(
             parsers
             or {
@@ -114,19 +137,18 @@ class IngestionService:
         )
 
     def ingest(self, request: IngestionRequest) -> IngestionResult:
-        parser = self._parser_for(request.input_type)
+        parser = self._parser_for(request)
         if request.dry_run:
             return self._ingest_dry_run(request, parser)
 
         run = self._create_run(request, parser)
         try:
             self._transition_run(run.id, RunStatus.RUNNING)
-            collected = self.collector.collect(
-                request.path,
-                max_bytes=resolve_max_bytes(request.max_bytes),
-            )
+            collected = self._collect(request)
             parsed = parser.parse(collected)
-            metadata = self._resolve_metadata(request, parsed, collected.path)
+            metadata = self._resolve_metadata(
+                request, parsed, collected.path, collected.input_uri
+            )
             self._align_run_workspace(run.id, metadata.workspace_id)
             source, source_warnings = self._get_or_create_source(
                 metadata=metadata,
@@ -142,10 +164,23 @@ class IngestionService:
             )
             output_ids = [source.id, plan.document.id]
             output_ids.extend(unit.id for unit in plan.content_units)
+            terminal_status = (
+                RunStatus.PARTIAL_SUCCESS
+                if parsed.parse_status == ParseStatus.PARTIALLY_PARSED
+                else RunStatus.SUCCESS
+            )
             self._transition_run(
                 run.id,
-                RunStatus.SUCCESS,
+                terminal_status,
                 output_object_ids=output_ids,
+                quality_flags=list(parsed.warnings),
+                metadata_updates={
+                    "raw_content_hash": parsed.raw_content_hash,
+                    "semantic_content_hash": parsed.content_hash,
+                    "parser_config_hash": parsed.parser_config_hash,
+                    "parse_status": parsed.parse_status.value,
+                    "metrics": parsed.metrics,
+                },
             )
             return self._result(
                 run_id=run.id,
@@ -171,12 +206,11 @@ class IngestionService:
         request: IngestionRequest,
         parser: Parser,
     ) -> IngestionResult:
-        collected = self.collector.collect(
-            request.path,
-            max_bytes=resolve_max_bytes(request.max_bytes),
-        )
+        collected = self._collect(request)
         parsed = parser.parse(collected)
-        metadata = self._resolve_metadata(request, parsed, collected.path)
+        metadata = self._resolve_metadata(
+            request, parsed, collected.path, collected.input_uri
+        )
         dry_run_time = utc_now()
         run = ProcessingRun(
             task_type="offline_ingestion_dry_run",
@@ -184,12 +218,25 @@ class IngestionService:
                 module=f"aurora.parser.{parsed.parser.name}",
                 code_version=parsed.parser.version,
             ),
-            run_status=RunStatus.SUCCESS,
+            run_status=(
+                RunStatus.PARTIAL_SUCCESS
+                if parsed.parse_status == ParseStatus.PARTIALLY_PARSED
+                else RunStatus.SUCCESS
+            ),
             started_at=dry_run_time,
             finished_at=dry_run_time,
             created_by=request.created_by,
             workspace_id=metadata.workspace_id,
-            metadata={"dry_run": True, "input_type": request.input_type.value},
+            quality_flags=list(parsed.warnings),
+            metadata={
+                "dry_run": True,
+                "input_type": request.input_type.value,
+                "raw_content_hash": parsed.raw_content_hash,
+                "semantic_content_hash": parsed.content_hash,
+                "parser_config_hash": parsed.parser_config_hash,
+                "parse_status": parsed.parse_status.value,
+                "metrics": parsed.metrics,
+            },
         )
         source, source_warnings = self._plan_source(metadata, run.id)
         plan = self._plan_document(
@@ -210,19 +257,47 @@ class IngestionService:
             warnings=[*source_warnings, *plan.warnings],
         )
 
-    def _parser_for(self, input_type: IngestionInputType) -> Parser:
-        parser = self.parsers.get(input_type)
-        if parser is None:
-            raise UnsupportedInputError(
-                f"no parser registered for input type: {input_type.value}"
+    def _parser_for(self, request: IngestionRequest) -> Parser:
+        parser = self.parsers.get(request.input_type)
+        if parser is not None:
+            return parser
+        if request.input_type in {IngestionInputType.HTML, IngestionInputType.URL}:
+            return HtmlDocumentParser(content_selector=request.content_selector)
+        if request.input_type == IngestionInputType.PDF:
+            return PdfDocumentParser(
+                page_selection=request.page_selection,
+                table_mode=request.table_mode,
+                max_pages=resolve_max_pdf_pages(request.max_pages),
             )
-        return parser
+        if request.input_type == IngestionInputType.SRT:
+            return TranscriptParser(transcript_format="srt")
+        if request.input_type == IngestionInputType.VTT:
+            return TranscriptParser(transcript_format="vtt")
+        raise UnsupportedInputError(
+            f"no parser registered for input type: {request.input_type.value}"
+        )
+
+    def _collect(self, request: IngestionRequest):
+        max_bytes = resolve_max_bytes_for_input(request.input_type, request.max_bytes)
+        if request.input_type == IngestionInputType.URL:
+            collector = self.url_collector or StaticUrlCollector(
+                timeout_seconds=resolve_web_timeout_seconds(),
+                max_redirects=resolve_web_max_redirects(),
+                allow_private_network=request.allow_private_network,
+            )
+            return collector.collect(str(request.url), max_bytes=max_bytes)
+        if request.path is None:
+            raise UnsupportedInputError("file ingestion requires a path")
+        if request.input_type == IngestionInputType.PDF:
+            return self.binary_collector.collect(request.path, max_bytes=max_bytes)
+        return self.collector.collect(request.path, max_bytes=max_bytes)
 
     def _resolve_metadata(
         self,
         request: IngestionRequest,
         parsed: ParsedDocument,
-        path: Path,
+        path: Path | None,
+        input_uri: str,
     ) -> _ResolvedMetadata:
         manifest = parsed.structured_manifest
         if manifest is not None:
@@ -250,20 +325,48 @@ class IngestionService:
             source_type = request.source_type
             source_key = request.source_key
             homepage = request.source_homepage_url
-            title = request.title or parsed.inferred_title or path.stem
-            document_type = request.document_type or (
-                DocumentType.MARKDOWN
-                if request.input_type == IngestionInputType.MARKDOWN
-                else DocumentType.TEXT
+            if request.input_type == IngestionInputType.URL and homepage is None:
+                parsed_url = urlsplit(input_uri)
+                homepage = urlunsplit(
+                    (parsed_url.scheme, parsed_url.netloc, "/", "", "")
+                )
+            title_fallback = (
+                path.stem
+                if path is not None
+                else (urlsplit(input_uri).path.rsplit("/", 1)[-1] or source_name)
+            )
+            title = request.title or parsed.inferred_title or title_fallback
+            default_document_types = {
+                IngestionInputType.MARKDOWN: DocumentType.MARKDOWN,
+                IngestionInputType.TEXT: DocumentType.TEXT,
+                IngestionInputType.HTML: DocumentType.WEB_ARTICLE,
+                IngestionInputType.URL: DocumentType.WEB_ARTICLE,
+                IngestionInputType.PDF: DocumentType.PDF,
+                IngestionInputType.SRT: DocumentType.VIDEO,
+                IngestionInputType.VTT: DocumentType.VIDEO,
+            }
+            mime_types = {
+                IngestionInputType.MARKDOWN: "text/markdown",
+                IngestionInputType.TEXT: "text/plain",
+                IngestionInputType.HTML: "text/html",
+                IngestionInputType.URL: "text/html",
+                IngestionInputType.PDF: "application/pdf",
+                IngestionInputType.SRT: "application/x-subrip",
+                IngestionInputType.VTT: "text/vtt",
+            }
+            document_type = request.document_type or default_document_types.get(
+                request.input_type, DocumentType.UNKNOWN
             )
             published_at = request.published_at
-            language = request.language or "zh-CN"
+            language = (
+                request.language
+                or parsed.document_metadata.get("language")
+                or "zh-CN"
+            )
             tags = list(dict.fromkeys(request.tags))
             idempotency_key = request.idempotency_key
-            mime_type = (
-                "text/markdown"
-                if request.input_type == IngestionInputType.MARKDOWN
-                else "text/plain"
+            mime_type = mime_types.get(
+                request.input_type, "application/octet-stream"
             )
 
         if not source_name:
@@ -304,7 +407,9 @@ class IngestionService:
             workspace_id=workspace_id,
             metadata={
                 "input_type": request.input_type.value,
-                "input_name": request.path.name,
+                "input_name": (
+                    request.path.name if request.path is not None else str(request.url)
+                ),
             },
         )
         session = self.session_factory()
@@ -326,6 +431,8 @@ class IngestionService:
         output_object_ids: list[str] | None = None,
         error_code: str | None = None,
         error_message: str | None = None,
+        quality_flags: list[str] | None = None,
+        metadata_updates: dict | None = None,
     ) -> ProcessingRun:
         session = self.session_factory()
         try:
@@ -346,6 +453,12 @@ class IngestionService:
                 payload["finished_at"] = None
             payload["error_code"] = error_code
             payload["error_message"] = error_message
+            if quality_flags is not None:
+                payload["quality_flags"] = list(dict.fromkeys(quality_flags))
+            if metadata_updates:
+                metadata = dict(payload.get("metadata") or {})
+                metadata.update(metadata_updates)
+                payload["metadata"] = metadata
             updated = ProcessingRun.model_validate(payload)
             result = cast(ProcessingRun, repository.update(updated))
             session.commit()
@@ -515,6 +628,7 @@ class IngestionService:
             content_hash=parsed.content_hash,
             parser_name=parsed.parser.name,
             parser_version=parsed.parser.version,
+            parser_config_hash=parsed.parser_config_hash,
         )
         series_key = document_series_key(
             source_id=source.id,
@@ -590,7 +704,12 @@ class IngestionService:
                 _VERSION_KEY: str(version_no),
                 _PARSER_NAME_KEY: parsed.parser.name,
                 _PARSER_VERSION_KEY: parsed.parser.version,
+                _PARSER_CONFIG_HASH_KEY: parsed.parser_config_hash,
+                _SEMANTIC_CONTENT_HASH_KEY: parsed.content_hash,
+                _PARSE_STATUS_KEY: parsed.parse_status.value,
             }
+            if parsed.raw_content_hash:
+                external_ids[_RAW_CONTENT_HASH_KEY] = parsed.raw_content_hash
             if metadata.idempotency_key:
                 external_ids[_EXPLICIT_IDEMPOTENCY_KEY] = metadata.idempotency_key
 
@@ -601,10 +720,11 @@ class IngestionService:
                 title=metadata.title,
                 published_at=metadata.published_at,
                 content_hash=parsed.content_hash,
+                original_url=(input_uri if input_uri.startswith(("http://", "https://")) else None),
                 normalized_url=input_uri,
                 mime_type=metadata.mime_type,
                 raw_storage_uri=input_uri,
-                parse_status=ParseStatus.PARSED,
+                parse_status=parsed.parse_status,
                 parent_document_id=parent_id,
                 workspace_id=metadata.workspace_id,
                 language=metadata.language,
@@ -612,14 +732,34 @@ class IngestionService:
                 source_refs=[source.id],
                 created_by=request.created_by,
                 external_ids=external_ids,
+                metadata={
+                    "parse_warnings": list(parsed.warnings),
+                    "parse_metrics": parsed.metrics,
+                    "document_metadata": parsed.document_metadata,
+                },
                 provenance=Provenance(
                     origin_type=OriginType.IMPORTED,
                     processing_run_id=processing_run_id,
                 ),
             )
+            unit_ids = {
+                parsed_unit.sequence_no: content_unit_object_id(
+                    document_id=document.id,
+                    unit_type=parsed_unit.unit_type,
+                    sequence_no=parsed_unit.sequence_no,
+                    normalized_text_hash=content_hash_for_text(parsed_unit.text),
+                )
+                for parsed_unit in parsed.units
+            }
             content_units = tuple(
                 self._build_content_unit(
                     parsed_unit=parsed_unit,
+                    object_id=unit_ids[parsed_unit.sequence_no],
+                    parent_unit_id=(
+                        unit_ids.get(parsed_unit.parent_sequence_no)
+                        if parsed_unit.parent_sequence_no is not None
+                        else None
+                    ),
                     document=document,
                     source=source,
                     processing_run_id=processing_run_id,
@@ -675,6 +815,8 @@ class IngestionService:
     def _build_content_unit(
         *,
         parsed_unit,
+        object_id: str,
+        parent_unit_id: str | None,
         document: Document,
         source: Source,
         processing_run_id: str,
@@ -682,18 +824,15 @@ class IngestionService:
     ) -> ContentUnit:
         unit_hash = content_hash_for_text(parsed_unit.text)
         return ContentUnit(
-            id=content_unit_object_id(
-                document_id=document.id,
-                unit_type=parsed_unit.unit_type,
-                sequence_no=parsed_unit.sequence_no,
-                normalized_text_hash=unit_hash,
-            ),
+            id=object_id,
             document_id=document.id,
             unit_type=parsed_unit.unit_type,
             sequence_no=parsed_unit.sequence_no,
             text=parsed_unit.text,
             locator=parsed_unit.locator,
             speaker=parsed_unit.speaker,
+            quality=QualityAssessment(quality_flags=list(parsed_unit.quality_flags)),
+            parent_unit_id=parent_unit_id,
             workspace_id=document.workspace_id,
             language=document.language,
             tags=document.tags,
@@ -730,6 +869,9 @@ class IngestionService:
             content_unit_ids=[unit.id for unit in plan.content_units],
             content_unit_count=len(plan.content_units),
             content_hash=parsed.content_hash,
+            raw_content_hash=parsed.raw_content_hash,
+            parser_config_hash=parsed.parser_config_hash,
+            parse_status=parsed.parse_status,
             idempotency_key=plan.document.external_ids[_DEDUPE_KEY],
             reused=plan.reused,
             dry_run=dry_run,
@@ -737,5 +879,6 @@ class IngestionService:
                 name=parsed.parser.name,
                 version=parsed.parser.version,
             ),
-            warnings=warnings,
+            warnings=list(dict.fromkeys([*warnings, *parsed.warnings])),
+            metrics=parsed.metrics,
         )

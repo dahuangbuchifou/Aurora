@@ -63,3 +63,15 @@ def stable_id(prefix: str, *parts: object, digest_length: int = 40) -> str:
     encoded = "\x1f".join(str(part) for part in parts).encode("utf-8")
     digest = hashlib.sha256(encoded).hexdigest()[:digest_length]
     return f"{prefix}_{digest}"
+
+
+def parser_config_hash(options: Mapping[str, Any]) -> str:
+    """Hash parser options without path, time, or process-local state."""
+
+    return sha256_hex(canonical_json_bytes(dict(options)))
+
+
+def semantic_units_hash(units: Sequence[Mapping[str, Any]]) -> str:
+    """Hash an ordered semantic unit sequence deterministically."""
+
+    return sha256_hex(canonical_json_bytes(list(units)))

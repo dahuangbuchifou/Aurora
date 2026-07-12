@@ -1,0 +1,13 @@
+{
+  "path": "annual_report.pdf",
+  "input_type": "pdf",
+  "source_name": "SMIC Annual Report",
+  "source_type": "company_announcement",
+  "document_type": "company_filing",
+  "page_selection": "15-18",
+  "table_mode": "best_effort",
+  "max_pages": 500,
+  "duplicate_strategy": "reuse",
+  "dry_run": false,
+  "created_by": "user"
+}

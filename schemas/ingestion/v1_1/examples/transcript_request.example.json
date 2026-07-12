@@ -1,0 +1,10 @@
+{
+  "path": "captions.vtt",
+  "input_type": "vtt",
+  "source_name": "Semiconductor Video",
+  "source_type": "video_channel",
+  "document_type": "video",
+  "duplicate_strategy": "reuse",
+  "dry_run": false,
+  "created_by": "user"
+}

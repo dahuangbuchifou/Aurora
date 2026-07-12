@@ -1,0 +1,76 @@
+# Aurora M2-002 Delivery Manifest
+
+Base: Aurora 0.4.0 / M2-001 CLOSED
+Target: Aurora 0.5.0 / M2-002 READY_FOR_QA
+Payload files: 69
+
+SIZE_BYTES  SHA256                                                            PATH
+       225  71e85b83c2ac8bfe39cc23e1c7c38872351d5cf74e8510b74a64d526a3ecb119  .env.example
+      1888  197b9ba500a9d53f71e52bec8990cd48dfb84306bafef9f6e5531506c667b3d9  APPLY_INSTRUCTIONS.md
+      2797  33778486421145cf2abb394ca9079d2d2965842854ab51169eb5e3b3975d23c0  BUILD_TEST_REPORT.json
+      1088  30a9546e2a7c5c95dd612fdbad35d564048ee88455ef9298b5312108078eb427  CHANGELOG_M2-002_append.md
+       291  9bdf23ec17d88bf7225c518558627be338e700c509c75f1c2729b9b0a8634ec1  CORE_SCHEMA_DIFF_REPORT.json
+      1895  969db79310a1f068617bbd88a336fb0a108356ee3d1fce9533c17af6be2b5bd6  DECISIONS_M2-002_append.md
+      5489  d2ef0a2beb38c8f4dc629ca9859b3f28cf155ee349da88aa4e6c01c503c79e45  M2-002_交付说明.md
+       357  43737e295fcefa58ce3a5396ef9bd64cda78bcf003eb2153bdf7f28e86a4cfa6  PATCH_BASELINE.md
+      3119  15ae799746a6f65972cdb9c36d478dcd2b9497cb9f00da8cd199bce31ee90f0c  PATCH_FILE_LIST.json
+      1045  09f07ed86475d41af2b7eea85b2944549df5085d0664605535503ea6230b3185  PERFORMANCE_OBSERVATIONS.json
+       474  f5680497abc7ee37c338cef2fcfabc3799f5e281e175132ed1d8a5fa4c722b30  README_M2-002.md
+      1158  35521fdf944445e5d9a4b0f50f3ceb5b907627740da2f4692509947867eb568f  docs/00_project/03_Aurora_项目总进度与资源看板_V1.6.md
+      1893  6e623883d5046fbeca14210ce16c311ec64006ea77b3ed0e1b8184dd7b34419d  docs/00_project/05_Aurora_待优化事项清单_V1.6.md
+      2918  ab566a594fd9946408843417c5be184bc7c701f846d95fd490af03294380f18f  docs/04_engines/03_M2-002_多载体解析实现说明_V1.0.md
+      2766  c0ab8ed3c3c2decd25108ab644deebe11afa29fc30c14ba915229c9be1d8c2a8  docs/06_operations/07_M2-002_多载体导入运行手册_V1.0.md
+      2445  77d72971a601247a9bb88268bc75cfc23c4aab4f19045835dedc01a964838fcf  docs/qa/M2-002_QA_验收清单_V1.0.md
+       733  6ddd8031e4eba6b73c9e8df43a455d6c4fa2b4a81ba54cd3923a2239d9424b8c  examples/m2_002/README.md
+      1025  c5b1ddbacf5d92a7115e57e2e9271aeb215822c1f152eac7c03d4c3e0759afaa  examples/m2_002/case_a_web.html
+       291  0d189817a12fcf27e4cdfb4994d6635ec57baf112d9db096d7042ea0579ca360  examples/m2_002/case_b_video.srt
+       215  136166f5572d2b5c9b4dba7bb2495dcaf8d0b438bb55b71b4b5f918110f94eb7  examples/m2_002/case_b_video.vtt
+      2521  78de39b7ea1e0d0b650eedd3c33c4902ae53e629cfc87c97592270e509d2d777  examples/m2_002/case_c_report.pdf
+      1280  bf208f43d5903cf36a5da454e1a91c67b610c2a7fc4cd465f29b70e59da42a18  pyproject.toml
+       106  d9b56bb19fd44817051c3119cde169a1253eb8917005fd4262089703ac6a5493  schemas/ingestion/registry.json
+       284  5676ac20d093d765e774eddb7d02ac281c48653cddf1dfcb7024d67240f5c774  schemas/ingestion/v1_1/examples/html_request.example.json
+       517  d3ea7827f67331194e3b4e695d8e60b199413bcb5e515a463a60063e3b5d8f22  schemas/ingestion/v1_1/examples/ingestion_result.example.json
+       331  bd3338541eefb9b38317defe8837d18e808956323a3ee9b1251d2586629fe22d  schemas/ingestion/v1_1/examples/pdf_request.example.json
+       231  7ae7d4aba9c68b064f8466c6f7bbc1310d5231fc728ff4607d3cc5f856f22fc8  schemas/ingestion/v1_1/examples/transcript_request.example.json
+      5745  3eb10efe06d9978124a98340cec3ba43c93e57f91b285f8ac928e70e56068a2c  schemas/ingestion/v1_1/ingestion_request.schema.json
+      2850  9bc3643b5e275b511b633cf12067b239438defde0f71e881c8a530c46f68645d  schemas/ingestion/v1_1/ingestion_result.schema.json
+       227  c569321a3a0967a97704207ed6c6eef27f34ab495d587ab9cd06fe3d3b9b959b  schemas/ingestion/v1_1/registry.json
+      8636  321bfd47c0ae5f6fc70c6929a22f0fc276a9af0493015bc3f60fb37dd0c5d6c0  schemas/ingestion/v1_1/structured_segments.schema.json
+      5366  bf203372f8dc84d243e760de1b705d8130ee3e64e19bfae22f0fda532776b5e7  scripts/benchmark_m2_002.py
+        89  b56c80935dfd249a7b64624c3a68e643b2bf4c76a0403cda304c230a184251c4  scripts/export_ingestion_schemas.py
+        59  281cf62803defe5e83dc694050cc072c5c5bb004eafbc04d45ba9b4ecb0de414  src/aurora/__init__.py
+     10164  3de900608dfd0b42a8b60a5469fa4ce633c2e77bea75829188d4e6420b4ed0d1  src/aurora/cli/ingest.py
+       507  cf03b92e2ef2abff1de8d0b1e4c271fc3c8f0aece488b199436ebb494a761336  src/aurora/collector/__init__.py
+       613  c0bb47ea69537234caace378ac18a80b3620a6f9e0bca95c5a3d1f161bda88f8  src/aurora/collector/base.py
+      3336  975f9720748ef22e2071e75c1edc0a9ffad2c3619214eb4e5b114e09bf7019bc  src/aurora/collector/local_file.py
+     10181  b8f6d7b5ecb189a9ee1439f0e42a2fbbe1fe45b8e057008ed31a98df2ee71840  src/aurora/collector/static_url.py
+      2238  03f1789b2335dd12f22263d035754975acdadd98cb3ea78346582fe3eaf609de  src/aurora/ingestion/__init__.py
+      5800  4cf0c5a424c24f42213af5b2673304a3be903e1addb3ec3a7f9cf3458939de79  src/aurora/ingestion/contracts.py
+      2967  98f06f8b15139a538a55eef459b1be133245471d5473afba148eeeed914699e2  src/aurora/ingestion/errors.py
+      2311  8edc7a9322a7b1615d1aece89d126bfeccc0ca0abf42b81e65eddd7527fd29e0  src/aurora/ingestion/hashing.py
+      3116  e00e77432d77365070291c9873a05c78e6b6b0b2acd5f1c31f4549b642571e4f  src/aurora/ingestion/identity.py
+      2172  eedd51544b95d6c162a2798a55776134c0742eb852110e570b8bd56554a541ca  src/aurora/ingestion/limits.py
+      1984  6fa6f1d5bcb53139cbdd6d303b339a810645b22caa4cb1046236c62d8fb44f04  src/aurora/ingestion/schema_registry.py
+       713  64e4b4dd0c914e95c97339fa318e8eac6d42373ba46701c9ea89fe3be8df64b7  src/aurora/parser/__init__.py
+      2071  96821803c5b823dd50f93f4baa9873fb00180a9d3898d1ec70b4f6ad37d244ae  src/aurora/parser/base.py
+       482  3620b0df138631aabe7899264858b7e584acb9afcf3687ac6932df99ef3cfeaf  src/aurora/parser/config.py
+     12586  aa795b82f491cf60ae890a1f113585d8388318985a91d3a27b09a6044523fcd1  src/aurora/parser/html.py
+     10983  41901b8325803a16cce85c4fe2fd0c1493e2d218bacd5b5f0248894397abbdfe  src/aurora/parser/pdf.py
+      7975  a7d5f5c91e210a2fc618b71864961851973113e7c2a12ca5bd70c967247021f6  src/aurora/parser/transcript.py
+     32744  8f19c784de4fc854667c49f268cc9ec7f9edae44522dd61a113dcb03be45ecae  src/aurora/workflow/ingestion.py
+      2831  e0d8e0696c351d832a2df0a376cda30b52af32d88c52acc604d8a07ff6b76107  tests/e2e/test_m2_002_three_carriers.py
+      1353  6d8b54fa0efa22df65cb224ecbb1ca4930d24d3896225679593b4049135fc22b  tests/fixtures/m2_002/blank.pdf
+      1025  c5b1ddbacf5d92a7115e57e2e9271aeb215822c1f152eac7c03d4c3e0759afaa  tests/fixtures/m2_002/case_a_web.html
+       291  0d189817a12fcf27e4cdfb4994d6635ec57baf112d9db096d7042ea0579ca360  tests/fixtures/m2_002/case_b_video.srt
+       215  136166f5572d2b5c9b4dba7bb2495dcaf8d0b438bb55b71b4b5f918110f94eb7  tests/fixtures/m2_002/case_b_video.vtt
+      2521  78de39b7ea1e0d0b650eedd3c33c4902ae53e629cfc87c97592270e509d2d777  tests/fixtures/m2_002/case_c_report.pdf
+      8142  e6b486fee9941c963aeff855b42235a983c8a39face5ac9c504d5b7984db8f4a  tests/integration/test_m2_002_ingestion_workflow.py
+      6119  3a046a5b7b028b42b9ae3bab86a3cc96609688163cff40fc7619c587f69829c5  tests/unit/test_html_parser_m2_002.py
+      1429  d05e29f14c282dd927cdc806a7c6135b008f3a8d496db35d2d097d48f67aa5eb  tests/unit/test_ingestion_limits.py
+      1515  0c49bb5574512d69e8ba77c9a63bb71eff80256d8320b46b54315ac390c9ef22  tests/unit/test_ingestion_schema_examples.py
+      1934  d1c73373bf4cd268c4b7faedad6d67d43d3bec071bf2a43648bd5272ea0ba042  tests/unit/test_ingestion_schema_registry.py
+      3507  d6ba53a176722bc826c883b7500dfec536305f12f455a8bbef3614a3f45d3191  tests/unit/test_m2_002_cli.py
+      2342  c7cf60ae02e55143dc25e45d56dd8bf3efcbded9f4dbecf4014cc5602387262f  tests/unit/test_m2_002_contracts.py
+      8580  d45e78ce97ea33215b952d1679793b609740ac9fb37c299b39fd19adfdd5a3b8  tests/unit/test_pdf_parser_m2_002.py
+      7112  5e07e7b2bbbc9252ba195069b2bcc9e964c6261a51ed4ba31a0f4c138f1aeb3b  tests/unit/test_static_url_collector_m2_002.py
+      4740  1b98fe207e7062c828ba04854799326e229670eff31983fa0c2634ce3e58263c  tests/unit/test_transcript_parser_m2_002.py

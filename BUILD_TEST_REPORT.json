@@ -1,0 +1,102 @@
+{
+  "delivery": "Aurora_M2-002_交付_V1.0",
+  "aurora_version": "0.5.0",
+  "date": "2026-07-12",
+  "local_environment": {
+    "python": "3.13.5",
+    "sqlite": "3.46.1",
+    "packages": {
+      "SQLAlchemy": "2.0.50",
+      "alembic": "1.18.4",
+      "pydantic": "2.13.4",
+      "pytest": "9.0.2",
+      "jsonschema": "4.26.0",
+      "beautifulsoup4": "4.14.3",
+      "lxml": "6.1.1",
+      "httpx": "0.28.1",
+      "pdfplumber": "0.11.9",
+      "webvtt-py": "0.5.1",
+      "reportlab": "4.4.9"
+    },
+    "editable_install": {
+      "status": "not_run",
+      "reason": "Local interpreter is Python 3.13.5 while pyproject intentionally targets >=3.11,<3.12; tests and CLI modules were executed with PYTHONPATH=src."
+    }
+  },
+  "tests": {
+    "collected": 197,
+    "passed": 197,
+    "failed": 0,
+    "warnings": 0,
+    "coverage_percent": 95.4,
+    "coverage_gate_percent": 90
+  },
+  "core_schema_diff": {
+    "v1": {
+      "baseline_files": 18,
+      "current_files": 18,
+      "added": [],
+      "removed": [],
+      "changed": [],
+      "identical": true
+    },
+    "v1_1": {
+      "baseline_files": 18,
+      "current_files": 18,
+      "added": [],
+      "removed": [],
+      "changed": [],
+      "identical": true
+    }
+  },
+  "performance_observations": {
+    "benchmark_type": "non_blocking_local_observation",
+    "notes": [
+      "Results depend on host CPU, memory, Python and dependency versions.",
+      "This is not a production SLA or release gate.",
+      "Peak allocation is measured with tracemalloc and excludes native allocations."
+    ],
+    "results": [
+      {
+        "name": "html_10_mib",
+        "input_bytes": 10485760,
+        "elapsed_seconds": 0.459559,
+        "python_peak_allocated_bytes": 44581228,
+        "content_unit_count": 2,
+        "parse_status": "parsed",
+        "warning_count": 0
+      },
+      {
+        "name": "pdf_232_pages",
+        "input_bytes": 125636,
+        "elapsed_seconds": 6.775572,
+        "python_peak_allocated_bytes": 42879237,
+        "content_unit_count": 464,
+        "parse_status": "parsed",
+        "warning_count": 0
+      },
+      {
+        "name": "webvtt_10000_cues",
+        "input_bytes": 488897,
+        "elapsed_seconds": 1.834165,
+        "python_peak_allocated_bytes": 16779056,
+        "content_unit_count": 10000,
+        "parse_status": "parsed",
+        "warning_count": 0
+      }
+    ]
+  },
+  "target_qa": {
+    "python": "3.11.13",
+    "sqlite": "3.26+",
+    "status": "pending_waner_qa"
+  },
+  "known_limitations": [
+    "No JavaScript execution or browser automation.",
+    "No OCR for scanned PDFs.",
+    "PDF table extraction is best effort.",
+    "PDF locators are page/block/row based, without bbox.",
+    "Transcript cues are not semantically merged.",
+    "No cross-process ingestion lock."
+  ]
+}
