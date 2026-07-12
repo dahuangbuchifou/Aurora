@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "object_files": [
+    "schemas/examples/m1_002/case_a_web/objects.json",
+    "schemas/examples/m1_002/case_b_video/objects.json",
+    "schemas/examples/m1_002/case_c_pdf/objects.json",
+    "schemas/examples/m1_002/cross_case/topic_summary.json",
+    "schemas/examples/m1_002/cross_case/insight.json",
+    "schemas/examples/m1_002/cross_case/personal_opinion.json"
+  ]
+}
