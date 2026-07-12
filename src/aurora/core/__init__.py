@@ -1,1 +1,1 @@
-"""Aurora package module."""
+"""Aurora core domain package."""
