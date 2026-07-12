@@ -1,0 +1,632 @@
+{
+  "$defs": {
+    "ContentUnitType": {
+      "enum": [
+        "paragraph",
+        "heading",
+        "transcript_segment",
+        "table",
+        "table_row",
+        "list_item",
+        "quote",
+        "code_block",
+        "note_block",
+        "unknown"
+      ],
+      "title": "ContentUnitType",
+      "type": "string"
+    },
+    "DerivationLink": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "relation_type": {
+          "$ref": "#/$defs/DerivationRelationType"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "object_id",
+        "relation_type"
+      ],
+      "title": "DerivationLink",
+      "type": "object"
+    },
+    "DerivationRelationType": {
+      "enum": [
+        "derived_from",
+        "quoted_from",
+        "summarizes",
+        "reposts",
+        "calculated_from",
+        "translated_from",
+        "extracted_from",
+        "inferred_from"
+      ],
+      "title": "DerivationRelationType",
+      "type": "string"
+    },
+    "HumanReview": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/HumanReviewStatus",
+          "default": "not_reviewed"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "HumanReview",
+      "type": "object"
+    },
+    "HumanReviewStatus": {
+      "enum": [
+        "not_reviewed",
+        "reviewed",
+        "approved",
+        "rejected",
+        "needs_revision"
+      ],
+      "title": "HumanReviewStatus",
+      "type": "string"
+    },
+    "LifecycleStatus": {
+      "enum": [
+        "active",
+        "archived",
+        "superseded",
+        "deleted"
+      ],
+      "title": "LifecycleStatus",
+      "type": "string"
+    },
+    "OriginType": {
+      "enum": [
+        "original",
+        "imported",
+        "derived",
+        "user_created"
+      ],
+      "title": "OriginType",
+      "type": "string"
+    },
+    "PrivacyLevel": {
+      "enum": [
+        "public",
+        "internal",
+        "private",
+        "sensitive",
+        "restricted"
+      ],
+      "title": "PrivacyLevel",
+      "type": "string"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "origin_type": {
+          "$ref": "#/$defs/OriginType",
+          "default": "original"
+        },
+        "origin_object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Origin Object Ids",
+          "type": "array"
+        },
+        "derivation_links": {
+          "items": {
+            "$ref": "#/$defs/DerivationLink"
+          },
+          "title": "Derivation Links",
+          "type": "array"
+        },
+        "processing_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Run Id"
+        },
+        "human_review": {
+          "$ref": "#/$defs/HumanReview"
+        },
+        "derivation_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Derivation Note"
+        },
+        "source_locator_required": {
+          "default": false,
+          "title": "Source Locator Required",
+          "type": "boolean"
+        }
+      },
+      "title": "Provenance",
+      "type": "object"
+    },
+    "QualityAssessment": {
+      "additionalProperties": false,
+      "properties": {
+        "source_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceQualityTier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "parse_quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualityLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extraction_confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualityLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence_strength": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evidence Strength"
+        },
+        "reasoning_confidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QualityLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "human_review_status": {
+          "$ref": "#/$defs/HumanReviewStatus",
+          "default": "not_reviewed"
+        },
+        "quality_flags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Quality Flags",
+          "type": "array"
+        }
+      },
+      "title": "QualityAssessment",
+      "type": "object"
+    },
+    "QualityLevel": {
+      "enum": [
+        "very_low",
+        "low",
+        "medium",
+        "high",
+        "very_high"
+      ],
+      "title": "QualityLevel",
+      "type": "string"
+    },
+    "SourceLocator": {
+      "additionalProperties": false,
+      "properties": {
+        "start_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Seconds"
+        },
+        "end_seconds": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Seconds"
+        },
+        "page_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page No"
+        },
+        "block_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Block No"
+        },
+        "paragraph_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Paragraph No"
+        },
+        "line_start": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Start"
+        },
+        "line_end": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line End"
+        },
+        "heading_path": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Heading Path",
+          "type": "array"
+        },
+        "sheet_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sheet Name"
+        },
+        "row_no": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Row No"
+        },
+        "column_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Column Name"
+        },
+        "css_selector": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Css Selector"
+        },
+        "xpath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Xpath"
+        }
+      },
+      "title": "SourceLocator",
+      "type": "object"
+    },
+    "SourceQualityTier": {
+      "enum": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5"
+      ],
+      "title": "SourceQualityTier",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "const": "content_unit",
+      "default": "content_unit",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "default": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LifecycleStatus",
+      "default": "active"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "created_by": {
+      "default": "system",
+      "title": "Created By",
+      "type": "string"
+    },
+    "workspace_id": {
+      "default": "default",
+      "title": "Workspace Id",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "zh-CN",
+      "title": "Language"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "source_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "privacy_level": {
+      "$ref": "#/$defs/PrivacyLevel",
+      "default": "internal"
+    },
+    "deleted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deleted At"
+    },
+    "external_ids": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "External Ids",
+      "type": "object"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "document_id": {
+      "title": "Document Id",
+      "type": "string"
+    },
+    "unit_type": {
+      "$ref": "#/$defs/ContentUnitType"
+    },
+    "sequence_no": {
+      "minimum": 0,
+      "title": "Sequence No",
+      "type": "integer"
+    },
+    "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "locator": {
+      "$ref": "#/$defs/SourceLocator"
+    },
+    "speaker": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Speaker"
+    },
+    "quality": {
+      "$ref": "#/$defs/QualityAssessment"
+    },
+    "parent_unit_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Unit Id"
+    }
+  },
+  "required": [
+    "document_id",
+    "unit_type",
+    "sequence_no",
+    "text",
+    "locator"
+  ],
+  "title": "ContentUnit",
+  "type": "object",
+  "$id": "https://aurora.local/schemas/v1_1/content_unit.schema.json"
+}

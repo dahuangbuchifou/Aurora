@@ -1,4 +1,4 @@
-"""Aurora V1.0 core enumerations."""
+"""Aurora V1.1 core enumerations."""
 
 from enum import StrEnum
 
@@ -43,6 +43,17 @@ class OriginType(StrEnum):
     IMPORTED = "imported"
     DERIVED = "derived"
     USER_CREATED = "user_created"
+
+
+class DerivationRelationType(StrEnum):
+    DERIVED_FROM = "derived_from"
+    QUOTED_FROM = "quoted_from"
+    SUMMARIZES = "summarizes"
+    REPOSTS = "reposts"
+    CALCULATED_FROM = "calculated_from"
+    TRANSLATED_FROM = "translated_from"
+    EXTRACTED_FROM = "extracted_from"
+    INFERRED_FROM = "inferred_from"
 
 
 class SourceType(StrEnum):
@@ -170,6 +181,18 @@ class CalculationMethod(StrEnum):
     UNKNOWN = "unknown"
 
 
+class MeasurementKind(StrEnum):
+    UNKNOWN = "unknown"
+    MONETARY = "monetary"
+    RATIO = "ratio"
+    PERCENTAGE = "percentage"
+    COUNT = "count"
+    PHYSICAL = "physical"
+    INDEX = "index"
+    RATE = "rate"
+    OTHER = "other"
+
+
 class ClaimType(StrEnum):
     FACT_CLAIM = "fact_claim"
     INTERPRETATION = "interpretation"
@@ -179,6 +202,23 @@ class ClaimType(StrEnum):
     RISK_CLAIM = "risk_claim"
     VALUE_JUDGMENT = "value_judgment"
     HYPOTHESIS = "hypothesis"
+
+
+class ClaimDimension(StrEnum):
+    GENERAL = "general"
+    BUSINESS_GROWTH = "business_growth"
+    FINANCIAL_PERFORMANCE = "financial_performance"
+    VALUATION = "valuation"
+    RISK = "risk"
+    MARKET_EXPECTATION = "market_expectation"
+    ACTION_RECOMMENDATION = "action_recommendation"
+    POLICY = "policy"
+    TECHNOLOGY = "technology"
+    OPERATIONS = "operations"
+    GOVERNANCE = "governance"
+    SUPPLY_CHAIN = "supply_chain"
+    COMPETITION = "competition"
+    OTHER = "other"
 
 
 class EpistemicStatus(StrEnum):

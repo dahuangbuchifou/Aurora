@@ -1,0 +1,481 @@
+{
+  "$defs": {
+    "ClaimDimension": {
+      "enum": [
+        "general",
+        "business_growth",
+        "financial_performance",
+        "valuation",
+        "risk",
+        "market_expectation",
+        "action_recommendation",
+        "policy",
+        "technology",
+        "operations",
+        "governance",
+        "supply_chain",
+        "competition",
+        "other"
+      ],
+      "title": "ClaimDimension",
+      "type": "string"
+    },
+    "ClaimType": {
+      "enum": [
+        "fact_claim",
+        "interpretation",
+        "causal_claim",
+        "prediction",
+        "recommendation",
+        "risk_claim",
+        "value_judgment",
+        "hypothesis"
+      ],
+      "title": "ClaimType",
+      "type": "string"
+    },
+    "DerivationLink": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "relation_type": {
+          "$ref": "#/$defs/DerivationRelationType"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "object_id",
+        "relation_type"
+      ],
+      "title": "DerivationLink",
+      "type": "object"
+    },
+    "DerivationRelationType": {
+      "enum": [
+        "derived_from",
+        "quoted_from",
+        "summarizes",
+        "reposts",
+        "calculated_from",
+        "translated_from",
+        "extracted_from",
+        "inferred_from"
+      ],
+      "title": "DerivationRelationType",
+      "type": "string"
+    },
+    "EpistemicStatus": {
+      "enum": [
+        "asserted",
+        "under_review",
+        "supported",
+        "disputed",
+        "verified",
+        "falsified",
+        "outdated",
+        "withdrawn"
+      ],
+      "title": "EpistemicStatus",
+      "type": "string"
+    },
+    "HumanReview": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/HumanReviewStatus",
+          "default": "not_reviewed"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "HumanReview",
+      "type": "object"
+    },
+    "HumanReviewStatus": {
+      "enum": [
+        "not_reviewed",
+        "reviewed",
+        "approved",
+        "rejected",
+        "needs_revision"
+      ],
+      "title": "HumanReviewStatus",
+      "type": "string"
+    },
+    "LifecycleStatus": {
+      "enum": [
+        "active",
+        "archived",
+        "superseded",
+        "deleted"
+      ],
+      "title": "LifecycleStatus",
+      "type": "string"
+    },
+    "OriginType": {
+      "enum": [
+        "original",
+        "imported",
+        "derived",
+        "user_created"
+      ],
+      "title": "OriginType",
+      "type": "string"
+    },
+    "PrivacyLevel": {
+      "enum": [
+        "public",
+        "internal",
+        "private",
+        "sensitive",
+        "restricted"
+      ],
+      "title": "PrivacyLevel",
+      "type": "string"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "origin_type": {
+          "$ref": "#/$defs/OriginType",
+          "default": "original"
+        },
+        "origin_object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Origin Object Ids",
+          "type": "array"
+        },
+        "derivation_links": {
+          "items": {
+            "$ref": "#/$defs/DerivationLink"
+          },
+          "title": "Derivation Links",
+          "type": "array"
+        },
+        "processing_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Run Id"
+        },
+        "human_review": {
+          "$ref": "#/$defs/HumanReview"
+        },
+        "derivation_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Derivation Note"
+        },
+        "source_locator_required": {
+          "default": false,
+          "title": "Source Locator Required",
+          "type": "boolean"
+        }
+      },
+      "title": "Provenance",
+      "type": "object"
+    },
+    "TimePrecision": {
+      "enum": [
+        "second",
+        "minute",
+        "hour",
+        "day",
+        "month",
+        "quarter",
+        "year",
+        "unknown"
+      ],
+      "title": "TimePrecision",
+      "type": "string"
+    },
+    "TimeRange": {
+      "additionalProperties": false,
+      "properties": {
+        "start": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End"
+        },
+        "precision": {
+          "$ref": "#/$defs/TimePrecision",
+          "default": "unknown"
+        }
+      },
+      "title": "TimeRange",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "const": "claim",
+      "default": "claim",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "default": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LifecycleStatus",
+      "default": "active"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "created_by": {
+      "default": "system",
+      "title": "Created By",
+      "type": "string"
+    },
+    "workspace_id": {
+      "default": "default",
+      "title": "Workspace Id",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "zh-CN",
+      "title": "Language"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "source_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "privacy_level": {
+      "$ref": "#/$defs/PrivacyLevel",
+      "default": "internal"
+    },
+    "deleted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deleted At"
+    },
+    "external_ids": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "External Ids",
+      "type": "object"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "claim_type": {
+      "$ref": "#/$defs/ClaimType"
+    },
+    "claim_dimension": {
+      "$ref": "#/$defs/ClaimDimension",
+      "default": "general"
+    },
+    "statement": {
+      "minLength": 1,
+      "title": "Statement",
+      "type": "string"
+    },
+    "subject_entity_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Subject Entity Ids",
+      "type": "array"
+    },
+    "asserted_by": {
+      "minLength": 1,
+      "title": "Asserted By",
+      "type": "string"
+    },
+    "asserted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Asserted At"
+    },
+    "time_horizon": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TimeRange"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Conditions",
+      "type": "array"
+    },
+    "source_ref": {
+      "title": "Source Ref",
+      "type": "string"
+    },
+    "direct_quote": {
+      "default": false,
+      "title": "Direct Quote",
+      "type": "boolean"
+    },
+    "epistemic_status": {
+      "$ref": "#/$defs/EpistemicStatus",
+      "default": "asserted"
+    }
+  },
+  "required": [
+    "claim_type",
+    "statement",
+    "asserted_by",
+    "source_ref"
+  ],
+  "title": "Claim",
+  "type": "object",
+  "$id": "https://aurora.local/schemas/v1_1/claim.schema.json"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "src_v11_derived_summary",
+  "object_type": "source",
+  "schema_version": "1.1",
+  "name": "年度报告摘要页",
+  "source_type": "official_website",
+  "source_quality_tier": "S1",
+  "provenance": {
+    "origin_type": "derived",
+    "origin_object_ids": ["doc_smic_annual_report"],
+    "derivation_links": [
+      {
+        "object_id": "doc_smic_annual_report",
+        "relation_type": "summarizes",
+        "note": "官网新闻稿概括年度报告"
+      }
+    ]
+  }
+}

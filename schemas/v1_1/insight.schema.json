@@ -1,0 +1,449 @@
+{
+  "$defs": {
+    "DerivationLink": {
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "minLength": 1,
+          "title": "Object Id",
+          "type": "string"
+        },
+        "relation_type": {
+          "$ref": "#/$defs/DerivationRelationType"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "object_id",
+        "relation_type"
+      ],
+      "title": "DerivationLink",
+      "type": "object"
+    },
+    "DerivationRelationType": {
+      "enum": [
+        "derived_from",
+        "quoted_from",
+        "summarizes",
+        "reposts",
+        "calculated_from",
+        "translated_from",
+        "extracted_from",
+        "inferred_from"
+      ],
+      "title": "DerivationRelationType",
+      "type": "string"
+    },
+    "HumanReview": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/HumanReviewStatus",
+          "default": "not_reviewed"
+        },
+        "reviewed_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed By"
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reviewed At"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "title": "HumanReview",
+      "type": "object"
+    },
+    "HumanReviewStatus": {
+      "enum": [
+        "not_reviewed",
+        "reviewed",
+        "approved",
+        "rejected",
+        "needs_revision"
+      ],
+      "title": "HumanReviewStatus",
+      "type": "string"
+    },
+    "InsightStatus": {
+      "enum": [
+        "draft",
+        "under_review",
+        "supported",
+        "challenged",
+        "revised",
+        "invalidated",
+        "archived"
+      ],
+      "title": "InsightStatus",
+      "type": "string"
+    },
+    "LifecycleStatus": {
+      "enum": [
+        "active",
+        "archived",
+        "superseded",
+        "deleted"
+      ],
+      "title": "LifecycleStatus",
+      "type": "string"
+    },
+    "OriginType": {
+      "enum": [
+        "original",
+        "imported",
+        "derived",
+        "user_created"
+      ],
+      "title": "OriginType",
+      "type": "string"
+    },
+    "PrivacyLevel": {
+      "enum": [
+        "public",
+        "internal",
+        "private",
+        "sensitive",
+        "restricted"
+      ],
+      "title": "PrivacyLevel",
+      "type": "string"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "origin_type": {
+          "$ref": "#/$defs/OriginType",
+          "default": "original"
+        },
+        "origin_object_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Origin Object Ids",
+          "type": "array"
+        },
+        "derivation_links": {
+          "items": {
+            "$ref": "#/$defs/DerivationLink"
+          },
+          "title": "Derivation Links",
+          "type": "array"
+        },
+        "processing_run_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Processing Run Id"
+        },
+        "human_review": {
+          "$ref": "#/$defs/HumanReview"
+        },
+        "derivation_note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Derivation Note"
+        },
+        "source_locator_required": {
+          "default": false,
+          "title": "Source Locator Required",
+          "type": "boolean"
+        }
+      },
+      "title": "Provenance",
+      "type": "object"
+    },
+    "QualityLevel": {
+      "enum": [
+        "very_low",
+        "low",
+        "medium",
+        "high",
+        "very_high"
+      ],
+      "title": "QualityLevel",
+      "type": "string"
+    },
+    "ValidityWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "as_of_date": {
+          "format": "date",
+          "title": "As Of Date",
+          "type": "string"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid From"
+        },
+        "valid_to": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid To"
+        },
+        "review_due_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Due At"
+        }
+      },
+      "required": [
+        "as_of_date"
+      ],
+      "title": "ValidityWindow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "object_type": {
+      "const": "insight",
+      "default": "insight",
+      "title": "Object Type",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.1",
+      "default": "1.1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/LifecycleStatus",
+      "default": "active"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "created_by": {
+      "default": "system",
+      "title": "Created By",
+      "type": "string"
+    },
+    "workspace_id": {
+      "default": "default",
+      "title": "Workspace Id",
+      "type": "string"
+    },
+    "language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "zh-CN",
+      "title": "Language"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "source_refs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "privacy_level": {
+      "$ref": "#/$defs/PrivacyLevel",
+      "default": "internal"
+    },
+    "deleted_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deleted At"
+    },
+    "external_ids": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "External Ids",
+      "type": "object"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "title": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "statement": {
+      "minLength": 1,
+      "title": "Statement",
+      "type": "string"
+    },
+    "supporting_object_ids": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Supporting Object Ids",
+      "type": "array"
+    },
+    "counter_evidence_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Counter Evidence Ids",
+      "type": "array"
+    },
+    "reasoning_steps": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Reasoning Steps",
+      "type": "array"
+    },
+    "alternative_explanations": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Alternative Explanations",
+      "type": "array"
+    },
+    "confidence_level": {
+      "$ref": "#/$defs/QualityLevel",
+      "default": "medium"
+    },
+    "validity": {
+      "$ref": "#/$defs/ValidityWindow"
+    },
+    "insight_status": {
+      "$ref": "#/$defs/InsightStatus",
+      "default": "draft"
+    }
+  },
+  "required": [
+    "title",
+    "statement",
+    "supporting_object_ids",
+    "reasoning_steps",
+    "validity"
+  ],
+  "title": "Insight",
+  "type": "object",
+  "$id": "https://aurora.local/schemas/v1_1/insight.schema.json"
+}

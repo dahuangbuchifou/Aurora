@@ -1,0 +1,25 @@
+{
+  "id": "dat_v11_smic_revenue",
+  "object_type": "data_point",
+  "schema_version": "1.1",
+  "metric": "revenue",
+  "value": 578.3,
+  "unit": "reported_unit",
+  "measurement_context": {
+    "measurement_kind": "monetary",
+    "currency": "CNY",
+    "scale_multiplier": 100000000,
+    "reporting_standard": "CAS",
+    "attribution_scope": "group_total",
+    "consolidation_scope": "consolidated"
+  },
+  "entity_id": "ent_smic",
+  "period": {
+    "start": "2025-01-01",
+    "end": "2025-12-31",
+    "precision": "year"
+  },
+  "calculation_method": "reported",
+  "source_ref": "cu_smic_annual_report_p15",
+  "audited": true
+}

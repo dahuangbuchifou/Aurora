@@ -1,0 +1,12 @@
+{
+  "id": "clm_v11_competition",
+  "object_type": "claim",
+  "schema_version": "1.1",
+  "claim_type": "interpretation",
+  "claim_dimension": "competition",
+  "statement": "成熟制程市场的竞争格局正在加剧。",
+  "subject_entity_ids": ["ent_smic"],
+  "asserted_by": "ent_analyst",
+  "source_ref": "cu_video_001",
+  "epistemic_status": "asserted"
+}

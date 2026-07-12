@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from copy import deepcopy
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from aurora.core.models import AuroraObject
 from aurora.core.models.common import BaseObject, utc_now
 from aurora.core.models.enums import LifecycleStatus, ObjectType
 from aurora.core.schema_registry import parse_object
@@ -26,6 +28,41 @@ class DuplicateObjectError(ValueError):
 
 class ConcurrentUpdateError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class RawObjectRecord:
+    """Immutable audit snapshot of an ObjectRecord."""
+
+    id: str
+    object_type: str
+    schema_version: str
+    lifecycle_status: str
+    workspace_id: str
+    privacy_level: str
+    created_by: str
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None
+    version: int
+    payload: dict[str, Any]
+
+    @classmethod
+    def from_record(cls, record: ObjectRecord) -> "RawObjectRecord":
+        return cls(
+            id=record.id,
+            object_type=record.object_type,
+            schema_version=record.schema_version,
+            lifecycle_status=record.lifecycle_status,
+            workspace_id=record.workspace_id,
+            privacy_level=record.privacy_level,
+            created_by=record.created_by,
+            created_at=record.created_at,
+            updated_at=record.updated_at,
+            deleted_at=record.deleted_at,
+            version=record.version,
+            payload=deepcopy(record.payload),
+        )
 
 
 class ObjectRepository:
@@ -84,6 +121,43 @@ class ObjectRepository:
             raise ObjectNotFoundError(f"object not found: {object_id}")
         return obj
 
+    def get_raw_record(self, object_id: str) -> RawObjectRecord | None:
+        record = self.session.get(ObjectRecord, object_id)
+        if record is None:
+            return None
+        return RawObjectRecord.from_record(record)
+
+    def list_by_schema_version(
+        self,
+        schema_version: str,
+        *,
+        workspace_id: str | None = None,
+        include_deleted: bool = True,
+        limit: int = 1000,
+        offset: int = 0,
+    ) -> list[RawObjectRecord]:
+        if not schema_version:
+            raise ValueError("schema_version is required")
+        if limit < 1 or limit > 10000:
+            raise ValueError("limit must be between 1 and 10000")
+        if offset < 0:
+            raise ValueError("offset cannot be negative")
+
+        statement: Select[tuple[ObjectRecord]] = select(ObjectRecord).where(
+            ObjectRecord.schema_version == schema_version
+        )
+        if workspace_id is not None:
+            statement = statement.where(ObjectRecord.workspace_id == workspace_id)
+        if not include_deleted:
+            statement = statement.where(ObjectRecord.deleted_at.is_(None))
+        statement = (
+            statement.order_by(ObjectRecord.created_at, ObjectRecord.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        records: Sequence[ObjectRecord] = self.session.scalars(statement).all()
+        return [RawObjectRecord.from_record(record) for record in records]
+
     def list(
         self,
         *,
@@ -101,13 +175,9 @@ class ObjectRepository:
 
         statement: Select[tuple[ObjectRecord]] = select(ObjectRecord)
         if object_type is not None:
-            statement = statement.where(
-                ObjectRecord.object_type == object_type.value
-            )
+            statement = statement.where(ObjectRecord.object_type == object_type.value)
         if workspace_id is not None:
-            statement = statement.where(
-                ObjectRecord.workspace_id == workspace_id
-            )
+            statement = statement.where(ObjectRecord.workspace_id == workspace_id)
         if lifecycle_status is not None:
             statement = statement.where(
                 ObjectRecord.lifecycle_status == lifecycle_status.value
@@ -158,12 +228,13 @@ class ObjectRepository:
         record = self.session.get(ObjectRecord, object_id)
         if record is None:
             raise ObjectNotFoundError(f"object not found: {object_id}")
-        payload = dict(record.payload)
+        payload = deepcopy(record.payload)
         deleted_at = utc_now()
         payload["status"] = LifecycleStatus.DELETED.value
         payload["deleted_at"] = deleted_at.isoformat()
         payload["updated_at"] = deleted_at.isoformat()
         validated = parse_object(payload)
+        record.schema_version = validated.schema_version
         record.lifecycle_status = LifecycleStatus.DELETED.value
         record.deleted_at = deleted_at
         record.updated_at = deleted_at
@@ -176,12 +247,13 @@ class ObjectRepository:
         record = self.session.get(ObjectRecord, object_id)
         if record is None:
             raise ObjectNotFoundError(f"object not found: {object_id}")
-        payload = dict(record.payload)
+        payload = deepcopy(record.payload)
         updated_at = utc_now()
         payload["status"] = LifecycleStatus.ACTIVE.value
         payload["deleted_at"] = None
         payload["updated_at"] = updated_at.isoformat()
         validated = parse_object(payload)
+        record.schema_version = validated.schema_version
         record.lifecycle_status = LifecycleStatus.ACTIVE.value
         record.deleted_at = None
         record.updated_at = updated_at
@@ -198,9 +270,7 @@ class ObjectRepository:
     ) -> int:
         statement = select(func.count()).select_from(ObjectRecord)
         if object_type is not None:
-            statement = statement.where(
-                ObjectRecord.object_type == object_type.value
-            )
+            statement = statement.where(ObjectRecord.object_type == object_type.value)
         if not include_deleted:
             statement = statement.where(ObjectRecord.deleted_at.is_(None))
         return int(self.session.scalar(statement) or 0)

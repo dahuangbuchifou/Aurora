@@ -1,26 +1,57 @@
 """Reference-graph validation and source traceability for Aurora objects.
 
-This module deliberately remains small. It validates object bundles and follows
-explicit IDs; it is not a general-purpose knowledge-graph engine.
+This module deliberately remains small. It validates explicit object IDs and
+follows dependencies; it is not a general-purpose knowledge-graph engine.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Iterable, Mapping
 
 from aurora.core.models import (
-    Claim, ContentUnit, DataPoint, Document, Entity, Event, Evidence, Fact,
-    Feedback, Insight, KnowledgeObject, OutputArtifact, PersonalOpinion,
-    ProcessingRun, Relation, Source, TimelineEntry,
+    Claim,
+    ContentUnit,
+    DataPoint,
+    Document,
+    Entity,
+    Event,
+    Evidence,
+    Fact,
+    Feedback,
+    Insight,
+    KnowledgeObject,
+    OutputArtifact,
+    PersonalOpinion,
+    ProcessingRun,
+    Relation,
+    Source,
+    TimelineEntry,
 )
 from aurora.core.models.common import BaseObject
-from aurora.core.models.enums import ObjectType, OriginType
+from aurora.core.models.enums import OriginType
 from aurora.repository.object_repository import ObjectRepository
 
 _ID_PREFIXES = (
-    "src_", "doc_", "cu_", "ent_", "evt_", "dat_", "clm_", "evi_",
-    "fac_", "knw_", "rel_", "tml_", "ins_", "opn_", "out_", "fbk_", "run_",
+    "src_",
+    "doc_",
+    "cu_",
+    "ent_",
+    "evt_",
+    "dat_",
+    "clm_",
+    "evi_",
+    "fac_",
+    "knw_",
+    "rel_",
+    "tml_",
+    "ins_",
+    "opn_",
+    "out_",
+    "fbk_",
+    "run_",
 )
+
 
 @dataclass(frozen=True)
 class ReferenceEdge:
@@ -29,10 +60,12 @@ class ReferenceEdge:
     field_name: str
     dependency: bool = True
 
+
 @dataclass
 class GraphValidationReport:
     duplicate_ids: list[str] = field(default_factory=list)
     dangling_references: list[ReferenceEdge] = field(default_factory=list)
+    advisory_references: list[ReferenceEdge] = field(default_factory=list)
     derived_without_origins: list[str] = field(default_factory=list)
     dependency_cycles: list[list[str]] = field(default_factory=list)
 
@@ -50,8 +83,14 @@ def looks_like_object_id(value: object) -> bool:
     return isinstance(value, str) and value.startswith(_ID_PREFIXES)
 
 
-def _append(edges: list[ReferenceEdge], obj: BaseObject, field_name: str,
-            values: object, *, dependency: bool = True) -> None:
+def _append(
+    edges: list[ReferenceEdge],
+    obj: BaseObject,
+    field_name: str,
+    values: object,
+    *,
+    dependency: bool = True,
+) -> None:
     if values is None:
         return
     seq = values if isinstance(values, (list, tuple, set)) else [values]
@@ -60,17 +99,56 @@ def _append(edges: list[ReferenceEdge], obj: BaseObject, field_name: str,
             edges.append(ReferenceEdge(obj.id, value, field_name, dependency))
 
 
+def _deduplicate_edges(edges: list[ReferenceEdge]) -> list[ReferenceEdge]:
+    """Avoid duplicate graph paths when legacy and V1.1 origins overlap."""
+
+    unique: list[ReferenceEdge] = []
+    seen: set[tuple[str, str, bool]] = set()
+    for edge in edges:
+        key = (edge.source_id, edge.target_id, edge.dependency)
+        if key not in seen:
+            seen.add(key)
+            unique.append(edge)
+    return unique
+
+
 def extract_reference_edges(obj: BaseObject) -> list[ReferenceEdge]:
-    """Return all explicit object-ID references, including reverse/audit links."""
+    """Return explicit object references with dependency semantics."""
+
     edges: list[ReferenceEdge] = []
     _append(edges, obj, "source_refs", obj.source_refs)
-    _append(edges, obj, "provenance.origin_object_ids", obj.provenance.origin_object_ids)
-    _append(edges, obj, "provenance.processing_run_id", obj.provenance.processing_run_id, dependency=False)
+    # Prefer structured V1.1 links. Legacy origin IDs are appended second so
+    # graph deduplication keeps the more informative relation when both exist.
+    for link in obj.provenance.derivation_links:
+        _append(
+            edges,
+            obj,
+            f"provenance.derivation_links.{link.relation_type.value}",
+            link.object_id,
+        )
+    _append(
+        edges,
+        obj,
+        "provenance.origin_object_ids",
+        obj.provenance.origin_object_ids,
+    )
+    _append(
+        edges,
+        obj,
+        "provenance.processing_run_id",
+        obj.provenance.processing_run_id,
+        dependency=False,
+    )
 
     if isinstance(obj, Document):
         _append(edges, obj, "source_id", obj.source_id)
         _append(edges, obj, "parent_document_id", obj.parent_document_id)
-        _append(edges, obj, "duplicate_of_document_id", obj.duplicate_of_document_id)
+        _append(
+            edges,
+            obj,
+            "duplicate_of_document_id",
+            obj.duplicate_of_document_id,
+        )
     elif isinstance(obj, ContentUnit):
         _append(edges, obj, "document_id", obj.document_id)
         _append(edges, obj, "parent_unit_id", obj.parent_unit_id)
@@ -86,14 +164,28 @@ def extract_reference_edges(obj: BaseObject) -> list[ReferenceEdge]:
         _append(edges, obj, "asserted_by", obj.asserted_by)
         _append(edges, obj, "source_ref", obj.source_ref)
     elif isinstance(obj, Evidence):
-        _append(edges, obj, "target_object_id", obj.target_object_id, dependency=False)
+        # The target is an audit/back-reference. Evidence reaches Source through
+        # source_ref, so target absence does not break source traceability.
+        _append(
+            edges,
+            obj,
+            "target_object_id",
+            obj.target_object_id,
+            dependency=False,
+        )
         _append(edges, obj, "source_ref", obj.source_ref)
     elif isinstance(obj, Fact):
         _append(edges, obj, "subject_entity_ids", obj.subject_entity_ids)
         _append(edges, obj, "evidence_ids", obj.evidence_ids)
     elif isinstance(obj, KnowledgeObject):
-        for name in ("topic_ids", "fact_ids", "data_point_ids", "claim_ids",
-                     "evidence_ids", "related_entity_ids"):
+        for name in (
+            "topic_ids",
+            "fact_ids",
+            "data_point_ids",
+            "claim_ids",
+            "evidence_ids",
+            "related_entity_ids",
+        ):
             _append(edges, obj, name, getattr(obj, name))
     elif isinstance(obj, Relation):
         _append(edges, obj, "subject_id", obj.subject_id)
@@ -118,11 +210,19 @@ def extract_reference_edges(obj: BaseObject) -> list[ReferenceEdge]:
         _append(edges, obj, "target_object_id", obj.target_object_id)
     elif isinstance(obj, ProcessingRun):
         _append(edges, obj, "input_object_ids", obj.input_object_ids)
-        _append(edges, obj, "output_object_ids", obj.output_object_ids, dependency=False)
-    return edges
+        _append(
+            edges,
+            obj,
+            "output_object_ids",
+            obj.output_object_ids,
+            dependency=False,
+        )
+    return _deduplicate_edges(edges)
 
 
-def build_object_map(objects: Iterable[BaseObject]) -> tuple[dict[str, BaseObject], list[str]]:
+def build_object_map(
+    objects: Iterable[BaseObject],
+) -> tuple[dict[str, BaseObject], list[str]]:
     object_map: dict[str, BaseObject] = {}
     duplicates: list[str] = []
     for obj in objects:
@@ -133,11 +233,14 @@ def build_object_map(objects: Iterable[BaseObject]) -> tuple[dict[str, BaseObjec
     return object_map, sorted(set(duplicates))
 
 
-def _dependency_graph(objects: Mapping[str, BaseObject]) -> dict[str, list[str]]:
+def _dependency_graph(
+    objects: Mapping[str, BaseObject],
+) -> dict[str, list[str]]:
     graph: dict[str, list[str]] = {object_id: [] for object_id in objects}
     for obj in objects.values():
         graph[obj.id] = [
-            edge.target_id for edge in extract_reference_edges(obj)
+            edge.target_id
+            for edge in extract_reference_edges(obj)
             if edge.dependency and edge.target_id in objects
         ]
     return graph
@@ -172,24 +275,40 @@ def validate_object_graph(objects: Iterable[BaseObject]) -> GraphValidationRepor
     object_list = list(objects)
     object_map, duplicates = build_object_map(object_list)
     dangling: list[ReferenceEdge] = []
+    advisory: list[ReferenceEdge] = []
     derived_without_origins: list[str] = []
+
     for obj in object_list:
         for edge in extract_reference_edges(obj):
             if edge.target_id not in object_map:
-                dangling.append(edge)
-        if obj.provenance.origin_type == OriginType.DERIVED and not obj.provenance.origin_object_ids:
+                if edge.dependency:
+                    dangling.append(edge)
+                else:
+                    advisory.append(edge)
+        if (
+            obj.provenance.origin_type == OriginType.DERIVED
+            and not obj.provenance.origin_object_ids
+            and not obj.provenance.derivation_links
+        ):
             derived_without_origins.append(obj.id)
+
     return GraphValidationReport(
         duplicate_ids=duplicates,
         dangling_references=dangling,
+        advisory_references=advisory,
         derived_without_origins=derived_without_origins,
         dependency_cycles=_find_cycles(_dependency_graph(object_map)),
     )
 
 
-def trace_to_sources(start_id: str, object_map: Mapping[str, BaseObject],
-                     *, max_depth: int = 64) -> list[list[str]]:
+def trace_to_sources(
+    start_id: str,
+    object_map: Mapping[str, BaseObject],
+    *,
+    max_depth: int = 64,
+) -> list[list[str]]:
     """Return dependency paths from an object to every reachable Source."""
+
     if start_id not in object_map:
         raise KeyError(f"unknown object id: {start_id}")
     paths: list[list[str]] = []
@@ -202,7 +321,8 @@ def trace_to_sources(start_id: str, object_map: Mapping[str, BaseObject],
             paths.append(path)
             return
         dependencies = [
-            edge.target_id for edge in extract_reference_edges(obj)
+            edge.target_id
+            for edge in extract_reference_edges(obj)
             if edge.dependency and edge.target_id in object_map
         ]
         for target in dependencies:
@@ -220,21 +340,31 @@ def trace_to_sources(start_id: str, object_map: Mapping[str, BaseObject],
     return unique
 
 
-def trace_cognitive_chain(start_id: str, object_map: Mapping[str, BaseObject]) -> list[list[str]]:
-    """Alias with domain wording for Opinion/Output → Source tracing."""
+def trace_cognitive_chain(
+    start_id: str,
+    object_map: Mapping[str, BaseObject],
+) -> list[list[str]]:
+    """Domain alias for Opinion/Output → Source tracing."""
+
     return trace_to_sources(start_id, object_map)
 
 
-def group_evidence_by_independence(objects: Iterable[BaseObject]) -> dict[str, list[Evidence]]:
+def group_evidence_by_independence(
+    objects: Iterable[BaseObject],
+) -> dict[str, list[Evidence]]:
+    """Backward-compatible grouping by the raw independence label."""
+
     groups: dict[str, list[Evidence]] = {}
     for obj in objects:
         if isinstance(obj, Evidence):
-            groups.setdefault(obj.independence_group, []).append(obj)
+            key = obj.independence_group.strip() or f"__evidence__:{obj.id}"
+            groups.setdefault(key, []).append(obj)
     return groups
 
 
 class RepositoryTraceabilityService:
-    """Traceability facade over ObjectRepository for M1 validation workflows."""
+    """Traceability facade over ObjectRepository for validation workflows."""
+
     def __init__(self, repository: ObjectRepository):
         self.repository = repository
 

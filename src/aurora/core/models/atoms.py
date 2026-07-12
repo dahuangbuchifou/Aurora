@@ -5,9 +5,10 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .common import BaseObject, TimeRange, new_id
+from .common import BaseObject, MeasurementContext, TimeRange, new_id
 from .enums import (
     CalculationMethod,
+    ClaimDimension,
     ClaimType,
     EntityType,
     EpistemicStatus,
@@ -17,7 +18,6 @@ from .enums import (
     EvidenceStrength,
     EvidenceType,
     ObjectType,
-    RelationStatus,
     SourceQualityTier,
     VerificationStatus,
 )
@@ -51,6 +51,9 @@ class DataPoint(BaseObject):
     metric: str = Field(min_length=1)
     value: int | float
     unit: str = Field(min_length=1)
+    measurement_context: MeasurementContext = Field(
+        default_factory=MeasurementContext
+    )
     entity_id: str
     period: TimeRange
     reported_at: datetime | None = None
@@ -64,6 +67,7 @@ class Claim(BaseObject):
     id: str = Field(default_factory=lambda: new_id("clm"))
     object_type: Literal[ObjectType.CLAIM] = ObjectType.CLAIM
     claim_type: ClaimType
+    claim_dimension: ClaimDimension = ClaimDimension.GENERAL
     statement: str = Field(min_length=1)
     subject_entity_ids: list[str] = Field(default_factory=list)
     asserted_by: str = Field(min_length=1)

@@ -1,16 +1,25 @@
-"""Shared Pydantic models and validation helpers."""
+"""Shared Pydantic models and validation helpers for Aurora V1.1."""
 
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+    model_validator,
+)
 
 from .enums import (
+    DerivationRelationType,
     HumanReviewStatus,
     LifecycleStatus,
+    MeasurementKind,
     ObjectType,
     OriginType,
     PrivacyLevel,
@@ -19,7 +28,9 @@ from .enums import (
     TimePrecision,
 )
 
-SCHEMA_VERSION = "1.0"
+LEGACY_SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
+SUPPORTED_SCHEMA_VERSIONS = frozenset({LEGACY_SCHEMA_VERSION, SCHEMA_VERSION})
 
 
 def utc_now() -> datetime:
@@ -55,9 +66,16 @@ class HumanReview(AuroraModel):
         return self
 
 
+class DerivationLink(AuroraModel):
+    object_id: str = Field(min_length=1)
+    relation_type: DerivationRelationType
+    note: str | None = None
+
+
 class Provenance(AuroraModel):
     origin_type: OriginType = OriginType.ORIGINAL
     origin_object_ids: list[str] = Field(default_factory=list)
+    derivation_links: list[DerivationLink] = Field(default_factory=list)
     processing_run_id: str | None = None
     human_review: HumanReview = Field(default_factory=HumanReview)
     derivation_note: str | None = None
@@ -65,8 +83,24 @@ class Provenance(AuroraModel):
 
     @model_validator(mode="after")
     def validate_derived(self) -> "Provenance":
-        if self.origin_type == OriginType.DERIVED and not self.origin_object_ids:
-            raise ValueError("derived provenance requires origin_object_ids")
+        if (
+            self.origin_type == OriginType.DERIVED
+            and not self.origin_object_ids
+            and not self.derivation_links
+        ):
+            raise ValueError(
+                "derived provenance requires origin_object_ids or derivation_links"
+            )
+
+        seen: set[tuple[str, DerivationRelationType]] = set()
+        for link in self.derivation_links:
+            key = (link.object_id, link.relation_type)
+            if key in seen:
+                raise ValueError(
+                    "duplicate derivation link: "
+                    f"{link.object_id}/{link.relation_type.value}"
+                )
+            seen.add(key)
         return self
 
 
@@ -136,11 +170,7 @@ class TimeRange(AuroraModel):
     @model_validator(mode="after")
     def validate_order(self) -> "TimeRange":
         if self.start is not None and self.end is not None:
-            start = (
-                self.start.date()
-                if isinstance(self.start, datetime)
-                else self.start
-            )
+            start = self.start.date() if isinstance(self.start, datetime) else self.start
             end = self.end.date() if isinstance(self.end, datetime) else self.end
             if end < start:
                 raise ValueError("time range end cannot be earlier than start")
@@ -171,6 +201,24 @@ class ValidityWindow(AuroraModel):
         return self
 
 
+class MeasurementContext(AuroraModel):
+    measurement_kind: MeasurementKind = MeasurementKind.UNKNOWN
+    currency: str | None = None
+    scale_multiplier: int = Field(default=1, gt=0)
+    reporting_standard: str | None = None
+    attribution_scope: str | None = None
+    consolidation_scope: str | None = None
+
+    @field_validator("currency")
+    @classmethod
+    def validate_currency(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if len(value) != 3 or not value.isascii() or not value.isalpha() or value != value.upper():
+            raise ValueError("currency must be an uppercase ISO 4217-style code")
+        return value
+
+
 class ProcessorInfo(AuroraModel):
     module: str
     model_provider: str | None = None
@@ -188,7 +236,7 @@ class ExternalReference(AuroraModel):
 class BaseObject(AuroraModel):
     id: str
     object_type: ObjectType
-    schema_version: str = SCHEMA_VERSION
+    schema_version: Literal["1.1"] = SCHEMA_VERSION
     status: LifecycleStatus = LifecycleStatus.ACTIVE
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
@@ -205,6 +253,10 @@ class BaseObject(AuroraModel):
 
     @model_validator(mode="after")
     def validate_common_state(self) -> "BaseObject":
+        if self.schema_version != SCHEMA_VERSION:
+            raise ValueError(
+                f"current domain models require schema_version={SCHEMA_VERSION}"
+            )
         if self.updated_at < self.created_at:
             raise ValueError("updated_at cannot be earlier than created_at")
         if self.status == LifecycleStatus.DELETED and self.deleted_at is None:

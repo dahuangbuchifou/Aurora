@@ -1,0 +1,7 @@
+{
+  "latest": "1.1",
+  "versions": {
+    "1.0": "v1/registry.json",
+    "1.1": "v1_1/registry.json"
+  }
+}
