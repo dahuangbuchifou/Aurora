@@ -36,6 +36,8 @@ aurora-migrate-payloads = "aurora.cli.migrate_payloads:main"
 aurora-restore-payloads = "aurora.cli.restore_payloads:main"
 aurora-ingest = "aurora.cli.ingest:main"
 aurora-export-ingestion-schemas = "aurora.ingestion.schema_registry:main"
+aurora-extract = "aurora.cli.extract:main"
+aurora-review = "aurora.cli.extract:review_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
