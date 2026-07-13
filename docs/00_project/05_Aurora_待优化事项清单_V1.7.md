@@ -1,122 +1,69 @@
 # Aurora 待优化事项清单 V1.7
 
-> 更新：2026-07-13 13:40 CST  
-> 合并 M2-003A/B 全部 OPT（大G + 婉儿 QA）
+> 更新时间：2026-07-13
 
----
+## 1. 本节点状态变化
 
-## 📐 优化规则（大黄 2026-07-13 定）
-
-1. 每个阶段 review 最多两轮，未解决问题放入本清单
-2. 大节点完成后统一修正，不卡当前阶段
-3. 本清单由婉儿维护，每次节点闭合时更新
-
----
-
-## 0. M1 阶段
-
-| ID | 等级 | 项目 | 状态 |
+| ID | 内容 | 状态 | 关闭/目标证据 |
 |---|---|---|---|
-| OPT-001 | MAJOR | DataPoint 财务和测量口径不足 | DONE |
-| OPT-002 | MAJOR | independence_group 无程序化去重规则 | DONE |
-| OPT-003 | MAJOR | Claim 缺少分析维度 | DONE |
-| OPT-004 | MAJOR | Provenance 派生关系不够结构化 | DONE |
-| OPT-005 | MAJOR | Claim 缺少原子性规范 | DONE |
-| OPT-006 | MINOR | SQLite 锁等待策略未标准化 | DONE |
-| OPT-007 | MINOR | schema_registry 与 session 测试不足 | DONE |
-| OPT-014 | MAJOR | Evidence Role 语义容易混淆 | DONE |
-| OPT-015 | MINOR | V1.0 到 V1.1 兼容策略未成文 | DONE |
-| OPT-016 | MINOR | 非依赖 processing_run_id 产生 dangling 噪音 | DONE |
-| OPT-017 | — | — | DONE |
-| OPT-018 | — | — | DONE |
-| OPT-019 | — | — | DONE |
-| OPT-020 | — | — | DONE |
+| OPT-061 | ContextWindow规范化Hash | DONE | Gate 1 Context Hash V2测试 |
+| OPT-062 | 真实Parser链与快照谱系 | DONE | Gate 1三个真实垂直切片 |
+| OPT-063 | Git基线与比较基线混淆 | DONE | 本地仓库、协作规范V2.1 |
+| OPT-064 | 冻结资产保护 | IN_PROGRESS | Gate 2 SHA清单与节点复核 |
 
----
+## 2. Gate 2新增事项
 
-## 1. M2-001
+### OPT-065：Extraction CLI零覆盖率
 
 ```text
-OPT-021：DONE
-OPT-022：DONE
-OPT-023：DONE
-OPT-024：DONE
+等级：MAJOR（非Gate 2阻塞）
+类别：Test Coverage
+发现节点：Gate 2启动基线
+现状：src/aurora/cli/extract.py Coverage = 0%
+临时方案：Gate 2不调用CLI，直接测试领域层
+责任人：大G
+目标节点：M2-003C或CLI正式纳入范围时
+状态：DEFERRED_BY_SCOPE
 ```
 
----
+### OPT-066：Provider越权字段处理策略需冻结
 
-## 2. M2-002 实现项
+```text
+等级：MAJOR
+类别：Epistemic Safety
+发现节点：Gate 2任务卡
+方案候选：
+A. 严格Schema拒绝
+B. 移除字段并产生ERROR Finding
+建议：A
+责任人：大G/婉儿共同确认
+目标节点：Gate 2任务卡确认
+状态：PROPOSED
+```
 
-| ID | 等级 | 项目 | 状态 |
-|---|---|---|---|
-| OPT-031 | MAJOR | URL抓取SSRF防护 | IMPLEMENTED_PENDING_QA |
-| OPT-032 | MAJOR | PDF表格不确定性 | IMPLEMENTED_PENDING_QA |
-| OPT-034 | MAJOR | Parser配置进入幂等键 | IMPLEMENTED_PENDING_QA |
+### OPT-067：Prompt Injection只有数据隔离，没有真实模型验证
 
----
+```text
+等级：MINOR
+类别：Model Safety
+说明：Gate 2使用FixtureProvider，只能验证系统权限和输出门禁；
+不能证明未来真实模型绝不受提示注入影响。
+临时方案：来源内容UNTRUSTED标记 + 严格输出验证 + 无工具权限。
+目标节点：M2-003D真实Provider小流量验证
+状态：DEFERRED
+```
 
-## 3. M2-003A (Gate 0) — 大G产生
+## 3. 继续延期
 
-| ID | 等级 | 项目 | 状态 | 说明 |
-|---|---|---|---|---|
-| OPT-052 | — | — | DONE | Gate 0 V1.2 实装 |
-| OPT-053 | — | — | DONE | |
-| OPT-054 | — | — | DONE | |
-| OPT-055 | — | — | DONE | |
-| OPT-056 | — | — | DONE | |
-| OPT-057 | — | — | DONE | |
-| OPT-058 | — | — | DONE | |
-
----
-
-## 4. M2-003B (Gate 1) — 大G产生
-
-| ID | 等级 | 项目 | 状态 | 说明 |
-|---|---|---|---|---|
-| OPT-061 | MAJOR | ContextWindow 规范化 Hash | IN_PROGRESS | 大G Gate 1 已实现 V2 Hash，待最终确认 |
-| OPT-062 | MAJOR | 真实 Parser 链与冻结快照谱系核对 | IN_PROGRESS | 大G Gate 1 三案例已用真实 Parser |
-| OPT-063 | MAJOR | Git 基线与比较基线混淆 | IN_PROGRESS | 婉儿已修正：父基线 f0627d9 / 代码比较基线 78d8b90 |
-| OPT-064 | BLOCKER | Gate 0 冻结资产被后续阶段修改 | ✅ CLOSED | 婉儿 QA Pass：8/8 资产 Hash 未修改 |
-
----
-
-## 5. M2-003B (Gate 1) — 婉儿 QA 发现
-
-| ID | 等级 | 项目 | 状态 | 说明 |
-|---|---|---|---|---|
-| OPT-065 | LOW | `gate1_check.py` ExtractionError 不支持排序 | OPEN | 旧版 Checker 与新 ReviewBundle API 不兼容；不影响集成测试 38/38 PASS |
-| OPT-066 | LOW | `review_decision.py` 覆盖率 89%（低于 90%） | OPEN | 该模块不在 M2-003B 变更范围，后续统一补齐 |
-
----
-
-## 6. 延期项（跨阶段）
-
-| ID | 等级 | 项目 | 状态 | 目标 |
-|---|---|---|---|---|
-| OPT-025 | ENHANCEMENT | 完整 CommonMark | DEFERRED | 后续 |
-| OPT-026 | ENHANCEMENT | 单表 JSON 查询性能 | DEFERRED | M3 |
-| OPT-027 | MINOR | 并发导入竞争 | DEFERRED | M2-005/M3 |
-| OPT-028 | ENHANCEMENT | PDF bbox Locator | DEFERRED | 独立 Schema 评审 |
-| OPT-029 | ENHANCEMENT | JavaScript 动态网页 | DEFERRED | M3 |
-| OPT-030 | MAJOR | 扫描 PDF 与 OCR | DEFERRED_BY_SCOPE | M3/M2-005 评审 |
-| OPT-033 | MINOR | 字幕 Cue 粒度过细 | DEFERRED | M2-003 |
-| OPT-035 | MINOR | PDF 文本与表格重复消除 | DEFERRED | 积累真实 PDF 后优化 |
-| OPT-036 | MINOR | 网页字符集高级识别 | DEFERRED | M2-005 或真实案例触发 |
-| OPT-037 | MAJOR | HTML Locator 快照持久化策略 | PLANNED | M2-005 输出与归档评审 |
-
----
-
-## 7. 开放项汇总
-
-| ID | 等级 | 项目 | 解决节点 |
-|---|---|---|---|
-| OPT-061 | MAJOR | ContextWindow 规范化 Hash | M2-003B Gate 1 最终确认 |
-| OPT-062 | MAJOR | 真实 Parser 链与快照谱系核对 | M2-003B Gate 1 最终确认 |
-| OPT-063 | MAJOR | Git 基线与比较基线混淆 | M2-003B Gate 1 最终确认 |
-| OPT-065 | LOW | gate1_check.py Error 排序 | 后续统一修正 |
-| OPT-066 | LOW | review_decision.py 覆盖率 | 后续统一修正 |
-| OPT-031~034 | MAJOR | M2-002 QA 待验证 | M2-002 收尾 |
-
----
-
-_婉儿维护 · 每次节点闭合更新_ 🎋
+```text
+OPT-025 完整CommonMark
+OPT-027 并发导入
+OPT-028 PDF bbox
+OPT-029 JavaScript网页
+OPT-030 OCR
+OPT-033 字幕语义合并
+OPT-035 PDF高级去重
+OPT-036 网页字符集高级识别
+OPT-037 HTML快照长期归档
+OPT-046 ReviewBundle长期归档
+```
