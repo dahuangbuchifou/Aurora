@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aurora.schemas/extraction/v1/expected-results",
   "title": "Gate 0 Expected Extraction Results V1.1 (Strict)",
-  "description": "M2-003A 人工期望提取结果的严格结构定义。V1.1 新增 additionalProperties: false、枚举约束、条件校验、SHA-256 pattern 和 prediction time_horizon。",
+  "description": "M2-003A V1.2 人工期望提取结果的严格结构定义。新增 quote_match_mode、expected_review_decisions、FormatChecker 强校验。",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,7 +11,7 @@
     "case_id", "case_title", "material_path",
     "expected_entities", "expected_data_points", "expected_claims",
     "expected_evidence", "expected_fact_candidates",
-    "expected_warnings", "expected_rejects", "validation_report"
+    "expected_warnings", "expected_rejects", "expected_review_decisions", "validation_report"
   ],
   "properties": {
     "annotated_by": {"type": "string", "minLength": 1},
@@ -104,6 +104,7 @@
           },
           "source_quote": {"type": "string", "minLength": 1},
           "quote_locator_hint": {"type": "string"},
+          "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
           "note": {"type": "string"}
         }
       }
@@ -145,6 +146,7 @@
           "promotable_to_fact": {"type": "boolean"},
           "source_quote": {"type": "string", "minLength": 1},
           "quote_locator_hint": {"type": "string"},
+          "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
           "note": {"type": "string"}
         },
         "if": {
@@ -179,6 +181,7 @@
           "target_object_id": {"type": "string", "minLength": 1},
           "independence_group": {"type": "string", "minLength": 1},
           "source_quote": {"type": "string", "minLength": 1},
+          "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
           "note": {"type": "string"}
         }
       }
@@ -296,7 +299,46 @@
           },
           "target_quote": {"type": "string", "minLength": 1},
           "quote_locator_hint": {"type": "string"},
+          "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
           "note": {"type": "string"}
+        }
+      }
+    },
+
+    "expected_review_decisions": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target_id", "action"],
+        "properties": {
+          "target_id": {"type": "string", "minLength": 1},
+          "action": {
+            "type": "string",
+            "enum": ["APPROVE", "REJECT", "REVISE_AND_APPROVE"]
+          },
+          "revised_payload": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "revised_statement": {"type": "string", "minLength": 1},
+              "revised_claim_type": {"type": "string"},
+              "revision_rationale": {"type": "string"}
+            }
+          }
+        },
+        "if": {
+          "properties": {"action": {"const": "REVISE_AND_APPROVE"}}
+        },
+        "then": {
+          "required": ["revised_payload"],
+          "properties": {
+            "revised_payload": {
+              "type": "object",
+              "required": ["revised_statement"]
+            }
+          }
         }
       }
     },

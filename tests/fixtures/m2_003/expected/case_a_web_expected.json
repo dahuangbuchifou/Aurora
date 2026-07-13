@@ -24,7 +24,6 @@
   "case_id": "case_a_web",
   "case_title": "中芯国际2025年度业绩摘要（网页）",
   "material_path": "tests/fixtures/m2_002/case_a_web.html",
-
   "expected_entities": [
     {
       "id": "expected_entity_a_001",
@@ -32,7 +31,6 @@
       "canonical_name": "中芯国际"
     }
   ],
-
   "expected_data_points": [
     {
       "id": "expected_dp_a_001",
@@ -50,7 +48,8 @@
         "consolidation_scope": "consolidated"
       },
       "source_quote": "营业收入 673.23亿元",
-      "quote_locator_hint": "table#metrics td"
+      "quote_locator_hint": "table#metrics td",
+      "quote_match_mode": "token_set"
     },
     {
       "id": "expected_dp_a_002",
@@ -68,10 +67,10 @@
         "consolidation_scope": "consolidated"
       },
       "source_quote": "产能利用率 93.5%",
-      "quote_locator_hint": "table#metrics td"
+      "quote_locator_hint": "table#metrics td",
+      "quote_match_mode": "token_set"
     }
   ],
-
   "expected_claims": [
     {
       "id": "expected_cl_a_001",
@@ -80,7 +79,8 @@
       "claim_dimension": "business_growth",
       "claimant_id": "expected_entity_a_001",
       "source_quote": "公司2025年营业收入保持增长",
-      "quote_locator_hint": "article p"
+      "quote_locator_hint": "article p",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_cl_a_002",
@@ -89,7 +89,8 @@
       "claim_dimension": "operations",
       "claimant_id": "expected_entity_a_001",
       "source_quote": "产能利用率维持较高水平",
-      "quote_locator_hint": "article p"
+      "quote_locator_hint": "article p",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_cl_a_003",
@@ -105,10 +106,10 @@
       },
       "promotable_to_fact": false,
       "source_quote": "管理层表示将继续推进产能建设。",
-      "quote_locator_hint": "blockquote"
+      "quote_locator_hint": "blockquote",
+      "quote_match_mode": "literal"
     }
   ],
-
   "expected_evidence": [
     {
       "id": "expected_ev_a_001",
@@ -117,7 +118,8 @@
       "target_object_id": "expected_dp_a_001",
       "independence_group": "smics_annual_report_2025",
       "source_quote": "营业收入 673.23亿元",
-      "note": "来源于中芯国际官方年度披露（年报）。Case A 网页是年报披露的摘要版本。"
+      "note": "来源于中芯国际官方年度披露（年报）。Case A 网页是年报披露的摘要版本。",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_ev_a_002",
@@ -126,22 +128,25 @@
       "target_object_id": "expected_dp_a_002",
       "independence_group": "smics_annual_report_2025",
       "source_quote": "产能利用率 93.5%",
-      "note": "与 evidence_a_001 属于同一 independence_group（同一份年报），独立计数时只计 1"
+      "note": "与 evidence_a_001 属于同一 independence_group（同一份年报），独立计数时只计 1",
+      "quote_match_mode": "literal"
     }
   ],
-
   "expected_fact_candidates": [
     {
       "id": "expected_fc_a_001",
       "target_data_point_id": "expected_dp_a_001",
-      "supporting_evidence_ids": ["expected_ev_a_001"],
+      "supporting_evidence_ids": [
+        "expected_ev_a_001"
+      ],
       "statement": "中芯国际2025年度营业收入为673.23亿元",
-      "valid_time": {"period": "2025"},
+      "valid_time": {
+        "period": "2025"
+      },
       "confidence_rationale": "官方年报披露数据，原文表格可直接印证",
       "promotable": true
     }
   ],
-
   "expected_warnings": [
     {
       "id": "expected_warn_a_001",
@@ -150,17 +155,16 @@
       "note": "管理层声明'将继续推进'被建模为 prediction。若后续系统支持双层 Claim，建议拆分为 Speech-act fact_claim + Embedded prediction。当前版本 prediction 缺少明确时间范围，precision=unknown，建议在未来版本补充。"
     }
   ],
-
   "expected_rejects": [
     {
       "id": "expected_rej_a_001",
       "rejection_reason": "CONTENT_UNIT_CODE_BLOCK_NON_CLAIM",
       "target_quote": "source = \"annual_report\"",
       "quote_locator_hint": "pre code",
-      "note": "代码示例不是涉及公司经营的事实主张。预期行为：CONTENT_UNIT_TYPE 检测到代码块，跳过文本提取或标记为 INFO 级别警告。"
+      "note": "代码示例不是涉及公司经营的事实主张。预期行为：CONTENT_UNIT_TYPE 检测到代码块，跳过文本提取或标记为 INFO 级别警告。",
+      "quote_match_mode": "literal"
     }
   ],
-
   "validation_report": {
     "claim_type_coverage": "SUFFICIENT",
     "claim_dimension_coverage": "SUFFICIENT",
@@ -171,5 +175,26 @@
     "core_schema_change_needed": false,
     "new_core_object_needed": false,
     "notes": "Case A Revision 1: D-001 代码块→expected_rejects; D-002 prediction方案A; D-003 independence_group→smics_annual_report_2025。涵盖 monetary 和 percentage 两种 MeasurementKind，prediction 新增 time_horizon 字段。表格定位精度问题待 M2-003B 解决。"
-  }
+  },
+  "expected_review_decisions": [
+    {
+      "target_id": "expected_fc_a_001",
+      "action": "APPROVE",
+      "revised_payload": null
+    },
+    {
+      "target_id": "expected_rej_a_001",
+      "action": "REJECT",
+      "revised_payload": null
+    },
+    {
+      "target_id": "expected_cl_a_003",
+      "action": "REVISE_AND_APPROVE",
+      "revised_payload": {
+        "revised_statement": "管理层表示将继续推进产能建设（Speech-act fact_claim，含嵌入式 prediction）",
+        "revised_claim_type": "fact_claim",
+        "revision_rationale": "大黄：M2-003A 采用 prediction 方案A，后续支持双层Claim后拆分"
+      }
+    }
+  ]
 }

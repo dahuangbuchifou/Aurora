@@ -17,7 +17,6 @@
   "case_id": "case_b_video",
   "case_title": "成熟制程竞争格局分析（视频转写）",
   "material_path": "tests/fixtures/m2_002/case_b_video.srt",
-
   "expected_entities": [
     {
       "id": "expected_entity_b_002",
@@ -35,9 +34,7 @@
       "canonical_name": "台积电"
     }
   ],
-
   "expected_data_points": [],
-
   "expected_claims": [
     {
       "id": "expected_cl_b_001",
@@ -48,7 +45,8 @@
       "claimant_name": "UP主",
       "source_quote": "成熟制程需求仍然存在",
       "quote_locator_hint": "cue 1",
-      "note": "前半句是对市场现状的事实性描述"
+      "note": "前半句是对市场现状的事实性描述",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_cl_b_002",
@@ -59,7 +57,8 @@
       "claimant_name": "UP主",
       "source_quote": "竞争格局需要持续观察",
       "quote_locator_hint": "cue 1",
-      "note": "后半句是对不确定性的表达。这是一个单句包含两个不同维度的 Claim——前一个可被证据支持，后一个是风险判断。不应被合并为一条复合 Claim。"
+      "note": "后半句是对不确定性的表达。这是一个单句包含两个不同维度的 Claim——前一个可被证据支持，后一个是风险判断。不应被合并为一条复合 Claim。",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_cl_b_003",
@@ -70,7 +69,8 @@
       "claimant_name": "UP主",
       "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
       "quote_locator_hint": "cue 2",
-      "note": "对竞争格局的描述，提及三个具体竞争对手"
+      "note": "对竞争格局的描述，提及三个具体竞争对手",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_cl_b_004",
@@ -81,10 +81,10 @@
       "claimant_name": "UP主",
       "source_quote": "当前估值已经反映了较多乐观预期。",
       "quote_locator_hint": "cue 3",
-      "note": "价值判断，不是事实也不是预测。cue 3 与 cue 2 有 200ms 时间重叠（08.000 - 07.800），属于 overlapping cue 场景。"
+      "note": "价值判断，不是事实也不是预测。cue 3 与 cue 2 有 200ms 时间重叠（08.000 - 07.800），属于 overlapping cue 场景。",
+      "quote_match_mode": "literal"
     }
   ],
-
   "expected_evidence": [
     {
       "id": "expected_ev_b_001",
@@ -93,10 +93,10 @@
       "target_object_id": "expected_cl_b_003",
       "independence_group": "up_analysis",
       "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
-      "note": "仅证明'UP主作出了该陈述'，不独立核实三家公司的实际投入行为。单一二手来源，不构成独立证据。"
+      "note": "仅证明'UP主作出了该陈述'，不独立核实三家公司的实际投入行为。单一二手来源，不构成独立证据。",
+      "quote_match_mode": "literal"
     }
   ],
-
   "expected_fact_candidates": [
     {
       "id": "expected_fc_b_001",
@@ -119,7 +119,6 @@
       "rejection_reason": "value_judgment 不可晋级为 Fact"
     }
   ],
-
   "expected_warnings": [
     {
       "id": "expected_warn_b_001",
@@ -134,9 +133,7 @@
       "note": "cue 2 与 cue 3 存在 200ms 时间重叠"
     }
   ],
-
   "expected_rejects": [],
-
   "validation_report": {
     "claim_type_coverage": "SUFFICIENT",
     "claim_dimension_coverage": "SUFFICIENT",
@@ -147,5 +144,26 @@
     "core_schema_change_needed": false,
     "new_core_object_needed": false,
     "notes": "Case B Revision 1: D-004 删除无原文依据的中芯国际实体；D-005 Evidence 改为 direct_quote + attribution，FactCandidate promotable=false，rejection_reason=缺少独立可核验来源；cue 重叠修正为 200ms。ClaimDimension 覆盖 market_expectation / competition / valuation 三个维度。Value Judgment 被正确阻止晋级为 Fact。"
-  }
+  },
+  "expected_review_decisions": [
+    {
+      "target_id": "expected_fc_b_001",
+      "action": "REJECT",
+      "revised_payload": null
+    },
+    {
+      "target_id": "expected_fc_b_002",
+      "action": "REJECT",
+      "revised_payload": null
+    },
+    {
+      "target_id": "expected_cl_b_001",
+      "action": "REVISE_AND_APPROVE",
+      "revised_payload": {
+        "revised_statement": "成熟制程需求仍然存在（需拆分为两条独立Claim）",
+        "revised_claim_type": "fact_claim",
+        "revision_rationale": "cue 1 包含复合句，建议拆分为需求存在 versus 格局需观察"
+      }
+    }
+  ]
 }

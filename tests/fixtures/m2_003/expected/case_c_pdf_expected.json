@@ -17,7 +17,6 @@
   "case_id": "case_c_pdf",
   "case_title": "中芯国际2025年报摘录（PDF）",
   "material_path": "tests/fixtures/m2_002/case_c_report.pdf",
-
   "expected_entities": [
     {
       "id": "expected_entity_c_001",
@@ -25,7 +24,6 @@
       "canonical_name": "中芯国际"
     }
   ],
-
   "expected_data_points": [
     {
       "id": "expected_dp_c_001",
@@ -44,7 +42,8 @@
       },
       "source_quote": "Revenue 67.323 bn",
       "quote_locator_hint": "page 1, table row",
-      "note": "原文计量单位为十亿元（bn），需转换为亿元（67.323 bn = 673.23 亿）"
+      "note": "原文计量单位为十亿元（bn），需转换为亿元（67.323 bn = 673.23 亿）",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_dp_c_002",
@@ -62,7 +61,8 @@
         "consolidation_scope": "consolidated"
       },
       "source_quote": "Revenue 57.796 bn",
-      "quote_locator_hint": "page 1, table row, 2024 column"
+      "quote_locator_hint": "page 1, table row, 2024 column",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_dp_c_003",
@@ -80,7 +80,8 @@
         "consolidation_scope": "consolidated"
       },
       "source_quote": "Utilization 93.5%",
-      "quote_locator_hint": "page 1, table row"
+      "quote_locator_hint": "page 1, table row",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_dp_c_004",
@@ -98,10 +99,10 @@
         "consolidation_scope": "consolidated"
       },
       "source_quote": "Utilization 85.6%",
-      "quote_locator_hint": "page 1, table row, 2024 column"
+      "quote_locator_hint": "page 1, table row, 2024 column",
+      "quote_match_mode": "literal"
     }
   ],
-
   "expected_claims": [
     {
       "id": "expected_cl_c_001",
@@ -111,7 +112,8 @@
       "claimant_id": "expected_entity_c_001",
       "source_quote": "Revenue reached CNY 67.323 billion in 2025.",
       "quote_locator_hint": "page 1 paragraph",
-      "note": "仅包含原文可核验的绝对值。增长率16.5%为人工计算（(673.23-577.96)/577.96），在 M2-003A 阶段不纳入预期。后续系统支持 Calculated DataPoint 后可补入。"
+      "note": "仅包含原文可核验的绝对值。增长率16.5%为人工计算（(673.23-577.96)/577.96），在 M2-003A 阶段不纳入预期。后续系统支持 Calculated DataPoint 后可补入。",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_cl_c_002",
@@ -128,10 +130,10 @@
       "promotable_to_fact": false,
       "source_quote": "The company expects revenue growth above the industry average in the same markets.",
       "quote_locator_hint": "page 2 paragraph",
-      "note": "管理层前瞻性声明。prediction 不可晋级 Fact——这是 Gate 2 认知污染测试的关键靶子。"
+      "note": "管理层前瞻性声明。prediction 不可晋级 Fact——这是 Gate 2 认知污染测试的关键靶子。",
+      "quote_match_mode": "literal"
     }
   ],
-
   "expected_evidence": [
     {
       "id": "expected_ev_c_001",
@@ -140,7 +142,8 @@
       "target_object_id": "expected_dp_c_001",
       "independence_group": "smics_annual_report_2025",
       "source_quote": "Revenue 67.323 bn",
-      "note": "年报审计数据，官方披露"
+      "note": "年报审计数据，官方披露",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_ev_c_002",
@@ -149,7 +152,8 @@
       "target_object_id": "expected_dp_c_002",
       "independence_group": "smics_annual_report_2025",
       "source_quote": "Revenue 57.796 bn",
-      "note": "与 evidence_c_001 同一 independence_group，独立计数只计 1"
+      "note": "与 evidence_c_001 同一 independence_group，独立计数只计 1",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_ev_c_003",
@@ -158,7 +162,8 @@
       "target_object_id": "expected_dp_c_003",
       "independence_group": "smics_annual_report_2025",
       "source_quote": "Utilization 93.5%",
-      "note": "同一 independence_group"
+      "note": "同一 independence_group",
+      "quote_match_mode": "literal"
     },
     {
       "id": "expected_ev_c_004",
@@ -167,24 +172,30 @@
       "target_object_id": "expected_cl_c_002",
       "independence_group": "smics_annual_report_2025",
       "source_quote": "The company expects revenue growth above the industry average",
-      "note": "管理层前瞻性声明。证据角色为 context——确认年报中含有该预测声明，但不验证预测本身。"
+      "note": "管理层前瞻性声明。证据角色为 context——确认年报中含有该预测声明，但不验证预测本身。",
+      "quote_match_mode": "literal"
     }
   ],
-
   "expected_fact_candidates": [
     {
       "id": "expected_fc_c_001",
       "target_data_point_id": "expected_dp_c_001",
-      "supporting_evidence_ids": ["expected_ev_c_001"],
+      "supporting_evidence_ids": [
+        "expected_ev_c_001"
+      ],
       "statement": "中芯国际2025年度营业收入为673.23亿元",
-      "valid_time": {"period": "2025"},
+      "valid_time": {
+        "period": "2025"
+      },
       "confidence_rationale": "年报审计数据，高可信度",
       "promotable": true
     },
     {
       "id": "expected_fc_c_002",
       "target_claim_id": "expected_cl_c_002",
-      "supporting_evidence_ids": ["expected_ev_c_004"],
+      "supporting_evidence_ids": [
+        "expected_ev_c_004"
+      ],
       "statement": "公司预计营收增长将高于同行业平均水平",
       "valid_time": null,
       "confidence_rationale": null,
@@ -192,7 +203,6 @@
       "rejection_reason": "claim_type 为 prediction，不可晋级为 Fact（G4-1 认知污染防护）"
     }
   ],
-
   "expected_warnings": [
     {
       "id": "expected_warn_c_001",
@@ -201,9 +211,7 @@
       "note": "全部 evidence 属于同一份年报 smics_annual_report_2025，独立证据计数只计 1 次"
     }
   ],
-
   "expected_rejects": [],
-
   "validation_report": {
     "claim_type_coverage": "SUFFICIENT",
     "claim_dimension_coverage": "SUFFICIENT",
@@ -214,5 +222,26 @@
     "core_schema_change_needed": false,
     "new_core_object_needed": false,
     "notes": "Case C Revision 1: D-006 删除16.5%人工计算结果，Claim statement仅保留绝对值；D-007 prediction 新增 time_horizon；D-003 independence_group→smics_annual_report_2025；reporting_standard 统一为 CAS。Evidence c_004 角色从 support 改为 context（仅证明年报含该声明，不验证预测）。展示了两年对比数据和 prediction 不可晋级 Fact（G4-1 关键测试案例）。"
-  }
+  },
+  "expected_review_decisions": [
+    {
+      "target_id": "expected_fc_c_001",
+      "action": "APPROVE",
+      "revised_payload": null
+    },
+    {
+      "target_id": "expected_fc_c_002",
+      "action": "REJECT",
+      "revised_payload": null
+    },
+    {
+      "target_id": "expected_cl_c_002",
+      "action": "REVISE_AND_APPROVE",
+      "revised_payload": {
+        "revised_statement": "公司预计营收增长将高于同行业平均水平（prediction，precision=unknown，不可晋级Fact）",
+        "revised_claim_type": "prediction",
+        "revision_rationale": "G4-1：prediction 不可晋级 Fact，需补充精确时间范围后重新评估"
+      }
+    }
+  ]
 }

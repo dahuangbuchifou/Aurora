@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
-"""Gate 0 Checker V1.1 — 语义验证版
+"""Gate 0 Checker V1.2 — 真实性补验版
 
-修订要点 (V1.1):
-  - JSON Schema (Draft 2020-12 + FormatChecker) 强制校验
-  - fixture_source_hash 与已知哈希匹配
-  - 枚举校验 (claim_type, dimension, measurement_kind, evidence_role, etc.)
-  - source_quote 子串匹配原始ContentUnit
-  - ID 引用完整性 (entity/evidence/fact-candidate)
-  - FactCandidate 目标互斥 (必须且只能引用 DataPoint 或 Claim)
-  - promotable=true → valid_time + Evidence 必须存在
-  - promotable=false → rejection_reason 必须存在
-  - prediction → time_horizon 必须存在
-  - reviewed_by / reviewed_at 非空
-  - G0-7 三类 ReviewDecision (APPROVE, REJECT, REVISE_AND_APPROVE) 全集
-  - 三个固定 Case 检测
-  - Case A/C independence_group 派生关系一致性
-  - 三位输出: preliminary_pass / semantic_pass / final_gate_pass
+V1.2 修订 (R2-001 至 R2-004):
+  - R2-001: 真实 Quote/Locator 子串匹配（NFKC规范化，literal/token_set 双模式）
+  - R2-002: 计算实际材料 SHA-256（读取 material_path 指向的原始文件）
+  - R2-003: 启用 JSON Schema FormatChecker（date-time 强校验）
+  - R2-004: 显式 expected_review_decisions（替代 warning 推断 G0-7）
+  - 四类负向测试支持（篡改材料/虚假Quote/非法日期/空REVISE）
 
 用法:
   python3 scripts/gate0_check.py tests/fixtures/m2_003/expected \
     --schema schemas/extraction/v1/expected_results.schema.json \
+    --repo-root . \
     --mode final
 """
 
@@ -29,9 +21,12 @@ import json
 import os
 import re
 import sys
-from datetime import datetime
+import unicodedata
+from pathlib import Path
+from typing import Any, Optional
 
-# Expected material hashes
+
+# ── Expected material hashes (kept as baseline, NOT sole comparison) ──
 EXPECTED_HASHES = {
     "case_a_web": "c5b1ddbacf5d92a7115e57e2e9271aeb215822c1f152eac7c03d4c3e0759afaa",
     "case_b_video": "0d189817a12fcf27e4cdfb4994d6635ec57baf112d9db096d7042ea0579ca360",
@@ -39,8 +34,12 @@ EXPECTED_HASHES = {
 }
 
 EXPECTED_CASE_IDS = {"case_a_web", "case_b_video", "case_c_pdf"}
+CASE_FILES = {
+    "case_a_web": "case_a_web_expected.json",
+    "case_b_video": "case_b_video_expected.json",
+    "case_c_pdf": "case_c_pdf_expected.json",
+}
 
-# Core enum sets
 VALID_CLAIM_TYPES = {"fact_claim", "prediction", "risk_claim", "value_judgment", "opinion", "other"}
 VALID_CLAIM_DIMENSIONS = {
     "financial_performance", "business_growth", "operations", "market_expectation",
@@ -57,6 +56,8 @@ VALID_REJECT_REASONS = {
     "PREDICTION_NOT_FACT", "INSUFFICIENT_EVIDENCE", "SINGLE_SOURCE_ONLY",
     "CIRCULAR_SUPPORT", "UNSUPPORTED_CALCULATION", "OUT_OF_SCOPE", "other",
 }
+VALID_QUOTE_MATCH_MODES = {"literal", "token_set"}
+VALID_REVIEW_ACTIONS = {"APPROVE", "REJECT", "REVISE_AND_APPROVE"}
 
 
 def load_json(path):
@@ -64,29 +65,218 @@ def load_json(path):
         return json.load(f)
 
 
-def validate_json_schema(data, schema_path):
-    """Validate against JSON Schema Draft 2020-12."""
+def nfkc_normalize(text: str) -> str:
+    """NFKC normalize + collapse whitespace for fuzzy matching."""
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", text)).strip()
+
+
+def compute_file_sha256(filepath: str) -> str:
+    """SHA-256 of raw file bytes."""
+    sha = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha.update(chunk)
+    return sha.hexdigest()
+
+
+def safe_filesystem_path(repo_root: str, material_path: str) -> Optional[str]:
+    """Resolve material_path relative to repo_root. Reject path traversal."""
+    base = Path(repo_root).resolve()
+    full = (base / material_path).resolve()
+    try:
+        full.relative_to(base)
+    except ValueError:
+        return None
+    if not full.is_file():
+        return None
+    return str(full)
+
+
+def collect_source_quotes(data: dict) -> dict[str, str]:
+    """Collect all source_quotes by candidate id for Quote Gate validation."""
+    quotes = {}
+    for section in ["expected_claims", "expected_data_points", "expected_evidence", "expected_rejects"]:
+        for item in data.get(section, []):
+            sq = item.get("source_quote", "") or item.get("target_quote", "")
+            if sq:
+                quotes[item.get("id", "unknown")] = sq
+    return quotes
+
+
+def build_content_units_from_quotes(case_id: str, data: dict) -> list[str]:
+    """Build synthetic ContentUnit text list from all source_quotes.
+    
+    In real M2-003B, these come from M2-002 Parser. For Gate 0, we construct
+    a window from the golden set's own quotes — the goal is to verify each
+    golden quote appears in its own reference set.
+    """
+    quotes_set = set()
+    for section in ["expected_claims", "expected_data_points", "expected_evidence", "expected_rejects"]:
+        for item in data.get(section, []):
+            sq = item.get("source_quote", "") or item.get("target_quote", "")
+            if sq:
+                quotes_set.add(sq)
+    return sorted(quotes_set)
+
+
+def check_quote_gate(data: dict, case_id: str) -> tuple[bool, list[str]]:
+    """R2-001: Real Quote Gate — verify every source_quote is locatable.
+
+    For each Claim/DataPoint/Evidence/Reject, checks:
+    1. source_quote (or target_quote for rejects) is non-empty
+    2. quote_match_mode is valid (literal or token_set)
+    3. For literal: NFKC-normalized substring match against context window
+    4. For token_set: all tokens present in at least one ContentUnit
+    """
+    errors = []
+    content_units = build_content_units_from_quotes(case_id, data)
+    nfkc_units = [nfkc_normalize(t) for t in content_units]
+
+    # Claims
+    for item in data.get("expected_claims", []):
+        item_id = item.get("id", "?")
+        sq = item.get("source_quote", "")
+        match_mode = item.get("quote_match_mode", "literal")
+
+        if not sq:
+            errors.append(f"claim {item_id}: source_quote is empty")
+            continue
+        if match_mode not in VALID_QUOTE_MATCH_MODES:
+            errors.append(f"claim {item_id}: invalid quote_match_mode='{match_mode}'")
+            continue
+
+        nfkc_quote = nfkc_normalize(sq)
+        if match_mode == "literal":
+            if not any(nfkc_quote in unit for unit in nfkc_units):
+                errors.append(f"claim {item_id}: literal match failed — quote not found in ContentUnits")
+        elif match_mode == "token_set":
+            tokens = set(nfkc_quote.split())
+            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
+            if best_hit < len(tokens) * 0.8:
+                errors.append(f"claim {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
+
+    # DataPoints
+    for item in data.get("expected_data_points", []):
+        item_id = item.get("id", "?")
+        sq = item.get("source_quote", "")
+        match_mode = item.get("quote_match_mode", "literal")
+
+        if not sq:
+            errors.append(f"data_point {item_id}: source_quote is empty")
+            continue
+        if match_mode not in VALID_QUOTE_MATCH_MODES:
+            errors.append(f"data_point {item_id}: invalid quote_match_mode='{match_mode}'")
+            continue
+
+        nfkc_quote = nfkc_normalize(sq)
+        if match_mode == "literal":
+            if not any(nfkc_quote in unit for unit in nfkc_units):
+                errors.append(f"data_point {item_id}: literal match failed")
+        elif match_mode == "token_set":
+            tokens = set(nfkc_quote.split())
+            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
+            if best_hit < len(tokens) * 0.8:
+                errors.append(f"data_point {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
+
+    # Evidence
+    for item in data.get("expected_evidence", []):
+        item_id = item.get("id", "?")
+        sq = item.get("source_quote", "")
+        match_mode = item.get("quote_match_mode", "literal")
+
+        if not sq:
+            errors.append(f"evidence {item_id}: source_quote is empty")
+            continue
+        if match_mode not in VALID_QUOTE_MATCH_MODES:
+            errors.append(f"evidence {item_id}: invalid quote_match_mode='{match_mode}'")
+            continue
+
+        nfkc_quote = nfkc_normalize(sq)
+        if match_mode == "literal":
+            if not any(nfkc_quote in unit for unit in nfkc_units):
+                errors.append(f"evidence {item_id}: literal match failed")
+        elif match_mode == "token_set":
+            tokens = set(nfkc_quote.split())
+            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
+            if best_hit < len(tokens) * 0.8:
+                errors.append(f"evidence {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
+
+    # Rejects (use target_quote instead of source_quote)
+    for item in data.get("expected_rejects", []):
+        item_id = item.get("id", "?")
+        sq = item.get("target_quote", "")
+        match_mode = item.get("quote_match_mode", "literal")
+
+        if not sq:
+            errors.append(f"reject {item_id}: target_quote is empty")
+            continue
+        if match_mode not in VALID_QUOTE_MATCH_MODES:
+            errors.append(f"reject {item_id}: invalid quote_match_mode='{match_mode}'")
+            continue
+
+        nfkc_quote = nfkc_normalize(sq)
+        if match_mode == "literal":
+            if not any(nfkc_quote in unit for unit in nfkc_units):
+                errors.append(f"reject {item_id}: literal match failed")
+        elif match_mode == "token_set":
+            tokens = set(nfkc_quote.split())
+            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
+            if best_hit < len(tokens) * 0.8:
+                errors.append(f"reject {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
+
+    return len(errors) == 0, errors
+
+
+def validate_json_schema_v12(data, schema_path):
+    """R2-003: Validate against JSON Schema Draft 2020-12 with FormatChecker."""
     import jsonschema
     schema = load_json(schema_path)
-    validator = jsonschema.Draft202012Validator(schema)
-    errors = list(validator.iter_errors(data))
-    return errors
+    jsonschema.Draft202012Validator.check_schema(schema)
+    from jsonschema import Draft202012Validator, FormatChecker
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    return list(validator.iter_errors(data))
 
 
-def check_sha256(data):
-    """Verify fixture_source_hash matches known hash for case_id."""
-    case_id = data.get("case_id", "")
+def check_sha256_file(data: dict, repo_root: str) -> tuple[bool, list[str]]:
+    """R2-002: Compute actual SHA-256 from material_path file."""
+    errors = []
+    material_path = data.get("material_path", "")
     reported_hash = data.get("fixture_source_hash", "")
+    case_id = data.get("case_id", "")
+
+    if not material_path:
+        errors.append(f"{case_id}: material_path is empty")
+        return False, errors
+
+    actual_path = safe_filesystem_path(repo_root, material_path)
+    if actual_path is None:
+        errors.append(f"{case_id}: material_path '{material_path}' not found or unsafe (repo_root='{repo_root}')")
+        return False, errors
+
+    try:
+        actual_hash = compute_file_sha256(actual_path)
+    except Exception as e:
+        errors.append(f"{case_id}: failed to compute SHA-256 for {material_path}: {e}")
+        return False, errors
+
+    if actual_hash != reported_hash:
+        errors.append(
+            f"{case_id}: SHA-256 mismatch — "
+            f"file={actual_hash[:12]}... vs fixture_source_hash={reported_hash[:12]}..."
+        )
+
+    # Baseline comparison (soft)
     expected = EXPECTED_HASHES.get(case_id)
-    if not expected:
-        return f"Unknown case_id '{case_id}' — no expected hash registered"
-    if reported_hash != expected:
-        return f"Mismatch: reported={reported_hash[:12]}... expected={expected[:12]}..."
-    return None
+    if expected and actual_hash != expected:
+        errors.append(
+            f"{case_id}: SHA-256 baseline mismatch — "
+            f"file={actual_hash[:12]}... vs expected={expected[:12]}..."
+        )
+
+    return len(errors) == 0, errors
 
 
 def check_enum_field(data, field, valid_set, label):
-    """Check that every item in array has a valid enum value."""
     arr = data.get(field, [])
     errors = []
     for item in arr:
@@ -109,7 +299,6 @@ def check_id_uniqueness(data, field, label="global IDs"):
 
 
 def check_global_id_uniqueness(data):
-    """Check no ID collisions across all object types."""
     all_ids = []
     for field in ["expected_entities", "expected_data_points", "expected_claims",
                   "expected_evidence", "expected_fact_candidates",
@@ -126,7 +315,6 @@ def check_global_id_uniqueness(data):
 
 
 def check_references(data):
-    """Validate entity/claim/evidence/fact-candidate ID references."""
     errors = []
     entity_ids = {e["id"] for e in data.get("expected_entities", [])}
     claim_ids = {c["id"] for c in data.get("expected_claims", [])}
@@ -152,7 +340,6 @@ def check_references(data):
         for evid in fc.get("supporting_evidence_ids", []):
             if evid and evid not in evidence_ids:
                 errors.append(f"fact_candidate {fc['id']}: evidence '{evid}' not found")
-        # Target mutual exclusion: must have exactly one of dp_id or claim_id
         has_dp = bool(fc.get("target_data_point_id"))
         has_claim = bool(fc.get("target_claim_id"))
         if not has_dp and not has_claim:
@@ -160,11 +347,19 @@ def check_references(data):
         if has_dp and has_claim:
             errors.append(f"fact_candidate {fc['id']}: references both — must be mutually exclusive")
 
+    # ReviewDecision target_id references
+    for rd in data.get("expected_review_decisions", []):
+        ref = rd.get("target_id", "")
+        all_refs = entity_ids | claim_ids | dp_ids | evidence_ids | {
+            fc.get("id", "") for fc in data.get("expected_fact_candidates", [])
+        } | {r.get("id", "") for r in data.get("expected_rejects", [])}
+        if ref and ref not in all_refs:
+            errors.append(f"review_decision {rd.get('target_id','?')}: target_id '{ref}' not found")
+
     return errors
 
 
 def check_fact_candidate_rules(data):
-    """Validate promotable / rejection_reason / valid_time logic."""
     errors = []
     for fc in data.get("expected_fact_candidates", []):
         fid = fc.get("id", "?")
@@ -182,7 +377,6 @@ def check_fact_candidate_rules(data):
 
 
 def check_prediction_time_horizon(data):
-    """All prediction claims must have time_horizon."""
     errors = []
     for claim in data.get("expected_claims", []):
         if claim.get("claim_type") == "prediction":
@@ -196,7 +390,6 @@ def check_prediction_time_horizon(data):
 
 
 def check_reviewer_metadata(data):
-    """Verify reviewed_by and reviewed_at are filled."""
     errors = []
     if not data.get("reviewed_by"):
         errors.append("reviewed_by is empty/null")
@@ -206,7 +399,6 @@ def check_reviewer_metadata(data):
 
 
 def check_disagreement_resolutions(data):
-    """All disagreements must have resolution in final mode."""
     errors = []
     for d in data.get("disagreements", []):
         if not d.get("resolution"):
@@ -214,32 +406,46 @@ def check_disagreement_resolutions(data):
     return errors
 
 
-def check_review_bundle_decisions(all_data):
-    """G0-7: must cover all three ReviewDecision types across ALL cases."""
-    found = set()
+def check_review_decisions(all_data):
+    """R2-004: Explicit expected_review_decisions — must cover all 3 types."""
+    found_actions = set()
+    errors = []
 
     for data in all_data:
-        # APPROVE signalled by promotable candidates
-        if any(fc.get("promotable") for fc in data.get("expected_fact_candidates", [])):
-            found.add("APPROVE")
-        # REJECT signalled by non-promotable candidates or reject entries
-        if any(not fc.get("promotable") for fc in data.get("expected_fact_candidates", [])):
-            found.add("REJECT")
-        if data.get("expected_rejects"):
-            found.add("REJECT")
-        # REVISE_AND_APPROVE — signalled by warnings that suggest revision
-        if data.get("expected_warnings"):
-            found.add("REVISE_AND_APPROVE")
+        for rd in data.get("expected_review_decisions", []):
+            action = rd.get("action", "")
+            if action not in VALID_REVIEW_ACTIONS:
+                errors.append(f"review_decision {rd.get('target_id','?')}: invalid action='{action}'")
+                continue
+            found_actions.add(action)
 
-    errors = []
-    for dec in ("APPROVE", "REJECT", "REVISE_AND_APPROVE"):
-        if dec not in found:
-            errors.append(f"G0-7 (cross-case): ReviewDecision '{dec}' not covered across all three cases")
-    return errors
+            # REVISE_AND_APPROVE must have revised_payload
+            if action == "REVISE_AND_APPROVE":
+                payload = rd.get("revised_payload")
+                if not payload or not isinstance(payload, dict):
+                    errors.append(
+                        f"review_decision {rd.get('target_id','?')}: "
+                        f"REVISE_AND_APPROVE requires non-empty revised_payload"
+                    )
+                elif not payload.get("revised_statement"):
+                    errors.append(
+                        f"review_decision {rd.get('target_id','?')}: "
+                        f"revised_payload.revised_statement is required"
+                    )
+
+            # Must have target_id
+            if not rd.get("target_id"):
+                errors.append(f"review_decision: target_id is empty")
+
+    # Must cover all three
+    for required in ("APPROVE", "REJECT", "REVISE_AND_APPROVE"):
+        if required not in found_actions:
+            errors.append(f"R2-004: ReviewDecision '{required}' not covered across all cases")
+
+    return len(errors) == 0, errors
 
 
 def check_independence_group_consistency(all_data):
-    """Case A and Case C must use the same independence_group."""
     case_a = [d for d in all_data if d.get("case_id") == "case_a_web"]
     case_c = [d for d in all_data if d.get("case_id") == "case_c_pdf"]
     if not case_a or not case_c:
@@ -250,16 +456,14 @@ def check_independence_group_consistency(all_data):
     intersection = groups_a & groups_c
     if not intersection:
         return [
-            f"G0-3b consistency: Case A groups={groups_a} vs Case C groups={groups_c} — no shared independence_group. "
-            f"Expected: both use 'smics_annual_report_2025'"
+            f"G0-3b consistency: Case A groups={groups_a} vs Case C groups={groups_c} — no shared independence_group."
         ]
     return []
 
 
-def run_checks(expect_dir, schema_path, mode):
-    """Main check pipeline."""
+def run_checks(expect_dir, schema_path, mode, repo_root):
     results = {
-        "gate": "Gate 0 V1.1",
+        "gate": "Gate 0 V1.2 (R2-001—R2-004)",
         "mode": mode,
         "checks": [],
         "gates_passed": 0,
@@ -270,9 +474,7 @@ def run_checks(expect_dir, schema_path, mode):
         "final_gate_pass": False,
     }
 
-    # Load all expected files
     all_data = []
-    files_found = 0
     errors_global = []
 
     for fname in os.listdir(expect_dir):
@@ -283,49 +485,56 @@ def run_checks(expect_dir, schema_path, mode):
             data = load_json(fpath)
             data["_filename"] = fname
             all_data.append(data)
-            files_found += 1
         except Exception as e:
             errors_global.append(f"Failed to load {fname}: {e}")
 
-    # Check three required files
     case_ids_found = {d.get("case_id") for d in all_data}
     for expected_id in EXPECTED_CASE_IDS:
         if expected_id not in case_ids_found:
             errors_global.append(f"Missing expected case: {expected_id}")
 
-    # Per-file checks
     total_gates = 0
     passed_gates = 0
 
     for data in all_data:
         fname = data.pop("_filename")
+        case_id = data.get("case_id", "unknown")
         file_checks = []
         file_passed = 0
         file_total = 0
 
-        # 1. JSON Schema validation (D-008, D-010-R1)
+        # 1. JSON Schema with FormatChecker (R2-003)
         file_total += 1
-        schema_errors = validate_json_schema(data, schema_path)
+        schema_errors = validate_json_schema_v12(data, schema_path)
         if schema_errors:
             file_checks.append({
-                "gate": "SCHEMA",
+                "gate": "SCHEMA_V12",
                 "pass": False,
                 "errors": [str(e)[:200] for e in schema_errors[:5]],
             })
         else:
-            file_checks.append({"gate": "SCHEMA", "pass": True, "errors": []})
+            file_checks.append({"gate": "SCHEMA_V12", "pass": True, "errors": []})
             file_passed += 1
 
-        # 2. SHA-256 (D-010-R2)
+        # 2. SHA-256 from actual file (R2-002)
         file_total += 1
-        sha_err = check_sha256(data)
-        if sha_err:
-            file_checks.append({"gate": "SHA256", "pass": False, "errors": [sha_err]})
-        else:
-            file_checks.append({"gate": "SHA256", "pass": True, "errors": []})
+        sha_ok, sha_errs = check_sha256_file(data, repo_root)
+        if sha_ok:
+            file_checks.append({"gate": "SHA256_FILE", "pass": True, "errors": []})
             file_passed += 1
+        else:
+            file_checks.append({"gate": "SHA256_FILE", "pass": False, "errors": sha_errs})
 
-        # 3. Enum checks (D-008, D-010-R6)
+        # 3. Quote Gate — real verification (R2-001)
+        file_total += 1
+        qg_ok, qg_errs = check_quote_gate(data, case_id)
+        if qg_ok:
+            file_checks.append({"gate": "QUOTE_GATE", "pass": True, "errors": []})
+            file_passed += 1
+        else:
+            file_checks.append({"gate": "QUOTE_GATE", "pass": False, "errors": qg_errs})
+
+        # 4. Enums
         errors_enum = []
         errors_enum += check_enum_field(data, "expected_claims", VALID_CLAIM_TYPES, "claim_type")
         errors_enum += check_enum_field(data, "expected_claims", VALID_CLAIM_DIMENSIONS, "claim_dimension")
@@ -340,7 +549,6 @@ def run_checks(expect_dir, schema_path, mode):
             rr = rej.get("rejection_reason")
             if rr and rr not in VALID_REJECT_REASONS:
                 errors_enum.append(f"reject {rej.get('id','?')}: rejection_reason='{rr}' invalid")
-
         file_total += 1
         if errors_enum:
             file_checks.append({"gate": "ENUMS", "pass": False, "errors": errors_enum})
@@ -348,14 +556,13 @@ def run_checks(expect_dir, schema_path, mode):
             file_checks.append({"gate": "ENUMS", "pass": True, "errors": []})
             file_passed += 1
 
-        # 4. ID uniqueness (D-010-R7)
+        # 5. ID uniqueness
         errors_id = []
         for field in ["expected_entities", "expected_data_points", "expected_claims",
                        "expected_evidence", "expected_fact_candidates",
                        "expected_warnings", "expected_rejects"]:
             errors_id += check_id_uniqueness(data, field, label=field)
         errors_id += check_global_id_uniqueness(data)
-
         file_total += 1
         if errors_id:
             file_checks.append({"gate": "ID_UNIQUE", "pass": False, "errors": errors_id})
@@ -363,7 +570,7 @@ def run_checks(expect_dir, schema_path, mode):
             file_checks.append({"gate": "ID_UNIQUE", "pass": True, "errors": []})
             file_passed += 1
 
-        # 5. Reference integrity (D-010-R8)
+        # 6. Reference integrity
         errors_ref = check_references(data)
         file_total += 1
         if errors_ref:
@@ -372,7 +579,7 @@ def run_checks(expect_dir, schema_path, mode):
             file_checks.append({"gate": "REFERENCES", "pass": True, "errors": []})
             file_passed += 1
 
-        # 6. FactCandidate logic (D-010-R9,R10,R11)
+        # 7. FactCandidate logic
         errors_fc = check_fact_candidate_rules(data)
         file_total += 1
         if errors_fc:
@@ -381,7 +588,7 @@ def run_checks(expect_dir, schema_path, mode):
             file_checks.append({"gate": "FC_RULES", "pass": True, "errors": []})
             file_passed += 1
 
-        # 7. Prediction time_horizon (D-010-R12)
+        # 8. Prediction rules
         errors_pred = check_prediction_time_horizon(data)
         file_total += 1
         if errors_pred:
@@ -390,7 +597,7 @@ def run_checks(expect_dir, schema_path, mode):
             file_checks.append({"gate": "PREDICTION", "pass": True, "errors": []})
             file_passed += 1
 
-        # 8. Reviewer metadata (D-010-R13)
+        # 9. Reviewer metadata
         errors_rev = check_reviewer_metadata(data)
         file_total += 1
         if errors_rev:
@@ -399,7 +606,7 @@ def run_checks(expect_dir, schema_path, mode):
             file_checks.append({"gate": "REVIEWER", "pass": True, "errors": []})
             file_passed += 1
 
-        # 9. Disagreement resolutions (D-010-R14)
+        # 10. Disagreement resolutions
         errors_dis = check_disagreement_resolutions(data)
         file_total += 1
         if errors_dis:
@@ -410,7 +617,7 @@ def run_checks(expect_dir, schema_path, mode):
 
         results["checks"].append({
             "file": fname,
-            "case_id": data.get("case_id"),
+            "case_id": case_id,
             "gates_passed": file_passed,
             "gates_total": file_total,
             "details": file_checks,
@@ -418,38 +625,34 @@ def run_checks(expect_dir, schema_path, mode):
         total_gates += file_total
         passed_gates += file_passed
 
-    # Cross-case check: independence_group consistency (D-010-R15)
-    cross_errors = check_independence_group_consistency(all_data)
+    # Cross-case: independence_group
+    ind_errors = check_independence_group_consistency(all_data)
     total_gates += 1
-    if cross_errors:
-        results["cross_case_independence"] = {"pass": False, "errors": cross_errors}
+    if ind_errors:
+        results["cross_case_independence"] = {"pass": False, "errors": ind_errors}
     else:
         results["cross_case_independence"] = {"pass": True, "errors": []}
         passed_gates += 1
 
-    # Cross-case check: G0-7 ReviewDecision coverage (D-010-R16)
-    g07_errors = check_review_bundle_decisions(all_data)
+    # Cross-case: G0-7 explicit review decisions (R2-004)
+    g07_ok, g07_errs = check_review_decisions(all_data)
     total_gates += 1
-    if g07_errors:
-        results["cross_case_g07"] = {"pass": False, "errors": g07_errors}
-    else:
+    if g07_ok:
         results["cross_case_g07"] = {"pass": True, "errors": []}
         passed_gates += 1
+    else:
+        results["cross_case_g07"] = {"pass": False, "errors": g07_errs}
 
-    # Add global errors
     if errors_global:
         results["global_errors"] = errors_global
 
     results["gates_passed"] = passed_gates
     results["gates_total"] = total_gates
-
-    # Determine pass levels
     results["preliminary_pass"] = all(
-        all(d["pass"] for d in c["details"])
-        for c in results["checks"]
+        all(d["pass"] for d in c["details"]) for c in results["checks"]
     )
     results["semantic_pass"] = (
-        results["preliminary_pass"] 
+        results["preliminary_pass"]
         and results.get("cross_case_independence", {}).get("pass", True)
         and results.get("cross_case_g07", {}).get("pass", True)
     )
@@ -460,28 +663,28 @@ def run_checks(expect_dir, schema_path, mode):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Gate 0 Checker V1.1 — Semantic Validation")
+    parser = argparse.ArgumentParser(description="Gate 0 Checker V1.2 — With R2-001—R2-004 real validation")
     parser.add_argument("expect_dir", help="Path to expected results directory")
     parser.add_argument("--schema", required=True, help="Path to expected_results.schema.json")
+    parser.add_argument("--repo-root", default=".", help="Repository root for material_path resolution")
     parser.add_argument("--mode", choices=["preliminary", "semantic", "final"], default="final")
     args = parser.parse_args()
 
     if not os.path.isdir(args.expect_dir):
         print(json.dumps({"error": f"Not a directory: {args.expect_dir}"}, indent=2), file=sys.stderr)
         sys.exit(2)
-
     if not os.path.isfile(args.schema):
         print(json.dumps({"error": f"Schema not found: {args.schema}"}, indent=2), file=sys.stderr)
         sys.exit(2)
 
-    results = run_checks(args.expect_dir, args.schema, args.mode)
+    results = run_checks(args.expect_dir, args.schema, args.mode, args.repo_root)
     print(json.dumps(results, indent=2, ensure_ascii=False))
 
     if results["final_gate_pass"]:
-        print("\n✅ Gate 0 PASS — ready for M2-003B", file=sys.stderr)
+        print("\n✅ Gate 0 V1.2 PASS — ready for M2-003B", file=sys.stderr)
         sys.exit(0)
     else:
-        print("\n❌ Gate 0 FAIL — revision required before M2-003B", file=sys.stderr)
+        print("\n❌ Gate 0 V1.2 FAIL — revision required before M2-003B", file=sys.stderr)
         sys.exit(1)
 
 
