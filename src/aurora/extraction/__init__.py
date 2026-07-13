@@ -1,25 +1,68 @@
-"""Aurora Extraction Engine — ContentUnit → Candidates vertical slice."""
+"""Aurora Extraction Pipeline.
 
-from .candidates import Candidate, ClaimCandidate, DataPointCandidate, EntityCandidate, EvidenceCandidate, FactCandidate
-from .context_window import ContentUnitRef, ContextWindow
-from .envelope import ExtractionEnvelope
-from .quote_gate import QuoteGate, QuoteGateFailure
-from .review_bundle import ReviewBundle
-from .review_decision import ReviewDecisionDecision, ReviewDecision
+V2 components:
+- ExtractionRequest: minimal contract for triggering extraction
+- ContextWindow: deterministic ordered ContentUnit snapshot with V2 JSON hash
+- Candidates: lightweight DTOs (Entity, DataPoint, Claim, Evidence, Fact)
+- FixtureProvider: reads from independent provider_responses fixtures
+- ExtractionEnvelope: container for extraction results + provider metadata
+- QuoteGate: validates source_quotes with strict source_unit_id enforcement
+- ValidationFinding: error/warning records for gate validation
+- ReviewBundle: immutable audit trail with canonicalized JSON hash
+"""
+
+from aurora.extraction.candidates import (
+    Candidate,
+    ClaimCandidate,
+    DataPointCandidate,
+    EntityCandidate,
+    EvidenceCandidate,
+    FactCandidate,
+)
+from aurora.extraction.context_window import (
+    CANDIDATE_TYPE_ORDER,
+    ContentUnitRef,
+    ContextWindow,
+    ContextWindowError,
+)
+from aurora.extraction.envelope import ExtractionEnvelope, ProviderMetadata
+from aurora.extraction.findings import FindingSeverity, ValidationFinding
+from aurora.extraction.providers.base import ExtractionProvider, ProviderResponse
+from aurora.extraction.providers.fixture_provider import FixtureProvider
+from aurora.extraction.quote_gate import QuoteGate, QuoteGateError, QuoteGateReport
+from aurora.extraction.request import ExtractionRequest
+from aurora.extraction.review_bundle import BUNDLE_SCHEMA_VERSION, ReviewBundle
 
 __all__ = [
-    "Candidate",
-    "ClaimCandidate",
-    "DataPointCandidate",
-    "EntityCandidate",
-    "EvidenceCandidate",
-    "FactCandidate",
+    # Request
+    "ExtractionRequest",
+    # Context
     "ContentUnitRef",
     "ContextWindow",
+    "ContextWindowError",
+    "CANDIDATE_TYPE_ORDER",
+    # Candidates
+    "Candidate",
+    "EntityCandidate",
+    "DataPointCandidate",
+    "ClaimCandidate",
+    "EvidenceCandidate",
+    "FactCandidate",
+    # Provider
+    "ExtractionProvider",
+    "ProviderResponse",
+    "FixtureProvider",
+    # Envelope
     "ExtractionEnvelope",
+    "ProviderMetadata",
+    # Quote Gate
     "QuoteGate",
-    "QuoteGateFailure",
+    "QuoteGateReport",
+    "QuoteGateError",
+    # Validation
+    "ValidationFinding",
+    "FindingSeverity",
+    # Review
     "ReviewBundle",
-    "ReviewDecision",
-    "ReviewDecisionDecision",
+    "BUNDLE_SCHEMA_VERSION",
 ]

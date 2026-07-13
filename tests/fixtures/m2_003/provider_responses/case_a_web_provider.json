@@ -1,0 +1,151 @@
+{
+  "provider_metadata": {
+    "name": "fixture",
+    "version": "2.0",
+    "deterministic_mode": true,
+    "case_id": "case_a_web",
+    "extra": {
+      "description": "独立 Provider Fixture for Case A — 不依赖 expected_results",
+      "fixture_version": "1.0",
+      "created_at": "2026-07-13T11:00:00+08:00"
+    }
+  },
+  "candidates": [
+    {
+      "candidate_id": "fc_cand_case_a_001",
+      "candidate_type": "entity",
+      "canonical_name": "中芯国际",
+      "entity_type": "organization",
+      "confidence": 0.95
+    },
+    {
+      "candidate_id": "fc_cand_case_a_002",
+      "candidate_type": "data_point",
+      "metric": "营业收入",
+      "value": 673.23,
+      "unit": "亿元",
+      "entity_id": "",
+      "period": "2025",
+      "measurement_context": {
+        "measurement_kind": "monetary",
+        "currency": "CNY",
+        "scale_multiplier": 100000000,
+        "reporting_standard": "CAS",
+        "attribution_scope": "group_total",
+        "consolidation_scope": "consolidated"
+      },
+      "source_quote": "营业收入 673.23亿元",
+      "quote_locator_hint": "table#metrics tr:nth-child(2)",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_a_004"
+    },
+    {
+      "candidate_id": "fc_cand_case_a_003",
+      "candidate_type": "data_point",
+      "metric": "产能利用率",
+      "value": 93.5,
+      "unit": "percent",
+      "entity_id": "",
+      "period": "2025",
+      "measurement_context": {
+        "measurement_kind": "percentage",
+        "currency": null,
+        "scale_multiplier": 1,
+        "reporting_standard": null,
+        "attribution_scope": "group_total",
+        "consolidation_scope": "consolidated"
+      },
+      "source_quote": "产能利用率 93.5%",
+      "quote_locator_hint": "table#metrics tr:nth-child(3)",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_a_005"
+    },
+    {
+      "candidate_id": "fc_cand_case_a_004",
+      "candidate_type": "claim",
+      "statement": "公司2025年营业收入保持增长",
+      "claim_type": "fact_claim",
+      "claim_dimension": "business_growth",
+      "claimant_name": "",
+      "asserted_by": "",
+      "confidence": 0.80,
+      "promotable_to_fact": true,
+      "source_quote": "公司2025年营业收入保持增长",
+      "quote_locator_hint": "p",
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_002"
+    },
+    {
+      "candidate_id": "fc_cand_case_a_005",
+      "candidate_type": "claim",
+      "statement": "产能利用率维持较高水平",
+      "claim_type": "fact_claim",
+      "claim_dimension": "operations",
+      "claimant_name": "",
+      "asserted_by": "",
+      "confidence": 0.80,
+      "promotable_to_fact": true,
+      "source_quote": "产能利用率维持较高水平",
+      "quote_locator_hint": "p",
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_002"
+    },
+    {
+      "candidate_id": "fc_cand_case_a_006",
+      "candidate_type": "claim",
+      "statement": "公司将继续推进产能建设",
+      "claim_type": "prediction",
+      "claim_dimension": "business_growth",
+      "claimant_name": "中芯国际管理层",
+      "asserted_by": "中芯国际管理层",
+      "time_horizon": {
+        "start": null,
+        "end": null,
+        "precision": "unknown"
+      },
+      "confidence": 0.60,
+      "promotable_to_fact": false,
+      "source_quote": "管理层表示将继续推进产能建设。",
+      "quote_locator_hint": "blockquote",
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_006"
+    },
+    {
+      "candidate_id": "fc_cand_case_a_007",
+      "candidate_type": "evidence",
+      "evidence_type": "company_filing",
+      "evidence_role": "support",
+      "target_object_id": "fc_cand_case_a_002",
+      "independence_group": "smics_annual_report_2025",
+      "source_quote": "营业收入 673.23亿元",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_a_004"
+    },
+    {
+      "candidate_id": "fc_cand_case_a_008",
+      "candidate_type": "evidence",
+      "evidence_type": "company_filing",
+      "evidence_role": "support",
+      "target_object_id": "fc_cand_case_a_003",
+      "independence_group": "smics_annual_report_2025",
+      "source_quote": "产能利用率 93.5%",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_a_005"
+    },
+    {
+      "candidate_id": "fc_cand_case_a_009",
+      "candidate_type": "fact",
+      "statement": "中芯国际2025年度营业收入为673.23亿元",
+      "promotable": true,
+      "target_data_point_id": "fc_cand_case_a_002",
+      "supporting_evidence_ids": ["fc_cand_case_a_007"],
+      "valid_time": {"period": "2025"},
+      "confidence_rationale": "官方年报披露数据",
+      "source_quote": "营业收入 673.23亿元",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_a_004"
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}

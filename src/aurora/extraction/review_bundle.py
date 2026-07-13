@@ -1,7 +1,11 @@
-"""ReviewBundle — immutable audit trail for extraction runs.
+"""ReviewBundle V2 — immutable audit trail for extraction runs.
 
-Generated once per extraction run. Immutable after creation.
-Human decisions are stored separately in review_decisions.json.
+V2 changes:
+- bundle_sha256 computed via canonicalized JSON (excludes hash field, then computes)
+- Includes validation_findings and context_hashes
+- Fully immutable frozen dataclass
+- Hash covers: run_id, candidates, validation_findings, context_hashes, metadata
+- Same input → same hash; any field change → hash change
 """
 
 from __future__ import annotations
@@ -15,11 +19,14 @@ from uuid import uuid4
 
 from aurora.extraction.candidates import Candidate
 from aurora.extraction.context_window import ContentUnitRef
+from aurora.extraction.findings import ValidationFinding
+
+BUNDLE_SCHEMA_VERSION = "2.0"
 
 
 @dataclass(frozen=True)
 class ExtractionError:
-    """Record of an extraction error with context."""
+    """Record of an extraction error with context (backward-compatible)."""
 
     code: str
     message: str
@@ -27,13 +34,35 @@ class ExtractionError:
     context: dict[str, Any] = field(default_factory=dict)
 
 
+def _candidate_to_serializable(c: Candidate) -> dict[str, Any]:
+    """Serialize a candidate to a JSON-safe dict for hash computation."""
+    if hasattr(c, "model_dump"):
+        return c.model_dump()
+    return dict(c.__dict__)
+
+
+def _finding_to_serializable(f: ValidationFinding) -> dict[str, Any]:
+    return f.to_dict()
+
+
+def _canonical_json(obj: Any) -> bytes:
+    """Produce canonical UTF-8 JSON bytes with sort_keys, compact separators."""
+    return json.dumps(
+        obj,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        default=str,
+    ).encode("utf-8")
+
+
 @dataclass(frozen=True)
 class ReviewBundle:
     """Immutable bundle of extraction results for human review.
 
-    Once created, the SHA-256 hash and all fields are fixed.
-    Human decisions are stored in ReviewDecision objects and
-    matched by (run_id, bundle_sha256).
+    V2: bundle_sha256 is computed from canonicalized JSON of all data fields
+    (excluding the hash itself). Any change to candidates, findings, context,
+    or metadata produces a different hash.
     """
 
     review_bundle_id: str
@@ -45,54 +74,56 @@ class ReviewBundle:
     created_at: datetime
     candidates: tuple[Candidate, ...]
     content_unit_window: tuple[ContentUnitRef, ...]
-    errors: tuple[ExtractionError, ...]
-    schema_version: str = "1.1"
+    validation_findings: tuple[ValidationFinding, ...] = ()
+    context_hashes: dict[str, str] = field(default_factory=dict)
+    errors: tuple[str, ...] = ()
+    schema_version: str = BUNDLE_SCHEMA_VERSION
     case_id: str = ""
+    prompt_version: str = "placeholder"
+    profile_version: str = "placeholder"
+    provider_response_hash: str = ""
     bundle_sha256: str = field(init=False)
 
     def __post_init__(self) -> None:
-        sha = hashlib.sha256()
-        # Include only data-content fields in hash computation (NOT UUIDs)
-        # This ensures deterministic SHA-256 for same extraction results
-        sha.update(self.document_id.encode("utf-8"))
-        sha.update(self.provider_name.encode("utf-8"))
-        sha.update(self.provider_version.encode("utf-8"))
-        sha.update(str(self.deterministic_mode).encode("utf-8"))
-        sha.update(self.schema_version.encode("utf-8"))
-        sha.update(self.case_id.encode("utf-8"))
+        sha = self._compute_hash()
+        object.__setattr__(self, "bundle_sha256", sha)
 
-        # Hash candidates deterministically by converting to sorted JSON
-        # Exclude candidate_id (UUID) for deterministic hash
-        candidate_dicts = []
-        for c in self.candidates:
-            d = self._candidate_to_dict(c)
-            d.pop("candidate_id", None)
-            candidate_dicts.append(d)
-        candidates_json = json.dumps(
-            candidate_dicts,
-            sort_keys=True,
-            ensure_ascii=False,
-            default=str,
-        )
-        sha.update(candidates_json.encode("utf-8"))
+    def _compute_hash(self) -> str:
+        """Compute SHA-256 from canonicalized JSON of all data fields.
 
-        # Hash ContentUnit refs (text + sequence only, exclude unit_id)
-        for unit in self.content_unit_window:
-            sha.update(str(unit.sequence_no).encode("utf-8"))
-            sha.update(unit.text.encode("utf-8"))
+        Excludes bundle_sha256 itself. Includes: run_id, document_id, provider,
+        candidates, validation_findings, context_hashes, content_unit_window,
+        errors, schema_version, case_id, prompt_version, profile_version,
+        provider_response_hash, deterministic_mode.
+        """
+        payload = self._to_hash_dict()
+        return hashlib.sha256(_canonical_json(payload)).hexdigest()
 
-        # Hash errors
-        for err in self.errors:
-            sha.update(err.code.encode("utf-8"))
-            sha.update(err.message.encode("utf-8"))
-            sha.update(err.candidate_id.encode("utf-8"))
-
-        object.__setattr__(self, "bundle_sha256", sha.hexdigest())
-
-    @staticmethod
-    def _candidate_to_dict(candidate: Candidate) -> dict[str, Any]:
-        """Serialize a candidate to a dict for hash computation."""
-        return candidate.model_dump() if hasattr(candidate, "model_dump") else str(candidate)
+    def _to_hash_dict(self) -> dict[str, Any]:
+        """Build the dict used for bundle hash computation."""
+        return {
+            "run_id": self.run_id,
+            "document_id": self.document_id,
+            "provider_name": self.provider_name,
+            "provider_version": self.provider_version,
+            "deterministic_mode": self.deterministic_mode,
+            "schema_version": self.schema_version,
+            "case_id": self.case_id,
+            "prompt_version": self.prompt_version,
+            "profile_version": self.profile_version,
+            "provider_response_hash": self.provider_response_hash,
+            "candidates": [
+                _candidate_to_serializable(c) for c in self.candidates
+            ],
+            "validation_findings": [
+                _finding_to_serializable(f) for f in self.validation_findings
+            ],
+            "context_hashes": dict(sorted(self.context_hashes.items())),
+            "content_unit_ids": sorted(
+                [u.unit_id for u in self.content_unit_window]
+            ),
+            "errors": sorted(self.errors),
+        }
 
     @classmethod
     def create(
@@ -104,14 +135,19 @@ class ReviewBundle:
         deterministic_mode: bool,
         candidates: tuple[Candidate, ...],
         content_unit_window: tuple[ContentUnitRef, ...],
-        errors: tuple[ExtractionError, ...] = (),
-        schema_version: str = "1.1",
+        validation_findings: tuple[ValidationFinding, ...] = (),
+        context_hashes: dict[str, str] | None = None,
+        errors: tuple[str, ...] = (),
+        schema_version: str = BUNDLE_SCHEMA_VERSION,
         case_id: str = "",
+        run_id: str | None = None,
+        prompt_version: str = "placeholder",
+        profile_version: str = "placeholder",
+        provider_response_hash: str = "",
     ) -> "ReviewBundle":
-        """Create a new ReviewBundle with generated IDs."""
         return cls(
             review_bundle_id=f"bundle_{uuid4()}",
-            run_id=f"run_{uuid4()}",
+            run_id=run_id or f"run_{uuid4()}",
             document_id=document_id,
             provider_name=provider_name,
             provider_version=provider_version,
@@ -119,9 +155,14 @@ class ReviewBundle:
             created_at=datetime.now(timezone.utc),
             candidates=candidates,
             content_unit_window=content_unit_window,
+            validation_findings=validation_findings,
+            context_hashes=context_hashes or {},
             errors=errors,
             schema_version=schema_version,
             case_id=case_id,
+            prompt_version=prompt_version,
+            profile_version=profile_version,
+            provider_response_hash=provider_response_hash,
         )
 
     @property
@@ -132,8 +173,52 @@ class ReviewBundle:
     def error_count(self) -> int:
         return len(self.errors)
 
+    @property
+    def accepted_count(self) -> int:
+        """Count of candidates that passed QuoteGate (no error findings)."""
+        failed_ids = {
+            f.candidate_id
+            for f in self.validation_findings
+            if f.is_error() and f.candidate_id
+        }
+        return sum(
+            1
+            for c in self.candidates
+            if getattr(c, "candidate_id", "") not in failed_ids
+        )
+
+    @property
+    def rejected_count(self) -> int:
+        """Count of candidates with validation errors."""
+        return self.candidate_count - self.accepted_count
+
+    @property
+    def accepted_candidate_ids(self) -> tuple[str, ...]:
+        failed_ids = {
+            f.candidate_id
+            for f in self.validation_findings
+            if f.is_error() and f.candidate_id
+        }
+        return tuple(
+            getattr(c, "candidate_id", "")
+            for c in self.candidates
+            if getattr(c, "candidate_id", "") not in failed_ids
+        )
+
+    @property
+    def rejected_candidate_ids(self) -> tuple[str, ...]:
+        failed_ids = {
+            f.candidate_id
+            for f in self.validation_findings
+            if f.is_error() and f.candidate_id
+        }
+        return tuple(
+            getattr(c, "candidate_id", "")
+            for c in self.candidates
+            if getattr(c, "candidate_id", "") in failed_ids
+        )
+
     def to_json_dict(self) -> dict[str, Any]:
-        """Serialize to a JSON-serializable dict."""
         return {
             "review_bundle_id": self.review_bundle_id,
             "run_id": self.run_id,
@@ -145,8 +230,12 @@ class ReviewBundle:
             "schema_version": self.schema_version,
             "case_id": self.case_id,
             "candidate_count": self.candidate_count,
+            "accepted_count": self.accepted_count,
+            "rejected_count": self.rejected_count,
+            "validation_finding_count": len(self.validation_findings),
             "error_count": self.error_count,
             "bundle_sha256": self.bundle_sha256,
+            "context_hashes": self.context_hashes,
         }
 
     def __repr__(self) -> str:
@@ -154,5 +243,7 @@ class ReviewBundle:
             f"ReviewBundle(id={self.review_bundle_id}, "
             f"provider={self.provider_name}, "
             f"candidates={self.candidate_count}, "
+            f"accepted={self.accepted_count}, "
+            f"rejected={self.rejected_count}, "
             f"sha256={self.bundle_sha256[:12]}…)"
         )
