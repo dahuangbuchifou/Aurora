@@ -1,0 +1,88 @@
+{
+  "reviewed_by": "大G",
+  "review_status": "semantic_review_failed",
+  "gate0_status": "not_passed",
+  "m2_003b_status": "blocked",
+  "items": [
+    {
+      "id": "D-001",
+      "case": "case_a_web",
+      "target_id": "expected_cl_a_004",
+      "severity": "BLOCKER",
+      "issue": "代码片段被放入 expected_claims，但 note 明确说明不是事实主张。",
+      "recommended_resolution": "从 expected_claims 删除，移入 expected_rejects。"
+    },
+    {
+      "id": "D-002",
+      "case": "case_a_web",
+      "target_id": "expected_cl_a_003",
+      "severity": "MAJOR",
+      "issue": "未来意图被标为 fact_claim。",
+      "recommended_resolution": "改为 prediction 并设置 unknown time_horizon；或由大黄裁定采用 speech-act fact_claim 双层表达。"
+    },
+    {
+      "id": "D-003",
+      "case": "cross_case_a_c",
+      "target_id": "independence_group",
+      "severity": "BLOCKER",
+      "issue": "A/C 属于同一原始披露，但 independence_group 不同。",
+      "recommended_resolution": "统一为 smics_annual_report_2025。"
+    },
+    {
+      "id": "D-004",
+      "case": "case_b_video",
+      "target_id": "expected_entity_b_001",
+      "severity": "BLOCKER",
+      "issue": "原SRT未出现中芯国际。",
+      "recommended_resolution": "删除该实体，除非存在明确Document元数据并进入提取上下文。"
+    },
+    {
+      "id": "D-005",
+      "case": "case_b_video",
+      "target_id": "expected_ev_b_001 / expected_fc_b_001",
+      "severity": "BLOCKER",
+      "issue": "同一句UP主观点循环支持自身，且FactCandidate被标为可晋级。",
+      "recommended_resolution": "删除真值Evidence或改为仅证明归属的direct_quote；FactCandidate设为不可晋级。"
+    },
+    {
+      "id": "D-006",
+      "case": "case_c_pdf",
+      "target_id": "expected_cl_c_001",
+      "severity": "BLOCKER",
+      "issue": "statement含原文未出现的16.5%人工计算结果。",
+      "recommended_resolution": "删除增长率，或另建有计算链的Calculated DataPoint。"
+    },
+    {
+      "id": "D-007",
+      "case": "case_c_pdf",
+      "target_id": "expected_cl_c_002",
+      "severity": "BLOCKER",
+      "issue": "prediction缺少核心模型要求的time_horizon。",
+      "recommended_resolution": "新增unknown precision的time_horizon并在Schema中条件约束。"
+    },
+    {
+      "id": "D-008",
+      "case": "schema",
+      "target_id": "expected_results.schema.json",
+      "severity": "MAJOR",
+      "issue": "Schema缺少enum、additionalProperties=false、条件约束和严格格式。",
+      "recommended_resolution": "升级Expected Results Schema V1.1。"
+    },
+    {
+      "id": "D-009",
+      "case": "architecture",
+      "target_id": "schema_path",
+      "severity": "MINOR",
+      "issue": "Expected Results属于extraction/QA，不应继续归入ingestion命名空间。",
+      "recommended_resolution": "迁移到schemas/extraction/v1或schemas/qa/m2_003/v1。"
+    },
+    {
+      "id": "D-010",
+      "case": "checker",
+      "target_id": "scripts/gate0_check.py",
+      "severity": "BLOCKER",
+      "issue": "Checker只做弱结构检查，21/21不能证明Gate0通过。",
+      "recommended_resolution": "实现Schema、Hash、Quote、Reference、Reviewer和跨案例规则验证。"
+    }
+  ]
+}
