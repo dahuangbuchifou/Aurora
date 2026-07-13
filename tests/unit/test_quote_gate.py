@@ -1,7 +1,6 @@
-"""Unit tests for QuoteGate — source_quote validation against ContentUnit text."""
+"""Unit tests for QuoteGate V2 — source_unit_id enforcement, token_set, NFKC."""
 
-import unittest.mock
-from unittest.mock import patch
+import pytest
 
 from aurora.core.models.common import SourceLocator
 from aurora.core.models.document import ContentUnit
@@ -9,6 +8,7 @@ from aurora.core.models.enums import ContentUnitType
 from aurora.extraction.candidates import (
     ClaimCandidate,
     DataPointCandidate,
+    EntityCandidate,
     EvidenceCandidate,
     FactCandidate,
 )
@@ -17,22 +17,26 @@ from aurora.extraction.quote_gate import QuoteGate, QuoteGateError, QuoteGateFai
 
 
 def _make_unit(
-    unit_id: str, sequence_no: int, text: str, doc_id: str = "doc_1"
+    unit_id: str,
+    sequence_no: int,
+    text: str,
+    doc_id: str = "doc_1",
+    unit_type: ContentUnitType = ContentUnitType.PARAGRAPH,
 ) -> ContentUnit:
     return ContentUnit(
         id=unit_id,
         document_id=doc_id,
-        unit_type=ContentUnitType.PARAGRAPH,
+        unit_type=unit_type,
         sequence_no=sequence_no,
         text=text,
         locator=SourceLocator(block_no=sequence_no + 1),
     )
 
 
-class TestQuoteGateSubstringMatching:
-    """source_quote must be a substring of at least one ContentUnit.text."""
+class TestQuoteGateLiteralMatching:
+    """V2: literal mode requires quote be a continuous substring within specific source_unit_id."""
 
-    def test_exact_match_passes(self):
+    def test_exact_match_with_source_unit_id_passes(self):
         window = ContextWindow.from_content_units(
             "doc_1",
             [_make_unit("cu_0", 0, "营业收入 673.23亿元")],
@@ -47,16 +51,21 @@ class TestQuoteGateSubstringMatching:
             period="2025",
             measurement_context={"measurement_kind": "monetary"},
             source_quote="营业收入 673.23亿元",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
         )
         report = gate.validate([candidate])
         assert report.all_passed
         assert report.passed_count == 1
         assert report.failed_count == 0
 
-    def test_substring_match_passes(self):
+    def test_substring_match_within_source_unit_passes(self):
         window = ContextWindow.from_content_units(
             "doc_1",
-            [_make_unit("cu_0", 0, "The company reported that 营业收入 673.23亿元 for fiscal year.")],
+            [
+                _make_unit("cu_0", 0, "The company reported that 营业收入 673.23亿元 for fiscal year."),
+                _make_unit("cu_1", 1, "unrelated text"),
+            ],
         )
         gate = QuoteGate(window)
         candidate = DataPointCandidate(
@@ -68,9 +77,37 @@ class TestQuoteGateSubstringMatching:
             period="2025",
             measurement_context={"measurement_kind": "monetary"},
             source_quote="营业收入 673.23亿元",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
         )
         report = gate.validate([candidate])
         assert report.all_passed
+
+    def test_quote_not_in_specific_unit_fails(self):
+        """Quote exists in another unit but not in the specified source_unit_id."""
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [
+                _make_unit("cu_0", 0, "completely different text"),
+                _make_unit("cu_1", 1, "target text here"),
+            ],
+        )
+        gate = QuoteGate(window)
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="revenue",
+            value=100,
+            unit="亿元",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "monetary"},
+            source_quote="target text",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
+        )
+        report = gate.validate([candidate])
+        assert not report.all_passed
+        assert report.failed_count == 1
 
     def test_no_match_fails(self):
         window = ContextWindow.from_content_units(
@@ -87,67 +124,213 @@ class TestQuoteGateSubstringMatching:
             period="2025",
             measurement_context={"measurement_kind": "monetary"},
             source_quote="营业收入 673.23亿元",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
         )
         report = gate.validate([candidate])
         assert not report.all_passed
         assert report.failed_count == 1
         assert len(report.failures) == 1
-        assert report.failures[0].candidate_id == "dp_1"
 
-    def test_candidate_without_source_quote_passes(self):
-        """Candidates without source_quote are not checked (e.g., entities)."""
-        from aurora.extraction.candidates import EntityCandidate
 
+class TestQuoteGateSourceUnitIdEnforcement:
+    """V2: Must reject missing units, wrong-document units, empty source_unit_id."""
+
+    def test_missing_source_unit_id_fails(self):
         window = ContextWindow.from_content_units(
             "doc_1",
-            [_make_unit("cu_0", 0, "中芯国际")],
+            [_make_unit("cu_0", 0, "hello")],
         )
         gate = QuoteGate(window)
-        candidate = EntityCandidate(
-            id="e1",
-            entity_type="organization",
-            canonical_name="中芯国际",
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="test",
+            value=1,
+            unit="x",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "count"},
+            source_quote="hello",
+            source_unit_id="",
+            quote_match_mode="literal",
+        )
+        report = gate.validate([candidate])
+        assert not report.all_passed
+        assert any("empty source_unit_id" in f.message.lower() for f in report.findings)
+
+    def test_unit_not_in_window_fails(self):
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [_make_unit("cu_0", 0, "hello")],
+        )
+        gate = QuoteGate(window)
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="test",
+            value=1,
+            unit="x",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "count"},
+            source_quote="hello",
+            source_unit_id="cu_nonexistent",
+            quote_match_mode="literal",
+        )
+        report = gate.validate([candidate])
+        assert not report.all_passed
+        assert any("not found in ContextWindow" in f.message for f in report.findings)
+
+    def test_empty_source_quote_fails(self):
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [_make_unit("cu_0", 0, "hello")],
+        )
+        gate = QuoteGate(window)
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="test",
+            value=1,
+            unit="x",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "count"},
+            source_quote="",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
+        )
+        report = gate.validate([candidate])
+        assert not report.all_passed
+
+
+class TestQuoteGateTokenSet:
+    """V2: token_set only allowed for TABLE and TABLE_ROW unit types."""
+
+    def test_token_set_on_table_row_passes(self):
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [_make_unit("cu_0", 0, "营业收入 673.23亿元", unit_type=ContentUnitType.TABLE_ROW)],
+        )
+        gate = QuoteGate(window)
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="revenue",
+            value=673.23,
+            unit="亿元",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "monetary"},
+            source_quote="营业收入 673.23亿元",
+            source_unit_id="cu_0",
+            quote_match_mode="token_set",
         )
         report = gate.validate([candidate])
         assert report.all_passed
 
-    def test_mixed_pass_fail(self):
+    def test_token_set_100_percent_match_required(self):
         window = ContextWindow.from_content_units(
             "doc_1",
-            [_make_unit("cu_0", 0, "收入 100 亿元")],
+            [_make_unit("cu_0", 0, "Revenue 67.323 bn 2025", unit_type=ContentUnitType.TABLE_ROW)],
         )
         gate = QuoteGate(window)
-        good = DataPointCandidate(
+        # All tokens present
+        candidate_ok = DataPointCandidate(
             id="dp_ok",
-            metric="revenue",
-            value=100,
-            unit="亿元",
+            metric="r",
+            value=67.323,
+            unit="bn",
             entity_id="e1",
             period="2025",
             measurement_context={"measurement_kind": "monetary"},
-            source_quote="收入 100 亿元",
+            source_quote="Revenue 67.323 bn",
+            source_unit_id="cu_0",
+            quote_match_mode="token_set",
         )
-        bad = DataPointCandidate(
+        # Missing token
+        candidate_bad = DataPointCandidate(
             id="dp_bad",
-            metric="profit",
-            value=50,
-            unit="亿元",
+            metric="r",
+            value=100,
+            unit="bn",
             entity_id="e1",
             period="2025",
             measurement_context={"measurement_kind": "monetary"},
-            source_quote="利润 50 亿元",
+            source_quote="Revenue 100.0 bn",
+            source_unit_id="cu_0",
+            quote_match_mode="token_set",
         )
-        report = gate.validate([good, bad])
+        report = gate.validate([candidate_ok, candidate_bad])
         assert report.passed_count == 1
         assert report.failed_count == 1
 
+    def test_token_set_on_non_table_fails(self):
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [_make_unit("cu_0", 0, "营业收入 673.23亿元", unit_type=ContentUnitType.PARAGRAPH)],
+        )
+        gate = QuoteGate(window)
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="revenue",
+            value=673.23,
+            unit="亿元",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "monetary"},
+            source_quote="营业收入",
+            source_unit_id="cu_0",
+            quote_match_mode="token_set",
+        )
+        report = gate.validate([candidate])
+        assert not report.all_passed
+        assert any("TOKEN_SET_ON_NON_TABLE" in f.code for f in report.findings)
+
+    def test_token_set_empty_tokens_fails(self):
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [_make_unit("cu_0", 0, "text", unit_type=ContentUnitType.TABLE_ROW)],
+        )
+        gate = QuoteGate(window)
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="test",
+            value=1,
+            unit="x",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "count"},
+            source_quote="   ",
+            source_unit_id="cu_0",
+            quote_match_mode="token_set",
+        )
+        report = gate.validate([candidate])
+        assert not report.all_passed
+
+    def test_token_set_on_table_passes(self):
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [_make_unit("cu_0", 0, "Revenue 67 bn", unit_type=ContentUnitType.TABLE)],
+        )
+        gate = QuoteGate(window)
+        candidate = DataPointCandidate(
+            id="dp_1",
+            metric="r",
+            value=67,
+            unit="bn",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "monetary"},
+            source_quote="Revenue 67 bn",
+            source_unit_id="cu_0",
+            quote_match_mode="token_set",
+        )
+        report = gate.validate([candidate])
+        assert report.all_passed
+
 
 class TestQuoteGateUnicodeNormalization:
-    """Unicode normalization (NFKC) ensures matching across different representations."""
+    """NFKC normalization ensures matching across different representations."""
 
     def test_fullwidth_halfwidth_normalization(self):
-        """Fullwidth digits should match halfwidth digits after normalization."""
-        # Fullwidth: １２３ vs regular 123
         window = ContextWindow.from_content_units(
             "doc_1",
             [_make_unit("cu_0", 0, "营收１２３亿元")],  # fullwidth
@@ -162,31 +345,11 @@ class TestQuoteGateUnicodeNormalization:
             period="2025",
             measurement_context={"measurement_kind": "monetary"},
             source_quote="营收123亿元",  # halfwidth
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
         )
         report = gate.validate([candidate])
         assert report.all_passed, "NFKC normalization should match fullwidth/halfwidth"
-
-    def test_combining_chars_normalization(self):
-        """CJK Compatibility characters should normalize."""
-        window = ContextWindow.from_content_units(
-            "doc_1",
-            [_make_unit("cu_0", 0, "①营业收入")],  # circled number
-        )
-        gate = QuoteGate(window)
-        candidate = DataPointCandidate(
-            id="dp_1",
-            metric="revenue",
-            value=100,
-            unit="亿元",
-            entity_id="e1",
-            period="2025",
-            measurement_context={"measurement_kind": "monetary"},
-            source_quote="1营业收入",  # after normalization
-        )
-        report = gate.validate([candidate])
-        # ① normalizes to "1 " (with space) in NFKC, so "1营业收入" might not match
-        # just checking it doesn't crash
-        assert isinstance(report, type(report))
 
 
 class TestQuoteGateFailureReporting:
@@ -204,12 +367,13 @@ class TestQuoteGateFailureReporting:
             claim_type="fact_claim",
             claim_dimension="general",
             source_quote="nonexistent text",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
         )
         report = gate.validate([candidate])
         assert len(report.failures) == 1
         failure = report.failures[0]
         assert failure.candidate_id == "cl_fail"
-        assert failure.source_quote == "nonexistent text"
         assert "not found" in failure.reason.lower()
 
     def test_validate_or_raise(self):
@@ -227,8 +391,10 @@ class TestQuoteGateFailureReporting:
             period="2025",
             measurement_context={"measurement_kind": "count"},
             source_quote="missing",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
         )
-        with __import__("pytest").raises(QuoteGateError):
+        with pytest.raises(QuoteGateError):
             gate.validate_or_raise([candidate])
 
     def test_valid_candidates_pass_validate_or_raise(self):
@@ -243,6 +409,42 @@ class TestQuoteGateFailureReporting:
             claim_type="fact_claim",
             claim_dimension="general",
             source_quote="hello world",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
         )
         report = gate.validate_or_raise([candidate])
         assert report.all_passed
+
+    def test_mixed_pass_fail(self):
+        window = ContextWindow.from_content_units(
+            "doc_1",
+            [_make_unit("cu_0", 0, "收入 100 亿元")],
+        )
+        gate = QuoteGate(window)
+        good = DataPointCandidate(
+            id="dp_ok",
+            metric="revenue",
+            value=100,
+            unit="亿元",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "monetary"},
+            source_quote="收入 100 亿元",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
+        )
+        bad = DataPointCandidate(
+            id="dp_bad",
+            metric="profit",
+            value=50,
+            unit="亿元",
+            entity_id="e1",
+            period="2025",
+            measurement_context={"measurement_kind": "monetary"},
+            source_quote="利润 50 亿元",
+            source_unit_id="cu_0",
+            quote_match_mode="literal",
+        )
+        report = gate.validate([good, bad])
+        assert report.passed_count == 1
+        assert report.failed_count == 1

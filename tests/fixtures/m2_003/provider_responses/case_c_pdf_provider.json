@@ -1,0 +1,136 @@
+{
+  "provider_metadata": {
+    "name": "fixture",
+    "version": "2.0",
+    "deterministic_mode": true,
+    "case_id": "case_c_pdf",
+    "extra": {
+      "description": "独立 Provider Fixture for Case C — 不依赖 expected_results",
+      "fixture_version": "1.0",
+      "created_at": "2026-07-13T11:00:00+08:00"
+    }
+  },
+  "candidates": [
+    {
+      "candidate_id": "fc_cand_case_c_001",
+      "candidate_type": "entity",
+      "canonical_name": "SMIC",
+      "entity_type": "organization",
+      "confidence": 0.95
+    },
+    {
+      "candidate_id": "fc_cand_case_c_002",
+      "candidate_type": "data_point",
+      "metric": "Revenue",
+      "value": 67.323,
+      "unit": "bn CNY",
+      "entity_id": "",
+      "period": "2025",
+      "measurement_context": {
+        "measurement_kind": "monetary",
+        "currency": "CNY",
+        "scale_multiplier": 1000000000,
+        "reporting_standard": "IFRS",
+        "attribution_scope": "group_total",
+        "consolidation_scope": "consolidated"
+      },
+      "source_quote": "Revenue 67.323 bn",
+      "quote_locator_hint": "table row 1",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_005"
+    },
+    {
+      "candidate_id": "fc_cand_case_c_003",
+      "candidate_type": "data_point",
+      "metric": "Utilization",
+      "value": 93.5,
+      "unit": "percent",
+      "entity_id": "",
+      "period": "2025",
+      "measurement_context": {
+        "measurement_kind": "percentage",
+        "currency": null,
+        "scale_multiplier": 1,
+        "reporting_standard": "IFRS",
+        "attribution_scope": "group_total",
+        "consolidation_scope": "consolidated"
+      },
+      "source_quote": "Utilization 93.5%",
+      "quote_locator_hint": "table row 2",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_006"
+    },
+    {
+      "candidate_id": "fc_cand_case_c_004",
+      "candidate_type": "claim",
+      "statement": "Revenue reached CNY 67.323 billion in 2025",
+      "claim_type": "fact_claim",
+      "claim_dimension": "business_growth",
+      "claimant_name": "",
+      "asserted_by": "",
+      "confidence": 0.90,
+      "promotable_to_fact": true,
+      "source_quote": "Revenue reached CNY 67.323 billion in 2025.",
+      "quote_locator_hint": "paragraph page 1",
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_c_003"
+    },
+    {
+      "candidate_id": "fc_cand_case_c_005",
+      "candidate_type": "claim",
+      "statement": "The company expects revenue growth above the industry average",
+      "claim_type": "prediction",
+      "claim_dimension": "business_growth",
+      "claimant_name": "SMIC管理层",
+      "asserted_by": "SMIC管理层",
+      "time_horizon": {
+        "start": null,
+        "end": null,
+        "precision": "unknown"
+      },
+      "confidence": 0.60,
+      "promotable_to_fact": false,
+      "source_quote": "The company expects revenue growth above the industry average",
+      "quote_locator_hint": "paragraph page 2",
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_c_008"
+    },
+    {
+      "candidate_id": "fc_cand_case_c_006",
+      "candidate_type": "evidence",
+      "evidence_type": "company_filing",
+      "evidence_role": "support",
+      "target_object_id": "fc_cand_case_c_002",
+      "independence_group": "smic_annual_report_2025",
+      "source_quote": "Revenue 67.323 bn",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_005"
+    },
+    {
+      "candidate_id": "fc_cand_case_c_007",
+      "candidate_type": "evidence",
+      "evidence_type": "company_filing",
+      "evidence_role": "support",
+      "target_object_id": "fc_cand_case_c_003",
+      "independence_group": "smic_annual_report_2025",
+      "source_quote": "Utilization 93.5%",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_006"
+    },
+    {
+      "candidate_id": "fc_cand_case_c_008",
+      "candidate_type": "fact",
+      "statement": "SMIC 2025 revenue was CNY 67.323 billion",
+      "promotable": true,
+      "target_data_point_id": "fc_cand_case_c_002",
+      "supporting_evidence_ids": ["fc_cand_case_c_006"],
+      "valid_time": {"period": "2025"},
+      "confidence_rationale": "Annual report disclosed data",
+      "source_quote": "Revenue 67.323 bn",
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_005"
+    }
+  ],
+  "warnings": [],
+  "errors": []
+}
