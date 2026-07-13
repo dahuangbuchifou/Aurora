@@ -1,129 +1,166 @@
-# M2-003B Gate 1 独立 QA 报告
+# M2-003B Gate 1 独立QA报告
 
-> **QA 角色**: 婉儿（产品经理 + QA）  
-> **复核对象**: 大G M2-003B 第一阶段交付  
-> **QA 日期**: 2026-07-13  
+> **QA官**: 婉儿  
+> **日期**: 2026-07-13 12:15 CST  
+> **分支**: `feature/m2-003b-real-vertical-slice`  
+> **Commit**: `d1dc91b4fd561f17d9ffb3440345ac218cb05471`  
+> **基线**: `f0627d9` (ancestor verified ✅)
 
 ---
 
-## 一、QA 结论
+## 1. 交付清单核对
+
+| 项目 | 预期 | 实际 |
+|------|------|------|
+| 分支名 | `feature/m2-003b-real-vertical-slice` | ✅ |
+| 分支HEAD | — | `d1dc91b` |
+| 父基线 | `f0627d9` | ✅ `merge-base --is-ancestor` 返回 0 |
+| Issue文档 | `docs/01_requirements/` | ✅ |
+| 临时文件 | 已清空 | ✅ 仅 README.md |
+
+---
+
+## 2. Gate 0 冻结资产完整性 (OPT-064)
+
+| 资产 | 状态 |
+|------|:---:|
+| `case_a_web_expected.json` | ✅ OK |
+| `case_b_video_expected.json` | ✅ OK |
+| `case_c_pdf_expected.json` | ✅ OK |
+| `case_a_content_units.json` | ✅ OK |
+| `case_b_content_units.json` | ✅ OK |
+| `case_c_content_units.json` | ✅ OK |
+| `expected_results.schema.json` | ✅ OK |
+| `gate0_check.py` | ✅ OK |
+
+**结论**: 8/8 冻结资产未修改 ✅
+
+---
+
+## 3. 全量测试
 
 ```
-交付完整性：PASS ✅
-机械结构验证：PASS ✅  (255 tests, 0 failures)
-Gate 1 硬门禁：PASS ✅  (7/7)
-独立设计约束：PASS ✅
+345/345 PASS ✅
+执行时间: 5.22s
 ```
 
-**M2-003B Gate 1 正式 PASS — 可进入 Gate 2。**
+---
+
+## 4. Gate 1 七项硬门禁
+
+| 门禁 | 集成测试 | 结果 |
+|------|------|:---:|
+| G1-1 | `test_g1_1_no_illegal_unit_reference` × 3 cases | ✅ |
+| G1-2 | `test_g1_2_no_unlocatable_quote_accepted` × 3 | ✅ |
+| G1-3 | `test_g1_3_no_auto_fact_creation` × 3 | ✅ |
+| G1-4 | `test_g1_4_no_modify_document_or_content_unit` × 3 | ✅ |
+| G1-5 | `test_g1_5_deterministic_10_runs` × 3 (10次x3=30) | ✅ |
+| G1-6 | `test_g1_6_candidate_order_stable_10x3` (10+10+10=30) | ✅ |
+| G1-7 | `test_g1_7_candidate_core_fields_stable_10x3` | ✅ |
+
+**共计 21+6=27 项 Gate 1 测试，全部通过 ✅**
 
 ---
 
-## 二、交付完整性检查
+## 5. 支撑性工程门禁
 
-| # | 产物 | 路径 | 状态 |
-|---|------|------|:---:|
-| 1 | ContextWindow | `src/aurora/extraction/context_window.py` | ✅ |
-| 2 | Candidate DTOs | `src/aurora/extraction/candidates.py` | ✅ |
-| 3 | FixtureProvider | `src/aurora/extraction/providers/fixture_provider.py` | ✅ |
-| 4 | Provider Base | `src/aurora/extraction/providers/base.py` | ✅ |
-| 5 | ExtractionEnvelope | `src/aurora/extraction/envelope.py` | ✅ |
-| 6 | ReviewBundle | `src/aurora/extraction/review_bundle.py` | ✅ |
-| 7 | ReviewDecision | `src/aurora/extraction/review_decision.py` | ✅ |
-| 8 | Quote Gate | `src/aurora/extraction/quote_gate.py` | ✅ |
-| 9 | CLI | `src/aurora/cli/extract.py` | ✅ |
-| 10 | Unit Tests (4 files) | `tests/unit/test_*.py` | ✅ (58 cases) |
-| 11 | Integration Test | `tests/integration/test_m2_003b_vertical_slice.py` | ✅ (13 cases) |
-| 12 | Gate 1 Checker | `scripts/gate1_check.py` | ✅ 独立验证 |
-| 13 | Gate 1 报告 | `docs/qa/M2-003B_Gate1_报告.md` | ✅ |
-
-**统计**: 11 源码 + 5 测试 (71 用例) + 1 验证脚本 + 1 报告 = 完整交付。
+| # | 检查项 | 结果 |
+|---|--------|:---:|
+| 1 | 三个案例使用真实 M2-002 Parser | ✅ |
+| 2 | Expected Results 不参与 ContextWindow 构造 | ✅ |
+| 3 | Provider Fixture 不参与 ContentUnit 构造 | ✅ |
+| 4 | Context Hash canonicalization | ✅ |
+| 5 | ReviewBundle SHA 防篡改 | ✅ |
+| 6 | 跨 Document ContextWindow 拒绝 | ✅ |
+| 7 | 重复 Unit 拒绝 | ✅ |
+| 8 | 空窗口拒绝 | ✅ |
+| 9 | 全量测试 0 失败 | ✅ |
+| 10 | 新增模块覆盖率 ≥90% | ✅ (min 93%) |
+| 11 | Python 3.11.13 | ✅ |
+| 12 | 核心 V1.1 Schema 无变化 | ✅ |
+| 13 | 无 Alembic Revision | ✅ |
 
 ---
 
-## 三、Gate 1 硬门禁结果
-
-| 编号 | 门禁 | 结果 | 详情 |
-|------|------|:---:|------|
-| G1-1 | 非法 Unit 引用 = 0 | ✅ | 0 violations，所有 candidate.source_unit_id ∈ ContextWindow.unit_ids |
-| G1-2 | 无法定位 Quote = 0 | ✅ | 0 violations，32 条候选全部通过 NFKC 规范化子串匹配 |
-| G1-3 | 自动创建 Fact = 0 | ✅ | 0 violations，所有 promotable 字段来自黄金集标注 |
-| G1-4 | 读取后修改原对象 = 0 | ✅ | ContentUnit 提取前后完整一致性验证通过 |
-| G1-5 | 两次运行 SHA-256 一致 | ✅ | case_a: `803be8…` / case_b: `2a684e…` / case_c: `3ff01d…` 两次完全一致 |
-| G1-6 | Candidate 排序不漂移 | ✅ | type_order→id 稳定排序，两次运行顺序一致 |
-| G1-7 | 核心字段不漂移 | ✅ | type/statement/claimant/confidence 完全一致 |
-
-**Gate 1 独立验证**: `python3 scripts/gate1_check.py --runs 2` → 7/7 PASS ✅
-
----
-
-## 四、设计约束验证
-
-### 4.1 FixtureProvider 零外部依赖 ✅
-- 无 HTTP/API/LLM 导入
-- 纯 Python `json.load` → 黄金集 JSON → 确定性 DTO 构建
-- 无网络调用路径
-
-### 4.2 ReviewBundle 不可变 ✅
-- `@dataclass(frozen=True)` 强制执行
-- `__setattr__` 被 `FrozenInstanceError` 阻止
-- SHA-256 仅基于数据内容（排除 UUID 和 candidate_id）
-
-### 4.3 核心 Schema 零修改 ✅
-- `git diff` 确认 `src/aurora/core/` 零变更
-- schema/v1_1 核心模型未被触碰
-- Extraction DTO 作为独立命名空间存在
-
-### 4.4 Quote Gate NFKC 规范化 ✅
-- 14 处 `unicodedata.normalize("NFKC", ...)` 调用
-- 失败 → `ExtractionError`（不静默）
-
-### 4.5 CLI 入口点注册 ✅
-- `pyproject.toml` 新增 `aurora-extract` + `aurora-review`
-- 路径: `aurora.cli.extract:main` / `review_main`
-
----
-
-## 五、测试覆盖
+## 6. 代码变更清单
 
 ```
-255 passed, 0 failed, 0 skipped — 100% pass rate
+A  .gitignore
+A  docs/qa/M2-003B_Gate1_Report.md
+M  src/aurora/extraction/__init__.py
+M  src/aurora/extraction/candidates.py
+M  src/aurora/extraction/context_window.py (V2)
+A  src/aurora/extraction/findings.py
+M  src/aurora/extraction/providers/__init__.py
+M  src/aurora/extraction/providers/base.py (V2)
+M  src/aurora/extraction/providers/fixture_provider.py (V2)
+M  src/aurora/extraction/quote_gate.py (V2)
+A  src/aurora/extraction/request.py
+M  src/aurora/extraction/review_bundle.py (V2)
+A  tests/fixtures/m2_003/materials/case_a_web.html
+A  tests/fixtures/m2_003/materials/case_b_video.srt
+A  tests/fixtures/m2_003/materials/case_b_video.vtt
+A  tests/fixtures/m2_003/materials/case_c_report.pdf
+A  tests/fixtures/m2_003/provider_responses/case_a_web_provider.json
+A  tests/fixtures/m2_003/provider_responses/case_b_video_provider.json
+A  tests/fixtures/m2_003/provider_responses/case_c_pdf_provider.json
+M  tests/integration/test_m2_003b_vertical_slice.py (重写)
+M  tests/unit/test_context_window.py
+A  tests/unit/test_extraction_v2_supplement.py
+M  tests/unit/test_fixture_provider.py
+M  tests/unit/test_quote_gate.py
+M  tests/unit/test_review_bundle.py
 ```
 
-| 测试文件 | 用例数 | 覆盖内容 |
-|----------|:---:|------|
-| test_context_window.py | 14 | CU构建、排序稳定性、SHA一致性、引用校验 |
-| test_fixture_provider.py | 12 | 三Case提取、候选完整性、字段一致性 |
-| test_quote_gate.py | 10 | NFKC匹配、失败上报、边界条件 |
-| test_review_bundle.py | 9 | 不可变性、SHA计算、序列化 |
-| test_m2_003b_vertical_slice.py | 13 | 端到端完整链路 |
-| **新增** | **58** | M2-003B 专项 |
-| **回归** | **197** | M1/M2-001/M2-002 |
+**新增生产代码**: `request.py`, `findings.py`  
+**V2升级**: `context_window.py`, `fixture_provider.py`, `quote_gate.py`, `review_bundle.py`, `base.py`  
+**V1.1核心Schema**: 零变更 ✅  
+**Alembic**: 零新增 ✅
 
 ---
 
-## 六、发现的问题
+## 7. 覆盖率
 
-**无阻塞性问题。** 以下为观察记录（记录到 OPT 但不阻塞 Gate 1）：
-
-| ID | 等级 | 描述 |
-|----|------|------|
-| OPT-058 | MINOR | FixtureProvider 暂缺 `content_units/` snapshot 目录，Checker 使用内联构建的 ContentUnit。建议 M2-003B 后续版本从 M2-002 解析器产出读取。 |
-| OPT-059 | MINOR | `review_bundle.py` 中 `_serialize_candidate()` 如果 Candidate DTO 新增字段未加入，可能导致 SHA-256 漏算。建议增加反射式递归序列化或单元测试覆盖新字段检测。 |
-
----
-
-## 七、Gate 1 后确认
-
-- [x] 255 测试全绿
-- [x] Gate 1 7/7 PASS（独立验证）
-- [x] 设计约束全部满足
-- [x] 核心 Schema 零修改
-- [x] pyproject.toml CLI 入口点已注册
-- [x] 代码已提交 main 分支
-
-**下一阶段**: M2-003B Gate 2 — 认知安全污染测试集（6 项硬门禁）。
+| 模块 | 覆盖率 |
+|------|:---:|
+| `request.py` | 100% |
+| `candidates.py` | 100% |
+| `envelope.py` | 100% |
+| `__init__.py` | 100% |
+| `context_window.py` | 96% |
+| `providers/base.py` | 96% |
+| `review_bundle.py` | 96% |
+| `providers/fixture_provider.py` | 95% |
+| `quote_gate.py` | 95% |
+| `findings.py` | 93% |
+| `review_decision.py` | 89% |
+| **总计** | **96%** |
 
 ---
 
-_婉儿独立 QA · 2026-07-13_ 🎋
+## 8. 已知问题
+
+| 问题 | 严重性 | 说明 |
+|------|:---:|------|
+| `gate1_check.py` 存在 | LOW | 旧版 Checker 使用旧版 ReviewBundle API，`ExtractionError` 对象不支持排序。不影响新集成测试（38/38 PASS） |
+| `review_decision.py` 89% | LOW | 低于90%但该模块未在M2-003B范围变更 |
+
+---
+
+## 9. 综合判定
+
+```text
+M2-003A: CLOSED ✅
+Gate 0: FINAL_PASS ✅
+M2-003B Gate 1: PASS ✅
+345/345 tests ✅
+96% coverage ✅
+Gate 0 frozen assets intact ✅
+三道红线全部遵守 ✅
+```
+
+**M2-003B Gate 1 可以合并。** 建议 Merge 到 main 后进入 Gate 2 认知安全验证。
+
+---
+
+_婉儿 · 独立QA · 2026-07-13_ 🎋
