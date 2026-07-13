@@ -1,0 +1,89 @@
+{
+  "document_id": "case_a_web",
+  "parser_name": "aurora.ingestion.html_parser",
+  "parser_version": "0.1.0",
+  "parser_config_hash": "sha256:placeholder_m2_003a",
+  "semantic_content_hash": "fed9af18eaa490772c2ae06349600720935ea255f644a5b4ca47fe3bd465a7e3",
+  "snapshot_sha256": "7b49cff82bf8b2463bfb610e0434e8cd9d32fd26ee65d25f43c2914619f0aee5",
+  "frozen_at": "2026-07-13T11:00:00+08:00",
+  "source": "tests/fixtures/m2_002/case_a_web.html",
+  "units": [
+    {
+      "unit_id": "cu_a_001",
+      "unit_type": "TITLE",
+      "sequence_no": 0,
+      "text": "中芯国际2025年度业绩摘要",
+      "locator": {
+        "start_line": 10,
+        "end_line": 10,
+        "selector": "h1"
+      }
+    },
+    {
+      "unit_id": "cu_a_002",
+      "unit_type": "PARAGRAPH",
+      "sequence_no": 1,
+      "text": "公司2025年营业收入保持增长，产能利用率维持较高水平。",
+      "locator": {
+        "start_line": 11,
+        "end_line": 11,
+        "selector": "p"
+      }
+    },
+    {
+      "unit_id": "cu_a_003",
+      "unit_type": "TABLE",
+      "sequence_no": 2,
+      "text": "2025年主要经营指标 指标 数值 营业收入 673.23亿元 产能利用率 93.5%",
+      "locator": {
+        "start_line": 14,
+        "end_line": 17,
+        "selector": "table#metrics"
+      }
+    },
+    {
+      "unit_id": "cu_a_004",
+      "unit_type": "TABLE_ROW",
+      "sequence_no": 3,
+      "text": "营业收入 673.23亿元",
+      "locator": {
+        "start_line": 16,
+        "end_line": 16,
+        "selector": "table#metrics tr:nth-child(2)"
+      }
+    },
+    {
+      "unit_id": "cu_a_005",
+      "unit_type": "TABLE_ROW",
+      "sequence_no": 4,
+      "text": "产能利用率 93.5%",
+      "locator": {
+        "start_line": 17,
+        "end_line": 17,
+        "selector": "table#metrics tr:nth-child(3)"
+      }
+    },
+    {
+      "unit_id": "cu_a_006",
+      "unit_type": "BLOCKQUOTE",
+      "sequence_no": 5,
+      "text": "管理层表示将继续推进产能建设。",
+      "locator": {
+        "start_line": 19,
+        "end_line": 19,
+        "selector": "blockquote"
+      }
+    },
+    {
+      "unit_id": "cu_a_007",
+      "unit_type": "CODE",
+      "sequence_no": 6,
+      "text": "source = \"annual_report\"",
+      "locator": {
+        "start_line": 20,
+        "end_line": 20,
+        "selector": "pre code"
+      }
+    }
+  ]
+}

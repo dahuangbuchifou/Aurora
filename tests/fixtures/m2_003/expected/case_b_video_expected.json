@@ -46,7 +46,8 @@
       "source_quote": "成熟制程需求仍然存在",
       "quote_locator_hint": "cue 1",
       "note": "前半句是对市场现状的事实性描述",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_b_001"
     },
     {
       "id": "expected_cl_b_002",
@@ -58,7 +59,8 @@
       "source_quote": "竞争格局需要持续观察",
       "quote_locator_hint": "cue 1",
       "note": "后半句是对不确定性的表达。这是一个单句包含两个不同维度的 Claim——前一个可被证据支持，后一个是风险判断。不应被合并为一条复合 Claim。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_b_001"
     },
     {
       "id": "expected_cl_b_003",
@@ -70,7 +72,8 @@
       "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
       "quote_locator_hint": "cue 2",
       "note": "对竞争格局的描述，提及三个具体竞争对手",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_b_002"
     },
     {
       "id": "expected_cl_b_004",
@@ -82,7 +85,8 @@
       "source_quote": "当前估值已经反映了较多乐观预期。",
       "quote_locator_hint": "cue 3",
       "note": "价值判断，不是事实也不是预测。cue 3 与 cue 2 有 200ms 时间重叠（08.000 - 07.800），属于 overlapping cue 场景。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_b_003"
     }
   ],
   "expected_evidence": [
@@ -94,7 +98,8 @@
       "independence_group": "up_analysis",
       "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
       "note": "仅证明'UP主作出了该陈述'，不独立核实三家公司的实际投入行为。单一二手来源，不构成独立证据。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_b_002"
     }
   ],
   "expected_fact_candidates": [

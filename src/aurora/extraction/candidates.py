@@ -41,6 +41,7 @@ class DataPointCandidate(AuroraModel):
     measurement_context: dict[str, Any]
     source_quote: str
     quote_locator_hint: str = ""
+    source_unit_id: str = ""
     note: str = ""
 
 
@@ -59,6 +60,7 @@ class ClaimCandidate(AuroraModel):
     promotable_to_fact: bool = False
     source_quote: str
     quote_locator_hint: str = ""
+    source_unit_id: str = ""
     note: str = ""
 
 
@@ -72,6 +74,7 @@ class EvidenceCandidate(AuroraModel):
     target_object_id: str
     independence_group: str
     source_quote: str
+    source_unit_id: str = ""
     note: str = ""
 
 

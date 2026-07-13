@@ -103,128 +103,144 @@ def collect_source_quotes(data: dict) -> dict[str, str]:
     return quotes
 
 
-def build_content_units_from_quotes(case_id: str, data: dict) -> list[str]:
-    """Build synthetic ContentUnit text list from all source_quotes.
+def load_content_unit_snapshot(case_id: str, base_dir: Path | str) -> dict | None:
+    """Load frozen ContentUnit snapshot from M2-002 actual parse results.
     
-    In real M2-003B, these come from M2-002 Parser. For Gate 0, we construct
-    a window from the golden set's own quotes — the goal is to verify each
-    golden quote appears in its own reference set.
+    Uses case_id (e.g. "case_a_web") first, then falls back to the
+    shorter case prefix (e.g. "case_a") if the full-ID file doesn't exist.
+    
+    Returns dict with keys: document_id, parser_name, parser_version,
+    parser_config_hash, semantic_content_hash, snapshot_sha256, units[].
+    Returns None if snapshot not found.
     """
-    quotes_set = set()
-    for section in ["expected_claims", "expected_data_points", "expected_evidence", "expected_rejects"]:
-        for item in data.get(section, []):
-            sq = item.get("source_quote", "") or item.get("target_quote", "")
-            if sq:
-                quotes_set.add(sq)
-    return sorted(quotes_set)
+    base = Path(base_dir)
+    # Try full case_id (e.g. case_a_web)
+    snapshot_path = base / "content_units" / f"{case_id}_content_units.json"
+    if not snapshot_path.exists():
+        # Fallback: strip _web/_video/_pdf suffix
+        short_id = case_id.split("_")[0] + "_" + case_id.split("_")[1] if "_" in case_id else case_id
+        # e.g. case_a_web → case_a
+        parts = case_id.split("_")
+        for suffix in ["_web", "_video", "_pdf"]:
+            if case_id.endswith(suffix):
+                short_id = case_id[:-len(suffix)]
+                break
+        snapshot_path = base / "content_units" / f"{short_id}_content_units.json"
+    if not snapshot_path.exists():
+        return None
+    return load_json(str(snapshot_path))
 
 
-def check_quote_gate(data: dict, case_id: str, fixed_units: list[str] | None = None) -> tuple[bool, list[str]]:
-    """R2-001: Real Quote Gate — verify every source_quote is locatable.
+def build_content_units_from_snapshot(snapshot: dict) -> list[str]:
+    """Extract text from frozen ContentUnit snapshot."""
+    return [u["text"] for u in snapshot.get("units", [])]
 
-    If fixed_units is provided, uses those as the ContentUnit reference set
-    (for negative testing where modifying the data would contaminate the CU list).
-    Otherwise builds CUs from the data's own source_quotes.
+
+def get_unit_by_id(snapshot: dict, unit_id: str) -> dict | None:
+    """Look up a specific ContentUnit by unit_id in a frozen snapshot."""
+    for u in snapshot.get("units", []):
+        if u["unit_id"] == unit_id:
+            return u
+    return None
+
+
+def check_quote_gate(data: dict, case_id: str, base_dir: Path | str = ".") -> tuple[bool, list[str]]:
+    """R2-001 V1.2c: Real Quote Gate — verify every source_quote against frozen ContentUnit snapshots.
+
+    This is NO LONGER circular self-verification. It:
+    1. Loads the frozen ContentUnit snapshot (from M2-002 actual parse results)
+    2. For each candidate, verifies source_unit_id references a real unit
+    3. Verifies the unit belongs to the correct document
+    4. Performs NFKC-normalized substring match within that specific unit
+    5. For token_set: 100% token hit within TABLE/TABLE_ROW units only
+    
+    Args:
+        data: Expected results JSON data
+        case_id: Case identifier (e.g. "case_a_web")
+        base_dir: Root directory containing content_units/
+    
+    Returns:
+        (pass, errors) where pass is True if all checks pass
     """
     errors = []
-    if fixed_units is not None:
-        content_units = list(fixed_units)
-    else:
-        content_units = build_content_units_from_quotes(case_id, data)
-    nfkc_units = [nfkc_normalize(t) for t in content_units]
-
-    # Claims
-    for item in data.get("expected_claims", []):
-        item_id = item.get("id", "?")
-        sq = item.get("source_quote", "")
-        match_mode = item.get("quote_match_mode", "literal")
-
-        if not sq:
-            errors.append(f"claim {item_id}: source_quote is empty")
-            continue
-        if match_mode not in VALID_QUOTE_MATCH_MODES:
-            errors.append(f"claim {item_id}: invalid quote_match_mode='{match_mode}'")
-            continue
-
-        nfkc_quote = nfkc_normalize(sq)
-        if match_mode == "literal":
-            if not any(nfkc_quote in unit for unit in nfkc_units):
-                errors.append(f"claim {item_id}: literal match failed — quote not found in ContentUnits")
-        elif match_mode == "token_set":
-            tokens = set(nfkc_quote.split())
-            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
-            if best_hit < len(tokens) * 0.8:
-                errors.append(f"claim {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
-
-    # DataPoints
-    for item in data.get("expected_data_points", []):
-        item_id = item.get("id", "?")
-        sq = item.get("source_quote", "")
-        match_mode = item.get("quote_match_mode", "literal")
-
-        if not sq:
-            errors.append(f"data_point {item_id}: source_quote is empty")
-            continue
-        if match_mode not in VALID_QUOTE_MATCH_MODES:
-            errors.append(f"data_point {item_id}: invalid quote_match_mode='{match_mode}'")
-            continue
-
-        nfkc_quote = nfkc_normalize(sq)
-        if match_mode == "literal":
-            if not any(nfkc_quote in unit for unit in nfkc_units):
-                errors.append(f"data_point {item_id}: literal match failed")
-        elif match_mode == "token_set":
-            tokens = set(nfkc_quote.split())
-            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
-            if best_hit < len(tokens) * 0.8:
-                errors.append(f"data_point {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
-
-    # Evidence
-    for item in data.get("expected_evidence", []):
-        item_id = item.get("id", "?")
-        sq = item.get("source_quote", "")
-        match_mode = item.get("quote_match_mode", "literal")
-
-        if not sq:
-            errors.append(f"evidence {item_id}: source_quote is empty")
-            continue
-        if match_mode not in VALID_QUOTE_MATCH_MODES:
-            errors.append(f"evidence {item_id}: invalid quote_match_mode='{match_mode}'")
-            continue
-
-        nfkc_quote = nfkc_normalize(sq)
-        if match_mode == "literal":
-            if not any(nfkc_quote in unit for unit in nfkc_units):
-                errors.append(f"evidence {item_id}: literal match failed")
-        elif match_mode == "token_set":
-            tokens = set(nfkc_quote.split())
-            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
-            if best_hit < len(tokens) * 0.8:
-                errors.append(f"evidence {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
-
-    # Rejects (use target_quote instead of source_quote)
-    for item in data.get("expected_rejects", []):
-        item_id = item.get("id", "?")
-        sq = item.get("target_quote", "")
-        match_mode = item.get("quote_match_mode", "literal")
-
-        if not sq:
-            errors.append(f"reject {item_id}: target_quote is empty")
-            continue
-        if match_mode not in VALID_QUOTE_MATCH_MODES:
-            errors.append(f"reject {item_id}: invalid quote_match_mode='{match_mode}'")
-            continue
-
-        nfkc_quote = nfkc_normalize(sq)
-        if match_mode == "literal":
-            if not any(nfkc_quote in unit for unit in nfkc_units):
-                errors.append(f"reject {item_id}: literal match failed")
-        elif match_mode == "token_set":
-            tokens = set(nfkc_quote.split())
-            best_hit = max((sum(1 for t in tokens if t in unit) for unit in nfkc_units), default=0)
-            if best_hit < len(tokens) * 0.8:
-                errors.append(f"reject {item_id}: token_set match failed — {best_hit}/{len(tokens)} tokens matched")
-
+    snapshot = load_content_unit_snapshot(case_id, base_dir)
+    if snapshot is None:
+        return False, [f"Frozen ContentUnit snapshot not found for {case_id}"]
+    
+    snapshot_doc_id = snapshot["document_id"]
+    
+    # Build a unit lookup by unit_id
+    unit_map: dict[str, dict] = {u["unit_id"]: u for u in snapshot.get("units", [])}
+    
+    sections_to_check = [
+        ("expected_claims", "source_quote", "source_unit_id"),
+        ("expected_data_points", "source_quote", "source_unit_id"),
+        ("expected_evidence", "source_quote", "source_unit_id"),
+        ("expected_rejects", "target_quote", "source_unit_id"),
+    ]
+    
+    for section, quote_field, unit_id_field in sections_to_check:
+        for item in data.get(section, []):
+            item_id = item.get("id", "?")
+            sq = item.get(quote_field, "")
+            source_unit_id = item.get(unit_id_field, "")
+            match_mode = item.get("quote_match_mode", "literal")
+            
+            if not sq:
+                errors.append(f"{section.rstrip('s')} {item_id}: {quote_field} is empty")
+                continue
+            if not source_unit_id:
+                errors.append(f"{section.rstrip('s')} {item_id}: source_unit_id is missing — cannot locate in ContentUnit snapshot")
+                continue
+            if match_mode not in VALID_QUOTE_MATCH_MODES:
+                errors.append(f"{section.rstrip('s')} {item_id}: invalid quote_match_mode='{match_mode}'")
+                continue
+            
+            # Verify source_unit_id exists in snapshot
+            target_unit = unit_map.get(source_unit_id)
+            if target_unit is None:
+                errors.append(f"{section.rstrip('s')} {item_id}: source_unit_id='{source_unit_id}' not found in frozen snapshot")
+                continue
+            
+            # Verify the unit belongs to THIS document
+            # unit_id prefix should match the snapshot's document_id
+            # e.g. cu_a_001 for case_a_web, cu_b_001 for case_b_video
+            unit_doc_prefix = target_unit["unit_id"].split("_")[1] if "_" in target_unit["unit_id"] else ""
+            expected_prefix = snapshot_doc_id.split("_")[1] if "_" in snapshot_doc_id else snapshot_doc_id
+            if unit_doc_prefix != expected_prefix:
+                errors.append(f"{section.rstrip('s')} {item_id}: source_unit_id='{source_unit_id}' belongs to wrong document (expected doc='{snapshot_doc_id}')")
+                continue
+            
+            unit_text = target_unit["text"]
+            nfkc_quote = nfkc_normalize(sq)
+            nfkc_unit = nfkc_normalize(unit_text)
+            
+            if match_mode == "literal":
+                if nfkc_quote not in nfkc_unit:
+                    errors.append(
+                        f"{section.rstrip('s')} {item_id}: literal match FAILED — "
+                        f"quote='{sq[:50]}…' not found in unit='{unit_text[:50]}…'"
+                    )
+                # Also verify quote doesn't span beyond this unit boundary
+                # by checking it starts at a character position within this unit
+            elif match_mode == "token_set":
+                # token_set: ALL tokens must hit, and unit must be TABLE or TABLE_ROW
+                unit_type = target_unit.get("unit_type", "")
+                if unit_type not in ("TABLE", "TABLE_ROW"):
+                    errors.append(
+                        f"{section.rstrip('s')} {item_id}: token_set requires unit_type=TABLE/TABLE_ROW, "
+                        f"got '{unit_type}'"
+                    )
+                    continue
+                quote_tokens = set(nfkc_quote.split())
+                unit_tokens = set(nfkc_unit.split())
+                missing = quote_tokens - unit_tokens
+                if missing:
+                    errors.append(
+                        f"{section.rstrip('s')} {item_id}: token_set match FAILED — "
+                        f"missing tokens: {missing} ({len(missing)}/{len(quote_tokens)})"
+                    )
+    
     return len(errors) == 0, errors
 
 
@@ -242,8 +258,10 @@ def check_datetime_format(data: dict) -> list[str]:
     """R2-003b: Manual ISO 8601 date-time validation.
     
     jsonschema 4.x FormatChecker does not strictly validate date-time format
-    by default, so we add explicit month/day range checks.
+    by default, so we add explicit calendar-date validation including
+    month-length rules (e.g., Feb 31 is invalid).
     """
+    import calendar
     errors = []
     iso_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
     for field in ["annotated_at", "reviewed_at"]:
@@ -262,10 +280,17 @@ def check_datetime_format(data: dict) -> list[str]:
             hh, mm, ss = int(time_parts[0]), int(time_parts[1]), int(time_parts[2])
             if m < 1 or m > 12:
                 errors.append(f"{field}='{val}': month={m} out of [1,12]")
+                continue
             if d < 1 or d > 31:
                 errors.append(f"{field}='{val}': day={d} out of [1,31]")
+                continue
             if hh < 0 or hh > 23 or mm < 0 or mm > 59 or ss < 0 or ss > 59:
                 errors.append(f"{field}='{val}': time out of range")
+                continue
+            # Validate actual calendar date (e.g. reject Feb 31)
+            last_day = calendar.monthrange(y, m)[1]
+            if d > last_day:
+                errors.append(f"{field}='{val}': day={d} exceeds month {m} last day ({last_day})")
         except (ValueError, IndexError) as e:
             errors.append(f"{field}='{val}': invalid date/time components ({e})")
     return errors
@@ -496,6 +521,10 @@ def check_independence_group_consistency(all_data):
 
 
 def run_checks(expect_dir, schema_path, mode, repo_root):
+    """expect_dir is the directory containing expected_results.json files.
+    The frozen ContentUnit snapshots live in expect_dir/../content_units/.
+    """
+    base_dir = Path(expect_dir).parent  # tests/fixtures/m2_003/
     results = {
         "gate": "Gate 0 V1.2 (R2-001—R2-004)",
         "mode": mode,
@@ -561,7 +590,7 @@ def run_checks(expect_dir, schema_path, mode, repo_root):
 
         # 3. Quote Gate — real verification (R2-001)
         file_total += 1
-        qg_ok, qg_errs = check_quote_gate(data, case_id)
+        qg_ok, qg_errs = check_quote_gate(data, case_id, base_dir=base_dir)
         if qg_ok:
             file_checks.append({"gate": "QUOTE_GATE", "pass": True, "errors": []})
             file_passed += 1

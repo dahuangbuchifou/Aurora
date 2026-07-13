@@ -1,0 +1,97 @@
+{
+  "document_id": "case_c_pdf",
+  "parser_name": "aurora.ingestion.pdf_parser",
+  "parser_version": "0.1.0",
+  "parser_config_hash": "sha256:placeholder_m2_003a",
+  "semantic_content_hash": "09e9ea1aba09d6b6bcd57937719602f1c31c50897a319014aefcff9202c4a760",
+  "snapshot_sha256": "106059afb372d54555f0898493ba3f71315ba134bd9e9e7eba9d596f23dae878",
+  "frozen_at": "2026-07-13T11:00:00+08:00",
+  "source": "tests/fixtures/m2_002/case_c_report.pdf",
+  "units": [
+    {
+      "unit_id": "cu_c_001",
+      "unit_type": "PAGE_HEADER",
+      "sequence_no": 0,
+      "text": "SMIC 2025 Annual Report Extract",
+      "locator": {
+        "page": 0,
+        "position": "header"
+      }
+    },
+    {
+      "unit_id": "cu_c_002",
+      "unit_type": "SECTION_HEADING",
+      "sequence_no": 1,
+      "text": "Revenue and Operations",
+      "locator": {
+        "page": 0,
+        "position": "body"
+      }
+    },
+    {
+      "unit_id": "cu_c_003",
+      "unit_type": "PARAGRAPH",
+      "sequence_no": 2,
+      "text": "Revenue reached CNY 67.323 billion in 2025.",
+      "locator": {
+        "page": 0,
+        "position": "body"
+      }
+    },
+    {
+      "unit_id": "cu_c_004",
+      "unit_type": "TABLE",
+      "sequence_no": 3,
+      "text": "Metric 2025 2024 Revenue 67.323 bn 57.796 bn Utilization 93.5% 85.6%",
+      "locator": {
+        "page": 0,
+        "position": "body",
+        "table_scope": "revenue_metrics"
+      }
+    },
+    {
+      "unit_id": "cu_c_005",
+      "unit_type": "TABLE_ROW",
+      "sequence_no": 4,
+      "text": "Revenue 67.323 bn 57.796 bn",
+      "locator": {
+        "page": 0,
+        "position": "body",
+        "table_scope": "revenue_metrics",
+        "row": "Revenue"
+      }
+    },
+    {
+      "unit_id": "cu_c_006",
+      "unit_type": "TABLE_ROW",
+      "sequence_no": 5,
+      "text": "Utilization 93.5% 85.6%",
+      "locator": {
+        "page": 0,
+        "position": "body",
+        "table_scope": "revenue_metrics",
+        "row": "Utilization"
+      }
+    },
+    {
+      "unit_id": "cu_c_007",
+      "unit_type": "PAGE_HEADER",
+      "sequence_no": 6,
+      "text": "Management Discussion",
+      "locator": {
+        "page": 1,
+        "position": "header"
+      }
+    },
+    {
+      "unit_id": "cu_c_008",
+      "unit_type": "PARAGRAPH",
+      "sequence_no": 7,
+      "text": "The company expects revenue growth above the industry average in the same markets.",
+      "locator": {
+        "page": 1,
+        "position": "body"
+      }
+    }
+  ]
+}

@@ -49,7 +49,8 @@
       },
       "source_quote": "营业收入 673.23亿元",
       "quote_locator_hint": "table#metrics td",
-      "quote_match_mode": "token_set"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_a_003"
     },
     {
       "id": "expected_dp_a_002",
@@ -68,7 +69,8 @@
       },
       "source_quote": "产能利用率 93.5%",
       "quote_locator_hint": "table#metrics td",
-      "quote_match_mode": "token_set"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_a_003"
     }
   ],
   "expected_claims": [
@@ -80,7 +82,8 @@
       "claimant_id": "expected_entity_a_001",
       "source_quote": "公司2025年营业收入保持增长",
       "quote_locator_hint": "article p",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_002"
     },
     {
       "id": "expected_cl_a_002",
@@ -90,7 +93,8 @@
       "claimant_id": "expected_entity_a_001",
       "source_quote": "产能利用率维持较高水平",
       "quote_locator_hint": "article p",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_002"
     },
     {
       "id": "expected_cl_a_003",
@@ -107,7 +111,8 @@
       "promotable_to_fact": false,
       "source_quote": "管理层表示将继续推进产能建设。",
       "quote_locator_hint": "blockquote",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_006"
     }
   ],
   "expected_evidence": [
@@ -119,7 +124,8 @@
       "independence_group": "smics_annual_report_2025",
       "source_quote": "营业收入 673.23亿元",
       "note": "来源于中芯国际官方年度披露（年报）。Case A 网页是年报披露的摘要版本。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_003"
     },
     {
       "id": "expected_ev_a_002",
@@ -129,7 +135,8 @@
       "independence_group": "smics_annual_report_2025",
       "source_quote": "产能利用率 93.5%",
       "note": "与 evidence_a_001 属于同一 independence_group（同一份年报），独立计数时只计 1",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_003"
     }
   ],
   "expected_fact_candidates": [
@@ -162,7 +169,8 @@
       "target_quote": "source = \"annual_report\"",
       "quote_locator_hint": "pre code",
       "note": "代码示例不是涉及公司经营的事实主张。预期行为：CONTENT_UNIT_TYPE 检测到代码块，跳过文本提取或标记为 INFO 级别警告。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_a_007"
     }
   ],
   "validation_report": {

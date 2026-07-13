@@ -87,11 +87,21 @@ class TestContextWindowSha256Consistency:
         assert w1.window_sha256 != w2.window_sha256
 
     def test_sha256_changes_with_different_document(self):
-        units = [_make_unit("cu_0", 0, "hello")]
-        w1 = ContextWindow.from_content_units("doc_a", units)
-        w2 = ContextWindow.from_content_units("doc_b", units)
+        # V1.2c: units must match document_id. Use matching doc_ids.
+        units_a = [_make_unit("cu_0", 0, "hello", doc_id="doc_x")]
+        units_b = [_make_unit("cu_0", 0, "hello", doc_id="doc_y")]
+        w1 = ContextWindow.from_content_units("doc_x", units_a)
+        w2 = ContextWindow.from_content_units("doc_y", units_b)
         # SHA is computed from unit IDs, texts, and seq_nos, not doc_id
         assert w1.window_sha256 == w2.window_sha256
+
+    def test_rejects_mismatched_document_id(self):
+        """V1.2c: ContextWindow must reject units from wrong document."""
+        import pytest
+        from aurora.extraction.context_window import ContextWindowError
+        units = [_make_unit("cu_0", 0, "hello", doc_id="doc_other")]
+        with pytest.raises(ContextWindowError):
+            ContextWindow.from_content_units("doc_target", units)
 
 
 class TestContextWindowUnitReference:

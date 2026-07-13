@@ -2,6 +2,9 @@
 
 From M2-002 ContentUnit list → ContextWindow with SHA-256 identity.
 All candidates must reference units within the window.
+
+V1.2c: Added document_id cross-verification — every unit must belong
+to the declared document. Units from other documents are rejected.
 """
 
 from __future__ import annotations
@@ -11,6 +14,11 @@ from dataclasses import dataclass, field
 from typing import Any, FrozenSet, Sequence
 
 from aurora.core.models.document import ContentUnit
+
+
+class ContextWindowError(ValueError):
+    """Raised when ContentUnits violate document boundary invariants."""
+    pass
 
 
 @dataclass(frozen=True)
@@ -63,7 +71,16 @@ class ContextWindow:
 
         Units are sorted deterministically by sequence_no ascending.
         Ties are broken by unit_id for absolute stability.
+        
+        Raises:
+            ContextWindowError: If any unit's document_id doesn't match.
         """
+        for unit in units:
+            if unit.document_id != document_id:
+                raise ContextWindowError(
+                    f"ContentUnit {unit.id} has document_id='{unit.document_id}' "
+                    f"but ContextWindow expects document_id='{document_id}'"
+                )
         refs = [ContentUnitRef.from_content_unit(u) for u in units]
         refs.sort(key=lambda r: (r.sequence_no, r.unit_id))
         return cls(document_id=document_id, units=tuple(refs))

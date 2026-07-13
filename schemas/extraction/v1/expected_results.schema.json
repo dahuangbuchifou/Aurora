@@ -105,6 +105,7 @@
           "source_quote": {"type": "string", "minLength": 1},
           "quote_locator_hint": {"type": "string"},
           "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
+          "source_unit_id": {"type": "string", "minLength": 1, "description": "V1.2c: 指向冻结 ContentUnit 快照中的 unit_id"},
           "note": {"type": "string"}
         }
       }
@@ -147,6 +148,7 @@
           "source_quote": {"type": "string", "minLength": 1},
           "quote_locator_hint": {"type": "string"},
           "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
+          "source_unit_id": {"type": "string", "minLength": 1},
           "note": {"type": "string"}
         },
         "if": {
@@ -182,6 +184,7 @@
           "independence_group": {"type": "string", "minLength": 1},
           "source_quote": {"type": "string", "minLength": 1},
           "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
+          "source_unit_id": {"type": "string", "minLength": 1},
           "note": {"type": "string"}
         }
       }
@@ -300,6 +303,7 @@
           "target_quote": {"type": "string", "minLength": 1},
           "quote_locator_hint": {"type": "string"},
           "quote_match_mode": {"type": "string", "enum": ["literal", "token_set"], "default": "literal"},
+          "source_unit_id": {"type": "string", "minLength": 1},
           "note": {"type": "string"}
         }
       }

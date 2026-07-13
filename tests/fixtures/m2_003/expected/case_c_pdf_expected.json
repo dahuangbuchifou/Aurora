@@ -43,7 +43,8 @@
       "source_quote": "Revenue 67.323 bn",
       "quote_locator_hint": "page 1, table row",
       "note": "原文计量单位为十亿元（bn），需转换为亿元（67.323 bn = 673.23 亿）",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_005"
     },
     {
       "id": "expected_dp_c_002",
@@ -62,7 +63,8 @@
       },
       "source_quote": "Revenue 57.796 bn",
       "quote_locator_hint": "page 1, table row, 2024 column",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_005"
     },
     {
       "id": "expected_dp_c_003",
@@ -81,7 +83,8 @@
       },
       "source_quote": "Utilization 93.5%",
       "quote_locator_hint": "page 1, table row",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_006"
     },
     {
       "id": "expected_dp_c_004",
@@ -100,7 +103,8 @@
       },
       "source_quote": "Utilization 85.6%",
       "quote_locator_hint": "page 1, table row, 2024 column",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_006"
     }
   ],
   "expected_claims": [
@@ -113,7 +117,8 @@
       "source_quote": "Revenue reached CNY 67.323 billion in 2025.",
       "quote_locator_hint": "page 1 paragraph",
       "note": "仅包含原文可核验的绝对值。增长率16.5%为人工计算（(673.23-577.96)/577.96），在 M2-003A 阶段不纳入预期。后续系统支持 Calculated DataPoint 后可补入。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_c_003"
     },
     {
       "id": "expected_cl_c_002",
@@ -131,7 +136,8 @@
       "source_quote": "The company expects revenue growth above the industry average in the same markets.",
       "quote_locator_hint": "page 2 paragraph",
       "note": "管理层前瞻性声明。prediction 不可晋级 Fact——这是 Gate 2 认知污染测试的关键靶子。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_c_008"
     }
   ],
   "expected_evidence": [
@@ -143,7 +149,8 @@
       "independence_group": "smics_annual_report_2025",
       "source_quote": "Revenue 67.323 bn",
       "note": "年报审计数据，官方披露",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_005"
     },
     {
       "id": "expected_ev_c_002",
@@ -153,7 +160,8 @@
       "independence_group": "smics_annual_report_2025",
       "source_quote": "Revenue 57.796 bn",
       "note": "与 evidence_c_001 同一 independence_group，独立计数只计 1",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_005"
     },
     {
       "id": "expected_ev_c_003",
@@ -163,7 +171,8 @@
       "independence_group": "smics_annual_report_2025",
       "source_quote": "Utilization 93.5%",
       "note": "同一 independence_group",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "token_set",
+      "source_unit_id": "cu_c_006"
     },
     {
       "id": "expected_ev_c_004",
@@ -173,7 +182,8 @@
       "independence_group": "smics_annual_report_2025",
       "source_quote": "The company expects revenue growth above the industry average",
       "note": "管理层前瞻性声明。证据角色为 context——确认年报中含有该预测声明，但不验证预测本身。",
-      "quote_match_mode": "literal"
+      "quote_match_mode": "literal",
+      "source_unit_id": "cu_c_008"
     }
   ],
   "expected_fact_candidates": [

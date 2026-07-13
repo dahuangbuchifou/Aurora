@@ -1,0 +1,48 @@
+{
+  "document_id": "case_b_video",
+  "parser_name": "aurora.ingestion.srt_parser",
+  "parser_version": "0.1.0",
+  "parser_config_hash": "sha256:placeholder_m2_003a",
+  "semantic_content_hash": "aaf87ecc1dbb21feb1e2f58c4d05a0604bbb0079f31dae01dde08d1f483f5156",
+  "snapshot_sha256": "67caba2c191334b0bc797571886077b6e4a6be1fc4542c0f37ebf596849a09cb",
+  "frozen_at": "2026-07-13T11:00:00+08:00",
+  "source": "tests/fixtures/m2_002/case_b_video.srt",
+  "units": [
+    {
+      "unit_id": "cu_b_001",
+      "unit_type": "SUBTITLE_SEGMENT",
+      "sequence_no": 0,
+      "text": "成熟制程需求仍然存在，但竞争格局需要持续观察。",
+      "locator": {
+        "start_time": "00:00:01,000",
+        "end_time": "00:00:04,000",
+        "speaker": "UP主",
+        "subtitle_index": 1
+      }
+    },
+    {
+      "unit_id": "cu_b_002",
+      "unit_type": "SUBTITLE_SEGMENT",
+      "sequence_no": 1,
+      "text": "联电、格芯和台积电都在成熟制程市场保持投入。",
+      "locator": {
+        "start_time": "00:00:04,500",
+        "end_time": "00:00:08,000",
+        "speaker": "UP主",
+        "subtitle_index": 2
+      }
+    },
+    {
+      "unit_id": "cu_b_003",
+      "unit_type": "SUBTITLE_SEGMENT",
+      "sequence_no": 2,
+      "text": "当前估值已经反映了较多乐观预期。",
+      "locator": {
+        "start_time": "00:00:07,800",
+        "end_time": "00:00:11,000",
+        "speaker": "UP主",
+        "subtitle_index": 3
+      }
+    }
+  ]
+}
