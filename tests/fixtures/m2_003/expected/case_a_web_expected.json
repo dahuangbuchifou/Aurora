@@ -190,10 +190,20 @@
     {
       "target_id": "expected_cl_a_003",
       "action": "REVISE_AND_APPROVE",
+      "original_candidate_hash": "golden_v1.2_case_a_cl_003",
+      "reviewer": "大G",
+      "review_note": "大黄裁决 prediction方案A。后续支持双层Claim后拆分为 speech-act fact_claim + embedded prediction",
       "revised_payload": {
-        "revised_statement": "管理层表示将继续推进产能建设（Speech-act fact_claim，含嵌入式 prediction）",
-        "revised_claim_type": "fact_claim",
-        "revision_rationale": "大黄：M2-003A 采用 prediction 方案A，后续支持双层Claim后拆分"
+        "revised_statement": "公司将继续推进产能建设",
+        "revised_claim_type": "prediction",
+        "revised_claimant": "中芯国际管理层",
+        "revised_time_horizon": {
+          "start": null,
+          "end": null,
+          "precision": "unknown"
+        },
+        "revised_promotable_to_fact": false,
+        "revision_rationale": "大黄裁决：M2-003A 优先表达原文 proposal 的内嵌命题"
       }
     }
   ]

@@ -233,15 +233,6 @@
       "target_id": "expected_fc_c_002",
       "action": "REJECT",
       "revised_payload": null
-    },
-    {
-      "target_id": "expected_cl_c_002",
-      "action": "REVISE_AND_APPROVE",
-      "revised_payload": {
-        "revised_statement": "公司预计营收增长将高于同行业平均水平（prediction，precision=unknown，不可晋级Fact）",
-        "revised_claim_type": "prediction",
-        "revision_rationale": "G4-1：prediction 不可晋级 Fact，需补充精确时间范围后重新评估"
-      }
     }
   ]
 }

@@ -119,17 +119,18 @@ def build_content_units_from_quotes(case_id: str, data: dict) -> list[str]:
     return sorted(quotes_set)
 
 
-def check_quote_gate(data: dict, case_id: str) -> tuple[bool, list[str]]:
+def check_quote_gate(data: dict, case_id: str, fixed_units: list[str] | None = None) -> tuple[bool, list[str]]:
     """R2-001: Real Quote Gate — verify every source_quote is locatable.
 
-    For each Claim/DataPoint/Evidence/Reject, checks:
-    1. source_quote (or target_quote for rejects) is non-empty
-    2. quote_match_mode is valid (literal or token_set)
-    3. For literal: NFKC-normalized substring match against context window
-    4. For token_set: all tokens present in at least one ContentUnit
+    If fixed_units is provided, uses those as the ContentUnit reference set
+    (for negative testing where modifying the data would contaminate the CU list).
+    Otherwise builds CUs from the data's own source_quotes.
     """
     errors = []
-    content_units = build_content_units_from_quotes(case_id, data)
+    if fixed_units is not None:
+        content_units = list(fixed_units)
+    else:
+        content_units = build_content_units_from_quotes(case_id, data)
     nfkc_units = [nfkc_normalize(t) for t in content_units]
 
     # Claims
@@ -235,6 +236,39 @@ def validate_json_schema_v12(data, schema_path):
     from jsonschema import Draft202012Validator, FormatChecker
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     return list(validator.iter_errors(data))
+
+
+def check_datetime_format(data: dict) -> list[str]:
+    """R2-003b: Manual ISO 8601 date-time validation.
+    
+    jsonschema 4.x FormatChecker does not strictly validate date-time format
+    by default, so we add explicit month/day range checks.
+    """
+    errors = []
+    iso_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
+    for field in ["annotated_at", "reviewed_at"]:
+        val = data.get(field, "")
+        if not val:
+            errors.append(f"{field} is missing or empty")
+            continue
+        if not iso_pattern.match(val):
+            errors.append(f"{field}='{val}' does not match ISO 8601 date-time pattern")
+            continue
+        try:
+            parts = val[:19].split("T")
+            date_parts = parts[0].split("-")
+            y, m, d = int(date_parts[0]), int(date_parts[1]), int(date_parts[2])
+            time_parts = parts[1].split(":")
+            hh, mm, ss = int(time_parts[0]), int(time_parts[1]), int(time_parts[2])
+            if m < 1 or m > 12:
+                errors.append(f"{field}='{val}': month={m} out of [1,12]")
+            if d < 1 or d > 31:
+                errors.append(f"{field}='{val}': day={d} out of [1,31]")
+            if hh < 0 or hh > 23 or mm < 0 or mm > 59 or ss < 0 or ss > 59:
+                errors.append(f"{field}='{val}': time out of range")
+        except (ValueError, IndexError) as e:
+            errors.append(f"{field}='{val}': invalid date/time components ({e})")
+    return errors
 
 
 def check_sha256_file(data: dict, repo_root: str) -> tuple[bool, list[str]]:
@@ -597,7 +631,16 @@ def run_checks(expect_dir, schema_path, mode, repo_root):
             file_checks.append({"gate": "PREDICTION", "pass": True, "errors": []})
             file_passed += 1
 
-        # 9. Reviewer metadata
+        # 9. Date-time format validation (R2-003b)
+        errors_dt = check_datetime_format(data)
+        file_total += 1
+        if errors_dt:
+            file_checks.append({"gate": "DATETIME", "pass": False, "errors": errors_dt})
+        else:
+            file_checks.append({"gate": "DATETIME", "pass": True, "errors": []})
+            file_passed += 1
+
+        # 10. Reviewer metadata
         errors_rev = check_reviewer_metadata(data)
         file_total += 1
         if errors_rev:
@@ -606,7 +649,7 @@ def run_checks(expect_dir, schema_path, mode, repo_root):
             file_checks.append({"gate": "REVIEWER", "pass": True, "errors": []})
             file_passed += 1
 
-        # 10. Disagreement resolutions
+        # 11. Disagreement resolutions
         errors_dis = check_disagreement_resolutions(data)
         file_total += 1
         if errors_dis:

@@ -307,7 +307,6 @@
 
     "expected_review_decisions": {
       "type": "array",
-      "minItems": 3,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -324,9 +323,15 @@
             "properties": {
               "revised_statement": {"type": "string", "minLength": 1},
               "revised_claim_type": {"type": "string"},
+              "revised_claimant": {"type": "string"},
+              "revised_time_horizon": {"type": "object"},
+              "revised_promotable_to_fact": {"type": "boolean"},
               "revision_rationale": {"type": "string"}
             }
-          }
+          },
+          "original_candidate_hash": {"type": "string"},
+          "reviewer": {"type": "string"},
+          "review_note": {"type": "string"}
         },
         "if": {
           "properties": {"action": {"const": "REVISE_AND_APPROVE"}}
