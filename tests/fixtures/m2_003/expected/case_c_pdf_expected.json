@@ -1,10 +1,18 @@
 {
   "annotated_by": "婉儿",
   "annotated_at": "2026-07-12T22:15:00+08:00",
-  "reviewed_by": null,
-  "reviewed_at": null,
-  "disagreements": [],
-  "adjudication_note": null,
+  "reviewed_by": "大G",
+  "reviewed_at": "2026-07-13T09:00:00+08:00",
+  "disagreements": [
+    {
+      "target_id": "expected_dp_c_001",
+      "raised_by": "大G",
+      "description": "reporting_standard 为 null，但 Case A 同类中芯国际数据标注为 CAS。中芯国际年报应统一使用 CAS（中国会计准则）。建议改为 'CAS'。",
+      "resolution": "ACCEPTED — 全部 DataPoint 的 reporting_standard 统一为 CAS",
+      "adjudication_note": "大黄：中芯国际A+H股均采用CAS，统一为CAS。"
+    }
+  ],
+  "adjudication_note": "大黄裁决 D-002：采用 prediction 方案 A。D-006 删除16.5%人工计算结果，D-007 prediction 新增 time_horizon。详见 docs/qa/M2-003A_disagreements.json。",
   "fixture_source_hash": "78de39b7ea1e0d0b650eedd3c33c4902ae53e629cfc87c97592270e509d2d777",
   "case_id": "case_c_pdf",
   "case_title": "中芯国际2025年报摘录（PDF）",
@@ -30,7 +38,7 @@
         "measurement_kind": "monetary",
         "currency": "CNY",
         "scale_multiplier": 100000000,
-        "reporting_standard": null,
+        "reporting_standard": "CAS",
         "attribution_scope": "group_total",
         "consolidation_scope": "consolidated"
       },
@@ -49,7 +57,7 @@
         "measurement_kind": "monetary",
         "currency": "CNY",
         "scale_multiplier": 100000000,
-        "reporting_standard": null,
+        "reporting_standard": "CAS",
         "attribution_scope": "group_total",
         "consolidation_scope": "consolidated"
       },
@@ -67,7 +75,7 @@
         "measurement_kind": "percentage",
         "currency": null,
         "scale_multiplier": 1,
-        "reporting_standard": null,
+        "reporting_standard": "CAS",
         "attribution_scope": "group_total",
         "consolidation_scope": "consolidated"
       },
@@ -85,7 +93,7 @@
         "measurement_kind": "percentage",
         "currency": null,
         "scale_multiplier": 1,
-        "reporting_standard": null,
+        "reporting_standard": "CAS",
         "attribution_scope": "group_total",
         "consolidation_scope": "consolidated"
       },
@@ -97,13 +105,13 @@
   "expected_claims": [
     {
       "id": "expected_cl_c_001",
-      "statement": "2025年营收达到673.23亿元，同比增长16.5%",
+      "statement": "2025年营业收入达到673.23亿元",
       "claim_type": "fact_claim",
       "claim_dimension": "financial_performance",
       "claimant_id": "expected_entity_c_001",
       "source_quote": "Revenue reached CNY 67.323 billion in 2025.",
       "quote_locator_hint": "page 1 paragraph",
-      "note": "年报原文只有绝对值，增长率16.5%为人工计算（(673.23-577.96)/577.96）。提取器不应凭空计算增长率，但提取器可提取两个绝对值。"
+      "note": "仅包含原文可核验的绝对值。增长率16.5%为人工计算（(673.23-577.96)/577.96），在 M2-003A 阶段不纳入预期。后续系统支持 Calculated DataPoint 后可补入。"
     },
     {
       "id": "expected_cl_c_002",
@@ -111,9 +119,16 @@
       "claim_type": "prediction",
       "claim_dimension": "business_growth",
       "claimant_id": "expected_entity_c_001",
+      "asserted_by": "中芯国际管理层",
+      "time_horizon": {
+        "start": null,
+        "end": null,
+        "precision": "unknown"
+      },
+      "promotable_to_fact": false,
       "source_quote": "The company expects revenue growth above the industry average in the same markets.",
       "quote_locator_hint": "page 2 paragraph",
-      "note": "管理层前瞻性声明。claim_type 必须是 prediction，不是 fact_claim。这是 Gate 2 认知污染测试的关键靶子——不能被晋级为 Fact。"
+      "note": "管理层前瞻性声明。prediction 不可晋级 Fact——这是 Gate 2 认知污染测试的关键靶子。"
     }
   ],
 
@@ -123,36 +138,36 @@
       "evidence_type": "company_filing",
       "evidence_role": "support",
       "target_object_id": "expected_dp_c_001",
-      "independence_group": "smics_annual_report",
+      "independence_group": "smics_annual_report_2025",
       "source_quote": "Revenue 67.323 bn",
-      "note": "年报官方数据"
+      "note": "年报审计数据，官方披露"
     },
     {
       "id": "expected_ev_c_002",
       "evidence_type": "company_filing",
       "evidence_role": "support",
       "target_object_id": "expected_dp_c_002",
-      "independence_group": "smics_annual_report",
+      "independence_group": "smics_annual_report_2025",
       "source_quote": "Revenue 57.796 bn",
-      "note": "与 evidence_c_001 同一 independence_group"
+      "note": "与 evidence_c_001 同一 independence_group，独立计数只计 1"
     },
     {
       "id": "expected_ev_c_003",
       "evidence_type": "company_filing",
       "evidence_role": "support",
       "target_object_id": "expected_dp_c_003",
-      "independence_group": "smics_annual_report",
+      "independence_group": "smics_annual_report_2025",
       "source_quote": "Utilization 93.5%",
-      "note": "同一份年报，与多项 evidence 共享 independence_group"
+      "note": "同一 independence_group"
     },
     {
       "id": "expected_ev_c_004",
       "evidence_type": "company_filing",
-      "evidence_role": "support",
+      "evidence_role": "context",
       "target_object_id": "expected_cl_c_002",
-      "independence_group": "smics_annual_report",
+      "independence_group": "smics_annual_report_2025",
       "source_quote": "The company expects revenue growth above the industry average",
-      "note": "管理层前瞻性声明。证据角色是 support 不是 context——但 claim 本身是 prediction，不应晋级 Fact"
+      "note": "管理层前瞻性声明。证据角色为 context——确认年报中含有该预测声明，但不验证预测本身。"
     }
   ],
 
@@ -174,15 +189,16 @@
       "valid_time": null,
       "confidence_rationale": null,
       "promotable": false,
-      "rejection_reason": "claim_type 为 prediction，不可晋级为 Fact（G4-1）"
+      "rejection_reason": "claim_type 为 prediction，不可晋级为 Fact（G4-1 认知污染防护）"
     }
   ],
 
   "expected_warnings": [
     {
+      "id": "expected_warn_c_001",
       "target_id": "expected_ev_c_001",
       "warning_type": "SAME_INDEPENDENCE_GROUP",
-      "note": "多份 evidence 属于同一份年报，独立证据计数只计 1 次"
+      "note": "全部 evidence 属于同一份年报 smics_annual_report_2025，独立证据计数只计 1 次"
     }
   ],
 
@@ -197,6 +213,6 @@
     "review_bundle_usable": true,
     "core_schema_change_needed": false,
     "new_core_object_needed": false,
-    "notes": "Case C 展示了两年对比数据（同一 metric 的不同 period）、PDF 表格提取的 monetary/percentage 值、管理层 prediction 不可晋级 Fact（G4-1 关键测试案例）。注意原文以十亿元（bn）为单位，需要 scale_multiplier=100000000 转换为亿元。"
+    "notes": "Case C Revision 1: D-006 删除16.5%人工计算结果，Claim statement仅保留绝对值；D-007 prediction 新增 time_horizon；D-003 independence_group→smics_annual_report_2025；reporting_standard 统一为 CAS。Evidence c_004 角色从 support 改为 context（仅证明年报含该声明，不验证预测）。展示了两年对比数据和 prediction 不可晋级 Fact（G4-1 关键测试案例）。"
   }
 }

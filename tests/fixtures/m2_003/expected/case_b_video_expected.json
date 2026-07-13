@@ -1,21 +1,24 @@
 {
   "annotated_by": "婉儿",
   "annotated_at": "2026-07-12T22:10:00+08:00",
-  "reviewed_by": null,
-  "reviewed_at": null,
-  "disagreements": [],
-  "adjudication_note": null,
+  "reviewed_by": "大G",
+  "reviewed_at": "2026-07-13T09:00:00+08:00",
+  "disagreements": [
+    {
+      "target_id": "cue_3",
+      "raised_by": "大G",
+      "description": "cue 2 与 cue 3 的时间重叠标注为 300ms，实际计算为 200ms（08.000 - 07.800 = 0.200s）。建议修正为 200ms。",
+      "resolution": "ACCEPTED — 修正为 200ms",
+      "adjudication_note": "大黄：时间数值修正为实际计算值 200ms。"
+    }
+  ],
+  "adjudication_note": "大黄裁决 D-002：采用 prediction 方案 A。D-004 删除无原文依据的实体，D-005 循环自证修复。详见 docs/qa/M2-003A_disagreements.json。",
   "fixture_source_hash": "0d189817a12fcf27e4cdfb4994d6635ec57baf112d9db096d7042ea0579ca360",
   "case_id": "case_b_video",
   "case_title": "成熟制程竞争格局分析（视频转写）",
   "material_path": "tests/fixtures/m2_002/case_b_video.srt",
 
   "expected_entities": [
-    {
-      "id": "expected_entity_b_001",
-      "entity_type": "organization",
-      "canonical_name": "中芯国际"
-    },
     {
       "id": "expected_entity_b_002",
       "entity_type": "organization",
@@ -67,7 +70,7 @@
       "claimant_name": "UP主",
       "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
       "quote_locator_hint": "cue 2",
-      "note": "对竞争格局的事实性描述，提及了三个具体竞争对手"
+      "note": "对竞争格局的描述，提及三个具体竞争对手"
     },
     {
       "id": "expected_cl_b_004",
@@ -78,19 +81,19 @@
       "claimant_name": "UP主",
       "source_quote": "当前估值已经反映了较多乐观预期。",
       "quote_locator_hint": "cue 3",
-      "note": "价值判断——不是事实也不是预测，是对当前估值水平的定性评价。cue 3 与 cue 2 有 300ms 时间重叠，属于 overlapping cue 场景。"
+      "note": "价值判断，不是事实也不是预测。cue 3 与 cue 2 有 200ms 时间重叠（08.000 - 07.800），属于 overlapping cue 场景。"
     }
   ],
 
   "expected_evidence": [
     {
       "id": "expected_ev_b_001",
-      "evidence_type": "observed_event",
-      "evidence_role": "support",
+      "evidence_type": "direct_quote",
+      "evidence_role": "attribution",
       "target_object_id": "expected_cl_b_003",
       "independence_group": "up_analysis",
       "source_quote": "联电、格芯和台积电都在成熟制程市场保持投入。",
-      "note": "分析师的观察陈述，可作为竞争格局的参考证据"
+      "note": "仅证明'UP主作出了该陈述'，不独立核实三家公司的实际投入行为。单一二手来源，不构成独立证据。"
     }
   ],
 
@@ -98,11 +101,12 @@
     {
       "id": "expected_fc_b_001",
       "target_claim_id": "expected_cl_b_003",
-      "supporting_evidence_ids": ["expected_ev_b_001"],
+      "supporting_evidence_ids": [],
       "statement": "联电、格芯和台积电在成熟制程市场保持投入",
-      "valid_time": {"period": "2025"},
-      "confidence_rationale": "可公开查证的竞争格局信息，但有单一来源风险",
-      "promotable": true
+      "valid_time": null,
+      "confidence_rationale": null,
+      "promotable": false,
+      "rejection_reason": "缺少独立可核验来源——仅靠 UP 主单一声明，无法晋级 Fact"
     },
     {
       "id": "expected_fc_b_002",
@@ -118,14 +122,16 @@
 
   "expected_warnings": [
     {
+      "id": "expected_warn_b_001",
       "target_id": "expected_cl_b_001",
       "warning_type": "CLAIM_COMPOUND_SPLIT_SUGGESTED",
       "note": "cue 1 包含两个独立判断（需求存在 vs 格局需观察），建议拆分为两条 Claim"
     },
     {
+      "id": "expected_warn_b_002",
       "target_id": "cue_3",
       "warning_type": "TRANSCRIPT_OVERLAPPING_CUES",
-      "note": "cue 2 与 cue 3 存在 300ms 时间重叠"
+      "note": "cue 2 与 cue 3 存在 200ms 时间重叠"
     }
   ],
 
@@ -140,6 +146,6 @@
     "review_bundle_usable": true,
     "core_schema_change_needed": false,
     "new_core_object_needed": false,
-    "notes": "Case B 是三个案例中最有挑战性的：cue 1 是复合句需要拆分、cue 3 是 value_judgment 且与 cue 2 有时序重叠。ClaimDimension 覆盖了 market_expectation / competition / valuation 三个维度。Value Judgment 被正确阻止晋级为 Fact。"
+    "notes": "Case B Revision 1: D-004 删除无原文依据的中芯国际实体；D-005 Evidence 改为 direct_quote + attribution，FactCandidate promotable=false，rejection_reason=缺少独立可核验来源；cue 重叠修正为 200ms。ClaimDimension 覆盖 market_expectation / competition / valuation 三个维度。Value Judgment 被正确阻止晋级为 Fact。"
   }
 }
