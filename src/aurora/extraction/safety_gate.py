@@ -1,21 +1,23 @@
-"""SafetyGate — cognitive safety validation for extraction pipeline (V2).
+"""SafetyGate — cognitive safety validation for extraction pipeline (V3).
 
-M2-003B Gate 2 Round 1 → Round 2 rework.
+M2-003B Gate 2 — Round 2 → Final rework.
 
-Key fixes from Round 1 review:
-- B01: Provider forbidden-field check on RAW JSON before DTO construction
-       (not after getattr on DTO — fields may already be dropped by then)
-- B02: independence_group is NOT checked by SafetyGate — it's handled at
-       EvidenceCandidate construction time (see candidates.py constraint)
-- B03: Provider-submitted promotable=True → unconditional ERROR
-       (not just keyword-based)
-- B04: Fact pollution via target_claim_id reference graph
-       (resolve linked ClaimCandidate claim_type)
-- B05: Prompt Injection on FULL ContentUnit, not candidate substrings
-- B06: Proper ReviewBundle.accepted/rejected integration
-- B07: NO duplicate QuoteGate — SafetyGate consumes QuoteGate/ReferenceGate
-       findings, does NOT duplicate them
-- M01: failed_count only counts ERROR, not INFO/WARNING
+Round 1 fixes preserved:
+- Raw JSON field check before DTO construction (B01)
+- Provider-submitted promotable=True → unconditional ERROR (B03)
+- Fact pollution via target_claim_id reference graph (B04)
+- Prompt Injection on FULL ContentUnit (B05)
+- ReviewBundle integration (B06)
+- No duplicate QuoteGate (B07)
+- INFO/WARNING not counted as failure (M01)
+
+Round 2 fixes:
+- R2-B01: independence_group RESTORED to PROVIDER_FORBIDDEN_FIELDS
+  (Provider must NOT set it; Aurora engine calculates from Source/Document)
+- R2-B02: raw_payload associated by candidate_id, not positional index
+  (prevents misalignment after candidate sorting)
+- R2-M01: Fact promotion eligibility changed from blacklist to WHITELIST
+  (only fact_claim is promotable to Fact; all other types denied)
 
 SafetyGate validates Provider output against cognitive safety dimensions.
 It does NOT duplicate QuoteGate or ReferenceGate — it consumes their output.
@@ -42,27 +44,23 @@ from aurora.extraction.findings import FindingSeverity, ValidationFinding
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-# Provider-forbidden fields: must NOT be set in raw Provider JSON payload
-# These are checked BEFORE DTO construction (B01 fix)
+# Provider-forbidden fields: must NOT be set in raw Provider JSON payload.
+# R2-B01: independence_group is RESTORED. Provider must NOT set it.
+# Aurora engine computes independence_group from Source/Document/DerivationLink.
 PROVIDER_FORBIDDEN_FIELDS: tuple[str, ...] = (
+    "independence_group",
     "source_quality_tier",
     "evidence_strength",
     "verification_status",
     "epistemic_status",
 )
-# Note: independence_group is deliberately NOT in this list.
-# EvidenceCandidate.independence_group is a legitimate field that
-# the Provider CAN set. The other 4 fields must never come from Provider.
 
-# Claim types that must never be promotable_to_fact
-NON_PROMOTABLE_CLAIM_TYPES: frozenset[str] = frozenset({
-    "prediction",
-    "recommendation",
-    "value_judgment",
-    "opinion",
-    "speculation",
-    "hypothesis",
-})
+# ── R2-M01: Fact promotion WHITELIST ─────────────────────────────────────────
+# Only fact_claim is eligible for FactCandidate promotion.
+# All other ClaimType values (interpretation, causal_claim, prediction,
+# recommendation, risk_claim, value_judgment, hypothesis) are inherently
+# non-promotable. This aligns with the frozen core enum in enums.py.
+PROMOTABLE_CLAIM_TYPES: frozenset[str] = frozenset({"fact_claim"})
 
 # Confidence threshold for high-confidence pollution check
 HIGH_CONFIDENCE_THRESHOLD = 0.99
@@ -84,13 +82,9 @@ PROMPT_INJECTION_PATTERNS: list[str] = [
 
 # ── SafetyGateReport ─────────────────────────────────────────────────────────
 
-
 @dataclass
 class SafetyGateReport:
-    """Result of running the Safety Gate over a set of candidates.
-
-    V2: failed_count now only counts ERROR findings (M01 fix).
-    """
+    """Result of running the Safety Gate over a set of candidates."""
 
     passed_count: int = 0
     accepted_count: int = 0
@@ -105,7 +99,6 @@ class SafetyGateReport:
 
     @property
     def failed_count(self) -> int:
-        """Backward-compatible alias for error_count."""
         return self.error_count
 
     @property
@@ -113,14 +106,16 @@ class SafetyGateReport:
         return [f for f in self.findings if f.is_error()]
 
     @property
-    def warning_or_info_findings(self) -> list[ValidationFinding]:
-        return [f for f in self.findings if not f.is_error()]
-
-    @property
     def fact_pollution_count(self) -> int:
         return sum(1 for f in self.findings if f.code in (
-            "FACT_POLLUTION", "FACT_POLLUTION_PREDICTION",
+            "FACT_POLLUTION",
+            "FACT_POLLUTION_PREDICTION",
             "FACT_POLLUTION_VALUATION",
+            "FACT_POLLUTION_INTERPRETATION",
+            "FACT_POLLUTION_CAUSAL",
+            "FACT_POLLUTION_RISK",
+            "FACT_POLLUTION_HYPOTHESIS",
+            "NON_PROMOTABLE_CLAIM_TYPE",
         ))
 
     @property
@@ -150,16 +145,15 @@ class SafetyGateReport:
 
 # ── SafetyGate ────────────────────────────────────────────────────────────────
 
-
 class SafetyGate:
-    """M2-003B Gate 2 V2: Cognitive safety validator.
+    """M2-003B Gate 2 V3: Cognitive safety validator.
 
     Validates Provider output against cognitive safety dimensions.
-    Consumes QuoteGate/ReferenceGate findings; does NOT duplicate them (B07).
+    Consumes QuoteGate/ReferenceGate findings; does NOT duplicate them.
     """
 
     FROZEN_FIELDS = PROVIDER_FORBIDDEN_FIELDS
-    NON_PROMOTABLE_TYPES = NON_PROMOTABLE_CLAIM_TYPES
+    PROMOTABLE_TYPES = PROMOTABLE_CLAIM_TYPES
     HIGH_CONF_THRESHOLD = HIGH_CONFIDENCE_THRESHOLD
 
     def __init__(
@@ -168,23 +162,12 @@ class SafetyGate:
         strict_mode: bool = True,
         existing_findings: Sequence[ValidationFinding] | None = None,
     ):
-        """Initialize SafetyGate.
-
-        Args:
-            window: ContextWindow for ContentUnit lookups.
-            strict_mode: Provider forbidden fields → ERROR (True) or WARNING (False).
-            existing_findings: Pre-existing QuoteGate/ReferenceGate findings
-                               that SafetyGate should NOT duplicate (B07).
-        """
         self._window = window
         self._strict_mode = strict_mode
         self._window_unit_ids = frozenset(u.unit_id for u in window.units)
-
-        # Build lookup for existing findings so we don't duplicate
         self._existing_finding_keys: set[str] = set()
         if existing_findings:
             for f in existing_findings:
-                # Key: code + candidate_id + source_unit_id — uniqueness
                 key = f"{f.code}|{f.candidate_id}|{f.source_unit_id}"
                 self._existing_finding_keys.add(key)
 
@@ -193,32 +176,30 @@ class SafetyGate:
     def validate(
         self,
         candidates: Sequence[Candidate],
-        raw_payloads: list[dict[str, Any]] | None = None,
+        raw_payloads: dict[str, dict[str, Any]] | None = None,
     ) -> SafetyGateReport:
         """Run all cognitive safety checks.
 
         Args:
             candidates: Extracted candidate DTOs.
-            raw_payloads: Original Provider JSON payloads (before DTO construction).
-                         Used for B01 forbidden-field check.
-
-        Returns SafetyGateReport with findings and accepted/rejected IDs.
+            raw_payloads: Dict mapping candidate_id → raw Provider JSON payload.
+                          (R2-B02: keyed by candidate_id, not positional)
         """
         report = SafetyGateReport()
 
-        # Build candidate index for cross-reference (B04)
+        # Build candidate index for B04 (target_claim_id graph)
         candidate_index: dict[str, Candidate] = {}
         for c in candidates:
             cid = self._cid(c)
             if cid:
                 candidate_index[cid] = c
 
-        for i, candidate in enumerate(candidates):
+        for candidate in candidates:
             cid = self._cid(candidate)
+            raw = raw_payloads.get(cid) if raw_payloads else None
 
             findings = self._validate_candidate(
-                candidate, cid, candidate_index,
-                raw_payload=raw_payloads[i] if raw_payloads and i < len(raw_payloads) else None,
+                candidate, cid, candidate_index, raw_payload=raw,
             )
 
             has_error = any(f.is_error() for f in findings)
@@ -245,10 +226,10 @@ class SafetyGate:
     ) -> list[ValidationFinding]:
         findings: list[ValidationFinding] = []
 
-        # B01: Check raw payload for forbidden fields (BEFORE DTO construction)
+        # B01/R2-B01: Check raw payload for ALL 5 forbidden fields
         findings.extend(self._check_raw_payload_fields(candidate, cid, raw_payload))
 
-        # B03: Provider-set promotable → ERROR for FactCandidate
+        # B03: Provider-set promotable → unconditional ERROR
         findings.extend(self._check_provider_promotable(candidate, cid))
 
         # B04: Fact pollution via target_claim_id graph
@@ -260,12 +241,13 @@ class SafetyGate:
         # G2-6: High confidence pollution
         findings.extend(self._check_high_confidence_pollution(candidate, cid))
 
-        # Legacy: keyword-based pollution (supplementary to B04)
+        # Supplementary: keyword-based pollution
         findings.extend(self._check_keyword_pollution(candidate, cid))
 
         return findings
 
-    # ── B01: Raw Payload Forbidden-Field Check ─────────────────────────────
+    # ── R2-B01: Raw Payload Forbidden-Field Check ─────────────────────────
+    # independence_group is RESTORED as a forbidden field.
 
     def _check_raw_payload_fields(
         self,
@@ -273,11 +255,6 @@ class SafetyGate:
         cid: str,
         raw_payload: dict[str, Any] | None = None,
     ) -> list[ValidationFinding]:
-        """B01: Check raw Provider JSON for forbidden fields before DTO.
-
-        If raw_payload is None, fall back to getattr on DTO
-        (less precise but still catches fields that made it through).
-        """
         findings: list[ValidationFinding] = []
 
         if raw_payload:
@@ -331,22 +308,16 @@ class SafetyGate:
 
         return findings
 
-    # ── B02: independence_group — NOT checked here ────────────────────────
-    # EvidenceCandidate.independence_group handling is now done at the
-    # Candidate construction layer. SafetyGate does NOT flag
-    # independence_group on EvidenceCandidate as an override — that's
-    # the ONLY field Provider is allowed to set on Evidence.
-    # Other forbidden fields (source_quality_tier etc.) are still rejected.
-
-    # ── B03: Provider promotable → ERROR ──────────────────────────────────
+    # ── B03/R2-M01: Provider promotable → ERROR ──────────────────────────
 
     def _check_provider_promotable(
         self, candidate: Candidate, cid: str
     ) -> list[ValidationFinding]:
         """B03: Provider must not set promotable=True.
+        R2-M01: Only fact_claim is eligible for promotion (whitelist).
 
         Provider-submitted promotable=True → unconditional ERROR.
-        Only ReviewDecision can determine Fact promotability.
+        Claim type not in whitelist → ERROR.
         """
         findings: list[ValidationFinding] = []
 
@@ -366,23 +337,23 @@ class SafetyGate:
                 ))
 
         if isinstance(candidate, ClaimCandidate):
-            if candidate.promotable_to_fact:
-                # Check if claim_type allows promotion
-                ct = (candidate.claim_type or "").lower()
-                if ct in self.NON_PROMOTABLE_TYPES:
-                    findings.append(ValidationFinding(
-                        code="FACT_POLLUTION_VALUATION",
-                        message=f"ClaimCandidate type '{candidate.claim_type}' "
-                                f"should not be promotable_to_fact=True",
-                        severity=FindingSeverity.ERROR,
-                        candidate_id=cid,
-                        gate_name="safety_gate",
-                        details={
-                            "claim_type": candidate.claim_type,
-                            "statement": candidate.statement[:120],
-                            "violation": "G2-1",
-                        },
-                    ))
+            ct = (candidate.claim_type or "").lower()
+            if candidate.promotable_to_fact and ct not in self.PROMOTABLE_TYPES:
+                findings.append(ValidationFinding(
+                    code="NON_PROMOTABLE_CLAIM_TYPE",
+                    message=f"ClaimCandidate type '{candidate.claim_type}' "
+                            f"is not in promotable whitelist "
+                            f"({sorted(self.PROMOTABLE_TYPES)})",
+                    severity=FindingSeverity.ERROR,
+                    candidate_id=cid,
+                    gate_name="safety_gate",
+                    details={
+                        "claim_type": candidate.claim_type,
+                        "promotable_types": sorted(self.PROMOTABLE_TYPES),
+                        "statement": candidate.statement[:120],
+                        "violation": "G2-1",
+                    },
+                ))
 
         return findings
 
@@ -394,11 +365,6 @@ class SafetyGate:
         cid: str,
         candidate_index: dict[str, Candidate],
     ) -> list[ValidationFinding]:
-        """B04: Check FactCandidate references against linked Claim type.
-
-        If a FactCandidate references a Claim with prediction/recommendation/
-        value_judgment type → ERROR.
-        """
         findings: list[ValidationFinding] = []
 
         if not isinstance(candidate, FactCandidate):
@@ -409,14 +375,13 @@ class SafetyGate:
             return findings
 
         linked_claim = candidate_index.get(target_claim_id)
-        if linked_claim is None:
-            return findings
-
-        if not isinstance(linked_claim, ClaimCandidate):
+        if linked_claim is None or not isinstance(linked_claim, ClaimCandidate):
             return findings
 
         claim_type = (linked_claim.claim_type or "").lower()
-        if claim_type in self.NON_PROMOTABLE_TYPES:
+
+        # R2-M01: whitelist — only fact_claim is promotable
+        if claim_type not in self.PROMOTABLE_TYPES:
             findings.append(ValidationFinding(
                 code="FACT_POLLUTION_PREDICTION",
                 message=f"FactCandidate {cid} references ClaimCandidate "
@@ -428,6 +393,7 @@ class SafetyGate:
                 details={
                     "target_claim_id": target_claim_id,
                     "claim_type": linked_claim.claim_type,
+                    "promotable_types": sorted(self.PROMOTABLE_TYPES),
                     "fact_statement": candidate.statement[:120],
                     "claim_statement": linked_claim.statement[:120],
                     "violation": "G2-1",
@@ -442,13 +408,6 @@ class SafetyGate:
     def _check_prompt_injection_full(
         self, candidate: Candidate, cid: str
     ) -> list[ValidationFinding]:
-        """B05: Check FULL ContentUnit text for prompt injection patterns.
-
-        Not just candidate substrings — reads the entire referenced
-        ContentUnit to prevent substring evasion.
-
-        Entity candidates are skipped (no source_unit_id).
-        """
         findings: list[ValidationFinding] = []
 
         if isinstance(candidate, EntityCandidate):
@@ -456,11 +415,9 @@ class SafetyGate:
 
         suid = getattr(candidate, "source_unit_id", "") or ""
 
-        # If no source_unit_id, check candidate fields as fallback
         if not suid or suid not in self._window_unit_ids:
             return self._check_prompt_injection_candidate_fallback(candidate, cid)
 
-        # Read FULL ContentUnit text
         unit = self._window.get_unit_by_id(suid)
         if unit is None:
             return findings
@@ -487,12 +444,10 @@ class SafetyGate:
                         },
                     ))
                 else:
-                    # Non-Fact: just INFO finding
                     findings.append(ValidationFinding(
                         code="PROMPT_INJECTION",
                         message=f"ContentUnit '{suid}' contains prompt injection "
-                                f"pattern '{pattern}' — treated as source text, "
-                                f"not executed",
+                                f"pattern '{pattern}' — treated as source text",
                         severity=FindingSeverity.INFO,
                         candidate_id=cid,
                         gate_name="safety_gate",
@@ -511,9 +466,7 @@ class SafetyGate:
     def _check_prompt_injection_candidate_fallback(
         self, candidate: Candidate, cid: str
     ) -> list[ValidationFinding]:
-        """Fallback: check candidate fields when ContentUnit is unavailable."""
         findings: list[ValidationFinding] = []
-
         texts: list[str] = []
         if hasattr(candidate, "statement"):
             texts.append(candidate.statement or "")
@@ -554,7 +507,6 @@ class SafetyGate:
                         },
                     ))
                 break
-
         return findings
 
     # ── G2-6: High Confidence Pollution ───────────────────────────────────
@@ -562,9 +514,7 @@ class SafetyGate:
     def _check_high_confidence_pollution(
         self, candidate: Candidate, cid: str
     ) -> list[ValidationFinding]:
-        """G2-6: High confidence must not drive knowledge status."""
         findings: list[ValidationFinding] = []
-
         confidence = getattr(candidate, "confidence", None)
         if confidence is None:
             return findings
@@ -575,64 +525,46 @@ class SafetyGate:
         if conf < self.HIGH_CONF_THRESHOLD:
             return findings
 
-        # High confidence on auto-promoted Fact → ERROR
-        if isinstance(candidate, FactCandidate):
-            if candidate.promotable:
-                findings.append(ValidationFinding(
-                    code="HIGH_CONFIDENCE_POLLUTION",
-                    message=f"FactCandidate with confidence={conf} "
-                            f"and promotable=True — confidence must not "
-                            f"drive knowledge status",
-                    severity=FindingSeverity.ERROR,
-                    candidate_id=cid,
-                    gate_name="safety_gate",
-                    details={
-                        "confidence": conf,
-                        "violation": "G2-6",
-                    },
-                ))
+        if isinstance(candidate, FactCandidate) and candidate.promotable:
+            findings.append(ValidationFinding(
+                code="HIGH_CONFIDENCE_POLLUTION",
+                message=f"FactCandidate with confidence={conf} "
+                        f"and promotable=True — confidence must not "
+                        f"drive knowledge status",
+                severity=FindingSeverity.ERROR,
+                candidate_id=cid,
+                gate_name="safety_gate",
+                details={"confidence": conf, "violation": "G2-6"},
+            ))
 
-        # High confidence on Claim with promotable_to_fact → WARNING
-        if isinstance(candidate, ClaimCandidate):
-            if candidate.promotable_to_fact:
-                findings.append(ValidationFinding(
-                    code="HIGH_CONFIDENCE_POLLUTION",
-                    message=f"ClaimCandidate with confidence={conf} "
-                            f"has promotable_to_fact=True",
-                    severity=FindingSeverity.WARNING,
-                    candidate_id=cid,
-                    gate_name="safety_gate",
-                    details={
-                        "confidence": conf,
-                        "claim_type": candidate.claim_type,
-                        "violation": "G2-6",
-                    },
-                ))
+        if isinstance(candidate, ClaimCandidate) and candidate.promotable_to_fact:
+            findings.append(ValidationFinding(
+                code="HIGH_CONFIDENCE_POLLUTION",
+                message=f"ClaimCandidate with confidence={conf} "
+                        f"has promotable_to_fact=True",
+                severity=FindingSeverity.WARNING,
+                candidate_id=cid,
+                gate_name="safety_gate",
+                details={
+                    "confidence": conf,
+                    "claim_type": candidate.claim_type,
+                    "violation": "G2-6",
+                },
+            ))
 
         return findings
 
-    # ── Legacy: Keyword-based Pollution (supplementary) ───────────────────
+    # ── Keyword-based Pollution (supplementary) ───────────────────────────
 
     def _check_keyword_pollution(
         self, candidate: Candidate, cid: str
     ) -> list[ValidationFinding]:
-        """Supplementary keyword-based pollution check (not primary).
-
-        B04 (target_claim_id graph) is the primary detection path.
-        This catches remaining cases where FactCandidate content itself
-        looks like prediction/valuation.
-        """
         findings: list[ValidationFinding] = []
-
         if not isinstance(candidate, FactCandidate):
             return findings
 
         statement = (candidate.statement or "").lower()
-        matched = False
-
-        prediction_keywords = [
-            "预计", "预测", "预期", "预计将", "有望", "或将", "可能",
-        ]
+        prediction_keywords = ["预计", "预测", "预期", "预计将", "有望", "或将", "可能"]
         valuation_keywords = [
             "不建议", "建议买入", "建议卖出", "不建议买入", "不建议卖出",
             "估值", "合理价值", "目标价", "合理价格",
@@ -654,8 +586,7 @@ class SafetyGate:
                         "violation": "G2-1",
                     },
                 ))
-                matched = True
-                break
+                return findings
 
         for kw in valuation_keywords:
             if kw in statement:
@@ -673,23 +604,11 @@ class SafetyGate:
                         "violation": "G2-1",
                     },
                 ))
-                matched = True
-                break
+                return findings
 
         return findings
 
-    # ── B07: NO duplicate QuoteGate ───────────────────────────────────────
-    # SafetyGate does NOT duplicate QuoteGate functionality.
-    # Fake quote and forged unit checks belong to QuoteGate +
-    # ReferenceGate. SafetyGate consumes their findings via
-    # existing_findings parameter.
-
     # ── Helpers ───────────────────────────────────────────────────────────
-
-    def _is_duplicate(self, code: str, candidate_id: str, source_unit_id: str = "") -> bool:
-        """Check if this finding would duplicate an existing QuoteGate finding."""
-        key = f"{code}|{candidate_id}|{source_unit_id}"
-        return key in self._existing_finding_keys
 
     @staticmethod
     def _cid(candidate: Candidate) -> str:
