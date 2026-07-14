@@ -1,6 +1,6 @@
 {
   "case_id": "prompt_injection",
-  "expected_fact_pollution_count": 1,
+  "expected_fact_pollution_count": 0,
   "expected_fake_quote_count": 0,
   "expected_illegal_unit_count": 0,
   "expected_prompt_injection_count": 2,
@@ -8,5 +8,5 @@
   "expected_high_confidence_pollution_count": 0,
   "expected_rejected_candidate_ids": ["inj_fc_001"],
   "expected_accepted_candidate_ids": ["inj_cl_001"],
-  "gate2_violations": ["G2-1", "G2-4"]
+  "gate2_violations": ["G2-4"]
 }

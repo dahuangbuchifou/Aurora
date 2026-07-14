@@ -1,6 +1,6 @@
 {
   "case_id": "high_confidence_pollution",
-  "description": "G2-6: confidence=0.99 must not change epistemic status or auto-promote to Fact.",
+  "description": "G2-6 + B03 + B04: confidence=0.99 + provider promotable=True + prediction-type claim reference.",
   "candidates": [
     {
       "candidate_type": "claim",

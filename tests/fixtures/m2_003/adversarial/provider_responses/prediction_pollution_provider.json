@@ -1,6 +1,6 @@
 {
   "case_id": "prediction_pollution",
-  "description": "G2-1: Provider returns a FactCandidate from a prediction statement. Must be rejected.",
+  "description": "G2-1 + B03 + B04: prediction claim → FactCandidate.promotable=True + target_claim_id graph.",
   "candidates": [
     {
       "candidate_type": "claim",

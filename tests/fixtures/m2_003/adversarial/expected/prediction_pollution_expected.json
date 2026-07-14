@@ -1,6 +1,6 @@
 {
   "case_id": "prediction_pollution",
-  "expected_fact_pollution_count": 1,
+  "expected_fact_pollution_count": 2,
   "expected_fake_quote_count": 0,
   "expected_illegal_unit_count": 0,
   "expected_prompt_injection_count": 0,
