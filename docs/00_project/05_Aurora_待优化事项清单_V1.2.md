@@ -67,3 +67,126 @@
 - 建议：对象达到万级后增加checkpoint与resume；
 - 目标：M3运维强化；
 - 状态：NEW。
+# Aurora 待优化事项清单：Gate 2追加 V1.0
+
+> 用于追加到正式 `05_Aurora_待优化事项清单`。  
+> 状态：OWNER_ACCEPTED_BACKLOG
+
+## OPT-068：Gate 2测试未使用正式FixtureProvider编排链
+
+```text
+等级：MAJOR
+类别：Provider Integration / Test Fidelity
+发现节点：M2-003B Gate 2 Owner Closure
+状态：DEFERRED_BY_OWNER
+责任人：大G
+目标节点：M2-003C Gate 3 Review Round 1前
+```
+
+### 问题
+
+Gate 2集成测试仍使用：
+
+```text
+读取Provider JSON
+→ 测试辅助函数手工构造Candidate
+→ QuoteGate
+→ SafetyGate
+→ ReviewBundle
+```
+
+没有实际执行：
+
+```text
+FixtureProvider
+→ ProviderResponse
+→ ExtractionEnvelope
+→ QuoteGate
+→ SafetyGate
+→ ReviewBundle
+```
+
+### 完成标准
+
+- 对抗Fixture通过正式FixtureProvider加载；
+- ProviderResponse.raw_payload进入统一Decoder/Validation；
+- ExtractionEnvelope进入正式链；
+- 七类场景保持10次稳定；
+- 不再由集成测试维护第二套Candidate构建器。
+
+## OPT-069：FixtureProvider仍把Provider语义字段写入DTO
+
+```text
+等级：BLOCKER_BEFORE_PERSISTENCE
+类别：Epistemic Ownership
+发现节点：M2-003B Gate 2 Owner Closure
+状态：DEFERRED_BY_OWNER
+责任人：大G
+目标节点：M2-003C Gate 3编码前置修复
+```
+
+### 问题
+
+当前FixtureProvider仍会从原始Provider JSON读取：
+
+```text
+EvidenceCandidate.independence_group
+ClaimCandidate.promotable_to_fact
+FactCandidate.promotable
+```
+
+其中：
+
+- `independence_group`应由Aurora根据来源链计算；
+- `promotable`和`promotable_to_fact`不能成为Provider授权。
+
+### 完成标准
+
+- Provider层DTO不接受`independence_group`；
+- Engine enrichment阶段单独写入来源独立组；
+- Provider提供`promotable=True`或`promotable_to_fact=True`时产生ERROR；
+- Gate 3持久化映射不读取上述Provider字段。
+
+## OPT-070：缺少统一Provider Decoder/Forbidden Field Gate
+
+```text
+等级：MAJOR
+类别：Architecture / Validation
+发现节点：M2-003B Gate 2 Owner Closure
+状态：DEFERRED_BY_OWNER
+责任人：大G
+目标节点：M2-003C Gate 3 Review Round 1前
+```
+
+### 完成标准
+
+```text
+Raw Provider Payload
+→ Provider Decoder
+→ Schema/Forbidden Field Gate
+→ Candidate DTO
+→ ExtractionEnvelope
+```
+
+所有Provider共用同一入口，并保留原始Payload Hash与Finding。
+
+## OPT-071：ClaimCandidate的promotable_to_fact所有权未完全冻结
+
+```text
+等级：MAJOR
+类别：Fact Promotion
+发现节点：M2-003B Gate 2 Owner Closure
+状态：DEFERRED_BY_OWNER
+责任人：大G
+目标节点：M2-003C Gate 3
+```
+
+### 决策建议
+
+Provider不得设置任何晋级授权。`fact_claim`只表示类型上具备进入人工复核的可能，不表示已经获准晋级。
+
+### 完成标准
+
+- Provider设置`promotable_to_fact=True`一律ERROR；
+- 引擎可计算`eligible_for_review`；
+- 只有ReviewDecision可批准Fact创建。
