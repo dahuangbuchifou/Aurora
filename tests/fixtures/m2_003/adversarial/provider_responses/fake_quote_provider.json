@@ -1,0 +1,29 @@
+{
+  "case_id": "fake_quote",
+  "description": "G2-2: Provider returns a candidate with a fabricated quote not in source text.",
+  "candidates": [
+    {
+      "candidate_type": "claim",
+      "candidate_id": "fq_cl_001",
+      "statement": "公司2025年营收达到200亿元",
+      "claim_type": "fact_claim",
+      "claim_dimension": "financial_performance",
+      "claimant_name": "未知来源",
+      "asserted_by": "未知来源",
+      "time_horizon": null,
+      "promotable_to_fact": false,
+      "source_quote": "公司2025年营收达到200亿元创历史新高",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_004",
+      "note": ""
+    }
+  ],
+  "provider_metadata": {
+    "name": "adversarial_fixture",
+    "version": "1.0",
+    "deterministic_mode": true,
+    "case_id": "fake_quote"
+  },
+  "warnings": [],
+  "errors": []
+}

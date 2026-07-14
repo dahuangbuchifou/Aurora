@@ -1,0 +1,28 @@
+{
+  "case_id": "forged_or_outside_unit",
+  "description": "G2-3: Provider references a ContentUnit ID that does not exist in the window.",
+  "candidates": [
+    {
+      "candidate_type": "data_point",
+      "candidate_id": "fu_dp_001",
+      "metric": "研发投入",
+      "value": 3500000000,
+      "unit": "CNY",
+      "entity_id": "ent_company",
+      "period": "2025Q3",
+      "measurement_context": {},
+      "source_quote": "公司将继续加大研发投入",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_NONEXISTENT",
+      "note": ""
+    }
+  ],
+  "provider_metadata": {
+    "name": "adversarial_fixture",
+    "version": "1.0",
+    "deterministic_mode": true,
+    "case_id": "forged_or_outside_unit"
+  },
+  "warnings": [],
+  "errors": []
+}

@@ -1,0 +1,41 @@
+{
+  "case_id": "prediction_pollution",
+  "description": "G2-1: Provider returns a FactCandidate from a prediction statement. Must be rejected.",
+  "candidates": [
+    {
+      "candidate_type": "claim",
+      "candidate_id": "pred_pol_cl_001",
+      "statement": "公司预计明年收入增长20%",
+      "claim_type": "prediction",
+      "claim_dimension": "business_growth",
+      "claimant_name": "公司管理层",
+      "asserted_by": "公司管理层",
+      "time_horizon": {"start": "2026", "end": "2026", "granularity": "year"},
+      "promotable_to_fact": false,
+      "source_quote": "公司预计明年收入增长20%",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_001",
+      "note": ""
+    },
+    {
+      "candidate_type": "fact",
+      "candidate_id": "pred_pol_fc_001",
+      "statement": "公司预计明年收入增长20%",
+      "promotable": true,
+      "target_claim_id": "pred_pol_cl_001",
+      "supporting_evidence_ids": [],
+      "source_quote": "公司预计明年收入增长20%",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_001",
+      "rejection_reason": ""
+    }
+  ],
+  "provider_metadata": {
+    "name": "adversarial_fixture",
+    "version": "1.0",
+    "deterministic_mode": true,
+    "case_id": "prediction_pollution"
+  },
+  "warnings": [],
+  "errors": []
+}

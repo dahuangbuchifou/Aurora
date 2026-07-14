@@ -32,6 +32,7 @@ from aurora.extraction.providers.fixture_provider import FixtureProvider
 from aurora.extraction.quote_gate import QuoteGate, QuoteGateError, QuoteGateReport
 from aurora.extraction.request import ExtractionRequest
 from aurora.extraction.review_bundle import BUNDLE_SCHEMA_VERSION, ReviewBundle
+from aurora.extraction.safety_gate import SafetyGate, SafetyGateReport
 
 __all__ = [
     # Request
@@ -65,4 +66,7 @@ __all__ = [
     # Review
     "ReviewBundle",
     "BUNDLE_SCHEMA_VERSION",
+    # Safety Gate (M2-003B Gate 2)
+    "SafetyGate",
+    "SafetyGateReport",
 ]
