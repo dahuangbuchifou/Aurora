@@ -1,8 +1,8 @@
-# Aurora 项目总进度与资源看板 V1.7
+# Aurora 项目总进度与资源看板 V1.8
 
-> 更新时间：2026-07-14 10:15 CST
-> 当前验证基线：Python 3.11.13 / Aurora 0.5.0 / 405 tests / 92.24% coverage
-> Gate 2 状态：REVIEW_ROUND_1_FAILED → ROUND_2_IN_PROGRESS
+> 更新时间：2026-07-14 12:00 CST
+> 当前验证基线：Python 3.11.13 / Aurora 0.5.0 / 431 tests / 92.37% coverage
+> Gate 2 状态：FIX_IN_PROGRESS (Round 2 BLOCKERs addressed, awaiting owner closure)
 
 ## 1. 总体进度
 
@@ -10,7 +10,7 @@
 总体治理进度：42%
 ```
 
-M2-003B Gate 2 正在 Round 2 修复中，暂不提升百分比。
+M2-003B Gate 2 — 三轮修复完成，待大黄 Owner Closure Verification。
 
 ## 2. 里程碑状态
 
@@ -21,52 +21,46 @@ M2-001：CLOSED
 M2-002：CLOSED
 M2-003A / Gate 0：CLOSED / FINAL_PASS
 M2-003B / Gate 1：CLOSED
-M2-003B / Gate 2：REVIEW_ROUND_1_FAILED → ROUND_2 (7 BLOCKER + 2 MAJOR)
+M2-003B / Gate 2：FIX_IN_PROGRESS → AWAITING_OWNER_CLOSURE
 M2-003C / Gate 3：BLOCKED_BY_GATE2
 ```
 
-## 3. Round 1 复核结果
+## 3. Round 2 复核 → Final 修复
 
-大G独立复核：**FAIL**
+大G Round 2：**FAIL** (3 BLOCKER + 2 MAJOR)
 
-| 级别 | 数量 | 内容 |
+| 编号 | 问题 | 状态 |
 |------|------|------|
-| BLOCKER | 7 | B01-B07 |
-| MAJOR | 2 | M01-M02 |
+| R2-B01 | independence_group 必须恢复为禁用字段 | ✅ 已修复 |
+| R2-B02 | raw_payload 改为 candidate_id 关联（非位置） | ✅ 已修复 |
+| R2-B03 | 7类全入 ReviewBundle + 10x稳定性 | ✅ 已修复 |
+| R2-M01 | 不可晋级改为 fact_claim 白名单 | ✅ 已修复 |
+| R2-M02 | "完整管道"表述 | ✅ 报告已修正 |
 
-### B01-B07 修复范围
-- B01: 原始Provider payload在DTO构建前检查5个禁用字段
-- B02: independence_group 不作为禁用字段（正常Evidence使用）
-- B03: Provider promotable=True → 无条件ERROR
-- B04: FactCandidate按target_claim_id引用图校验
-- B05: Prompt Injection检查完整ContentUnit，防止子串规避
-- B06: SafetyGate接入真实ReviewBundle (accepted/rejected/bundle_sha256)
-- B07: 移除SafetyGate中弱化版QuoteGate，消费QuoteGate findings
+### 关键变更
+- `PROVIDER_FORBIDDEN_FIELDS`: 恢复为5个（含independence_group）
+- 白名单：`PROMOTABLE_CLAIM_TYPES = {"fact_claim"}`
+- raw_payloads: `dict[candidate_id, payload]`
+- 全7类对抗场景通过 ReviewBundle 10×稳定性验证
 
-### M01-M02 修复
-- M01: INFO/WARNING不再计为failed_count
-- M02: 看板状态回退到 REVIEW_ROUND_1_FAILED
-
-## 4. Round 2 当前状态
-
-```text
-SafetyGate V2 已重写：全部7个BLOCKER + 2个MAJOR已处理
-405/405 tests passed
-Coverage: 92.24%
-冻结资产: 60/60 匹配
-核心Schema: 零变更 / Alembic: 零新增
-
-正在等待: 大G Round 2 复核
-```
-
-## 5. 服务器资源
+## 4. 服务器资源
 
 ```text
 仓库：/home/admin/.openclaw/workspace/Aurora
 Python：3.11.13
-pytest：405 passed
-Coverage：92.24%
+pytest：431 passed
+Coverage：92.37%
 Git分支：feature/m2-003b-gate2-cognitive-safety（未merge）
+Commit：2eb04e3
+```
+
+## 5. 下一节点
+
+```text
+Owner Closure Verification
+→ 大黄裁断
+→ Merge main
+→ M2-003C Gate 3 启动
 ```
 
 ---
