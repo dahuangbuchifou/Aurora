@@ -29,7 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          python -m pip install -e ".[dev,parsers]"
+          python -c "import bs4, lxml, httpx, pdfplumber, webvtt; print('Parser dependencies verified')"
 
       - name: pytest
         id: pytest
