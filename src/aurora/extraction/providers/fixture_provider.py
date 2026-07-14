@@ -22,17 +22,23 @@ from aurora.extraction.context_window import ContextWindow
 from aurora.extraction.envelope import ProviderMetadata
 from aurora.extraction.providers.base import ExtractionProvider, ProviderResponse
 
-PROVIDER_FIXTURE_DIR = (
-    Path(__file__).parents[4] / "tests" / "fixtures" / "m2_003" / "provider_responses"
-)
-
 PROVIDER_CASE_FILES = {
     "case_a_web": "case_a_web_provider.json",
     "case_b_video": "case_b_video_provider.json",
     "case_c_pdf": "case_c_pdf_provider.json",
+    # Adversarial cases (Gate 2/3)
+    "prediction_pollution": "prediction_pollution_provider.json",
+    "valuation_recommendation": "valuation_recommendation_provider.json",
+    "prompt_injection": "prompt_injection_provider.json",
+    "fake_quote": "fake_quote_provider.json",
+    "forged_or_outside_unit": "forged_or_outside_unit_provider.json",
+    "high_confidence_pollution": "high_confidence_pollution_provider.json",
+    "provider_independence_override": "provider_independence_override_provider.json",
 }
 
-# Frozen candidate type ordering for G1-6 stability
+PROVIDER_FIXTURE_DIR = (
+    Path(__file__).parents[4] / "tests" / "fixtures" / "m2_003" / "provider_responses"
+)# Frozen candidate type ordering for G1-6 stability
 _CANDIDATE_TYPE_ORDER: tuple[str, ...] = (
     "entity",
     "data_point",
@@ -73,7 +79,12 @@ class FixtureProvider(ExtractionProvider):
             )
         file_path = self._fixture_dir / file_name
         if not file_path.exists():
-            raise FileNotFoundError(f"Provider fixture not found: {file_path}")
+            # Try adversarial subdirectory
+            alt_path = self._fixture_dir.parent / "adversarial" / "provider_responses" / file_name
+            if alt_path.exists():
+                file_path = alt_path
+            else:
+                raise FileNotFoundError(f"Provider fixture not found: {file_path}")
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
