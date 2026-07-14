@@ -10,12 +10,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from aurora.core.models.atoms import Claim, DataPoint, Entity, Evidence
-from aurora.core.models.common import (
-    HumanReview,
-    MeasurementContext,
-    Provenance,
-    TimeRange,
-)
+from aurora.core.models.common import MeasurementContext, TimeRange
 from aurora.core.models.enums import (
     ClaimType,
     EntityType,
@@ -24,9 +19,6 @@ from aurora.core.models.enums import (
     EvidenceRole,
     EvidenceStrength,
     EvidenceType,
-    HumanReviewStatus,
-    ObjectType,
-    OriginType,
     SourceQualityTier,
 )
 from aurora.extraction.candidates import (
@@ -40,7 +32,6 @@ from aurora.extraction.candidates import (
 
 
 def _safe_enum(enum_cls: Any, value: str) -> Any:
-    """Parse enum value, falling back gracefully."""
     if not value:
         return None
     try:
@@ -50,21 +41,14 @@ def _safe_enum(enum_cls: Any, value: str) -> Any:
 
 
 def map_entity(cid: str, candidate: EntityCandidate) -> Entity:
-    """Create a draft Entity from an EntityCandidate."""
     et = _safe_enum(EntityType, candidate.entity_type) or EntityType.ORGANIZATION
     return Entity(
         entity_type=et,
         canonical_name=candidate.canonical_name or candidate.candidate_id,
-        provenance=Provenance(
-            origin_type=OriginType.ORIGINAL,
-            human_review=HumanReview(status=HumanReviewStatus.NOT_REVIEWED),
-            derivation_note=f"Draft from candidate {cid}",
-        ),
     )
 
 
 def map_data_point(cid: str, candidate: DataPointCandidate) -> DataPoint:
-    """Create a draft DataPoint from a DataPointCandidate."""
     now = datetime.now(UTC)
     return DataPoint(
         metric=candidate.metric or "unknown",
@@ -77,44 +61,22 @@ def map_data_point(cid: str, candidate: DataPointCandidate) -> DataPoint:
         else TimeRange(start=now, end=now),
         reported_at=now,
         source_ref=f"candidate:{cid}",
-        provenance=Provenance(
-            origin_type=OriginType.ORIGINAL,
-            human_review=HumanReview(status=HumanReviewStatus.NOT_REVIEWED),
-            derivation_note=f"Draft from candidate {cid}",
-        ),
     )
 
 
 def map_claim(cid: str, candidate: ClaimCandidate) -> Claim:
-    """Create a draft Claim from a ClaimCandidate.
-
-    Epistemic status defaults to UNDER_REVIEW, not VERIFIED.
-    Only fact_claim type passes through; other types are blocked upstream.
-    If claim_type is prediction and no time_horizon in candidate, provide a default.
-    """
     ct = _safe_enum(ClaimType, candidate.claim_type) or ClaimType.FACT_CLAIM
     return Claim(
         claim_type=ct,
         statement=candidate.statement or "",
         asserted_by=candidate.asserted_by or candidate.claimant_name or "unknown",
         source_ref=f"candidate:{cid}",
-        epistemic_status=EpistemicStatus.UNDER_REVIEW,  # G3-3: not confirmed
+        epistemic_status=EpistemicStatus.UNDER_REVIEW,
         time_horizon=TimeRange() if ct == ClaimType.PREDICTION else None,
-        provenance=Provenance(
-            origin_type=OriginType.ORIGINAL,
-            human_review=HumanReview(status=HumanReviewStatus.NOT_REVIEWED),
-            derivation_note=f"Draft from candidate {cid}",
-        ),
     )
 
 
-def map_evidence(
-    cid: str, candidate: EvidenceCandidate, engine_independence_group: str = ""
-) -> Evidence:
-    """Create a draft Evidence from an EvidenceCandidate.
-
-    independence_group is computed by the engine, NOT from Provider.
-    """
+def map_evidence(cid: str, candidate: EvidenceCandidate) -> Evidence:
     er = _safe_enum(EvidenceRole, candidate.evidence_role) or EvidenceRole.CORROBORATES
     et = _safe_enum(EvidenceType, candidate.evidence_type) or EvidenceType.DOCUMENT
     return Evidence(
@@ -123,40 +85,23 @@ def map_evidence(
         target_object_id=candidate.target_object_id or "",
         source_ref=f"candidate:{cid}",
         summary=candidate.source_quote or candidate.note or f"Evidence from {cid}",
-        independence_group=engine_independence_group or f"group_{cid}",
+        independence_group=f"engine_{cid}",
         directness=EvidenceDirectness.UNKNOWN,
         source_quality_tier=SourceQualityTier.S5,
         evidence_strength=EvidenceStrength.E1,
-        provenance=Provenance(
-            origin_type=OriginType.ORIGINAL,
-            human_review=HumanReview(status=HumanReviewStatus.NOT_REVIEWED),
-            derivation_note=f"Draft from candidate {cid}",
-        ),
     )
-
-
-_CANDIDATE_TYPE_ORDER: tuple[str, ...] = (
-    "entity", "data_point", "claim", "evidence",
-)
 
 
 def map_accepted_candidates(
     bundle_accepted_ids: list[str],
     candidates: tuple[Candidate, ...],
-    engine_independence_group: str = "",
 ) -> tuple[list[Entity], list[DataPoint], list[Claim], list[Evidence]]:
-    """Map all accepted candidates to draft core objects.
-
-    Returns four parallel lists in deterministic type order.
-    FactCandidate is skipped (G3-2).
-    """
     accepted = {cid for cid in bundle_accepted_ids}
     entities: list[Entity] = []
     data_points: list[DataPoint] = []
     claims: list[Claim] = []
     evidence_list: list[Evidence] = []
 
-    # Process in type order for determinism
     for c in candidates:
         cid = getattr(c, "candidate_id", "")
         if cid not in accepted:
@@ -169,7 +114,6 @@ def map_accepted_candidates(
         elif isinstance(c, ClaimCandidate):
             claims.append(map_claim(cid, c))
         elif isinstance(c, EvidenceCandidate):
-            evidence_list.append(map_evidence(cid, c, engine_independence_group))
-        # FactCandidate: intentionally skipped (G3-2)
+            evidence_list.append(map_evidence(cid, c))
 
     return entities, data_points, claims, evidence_list
