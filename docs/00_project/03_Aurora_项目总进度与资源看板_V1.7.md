@@ -1,15 +1,15 @@
-# Aurora 项目总进度与资源看板 V1.7
+# Aurora 项目总进度与资源看板 V1.9
 
-> 更新时间：2026-07-13  
-> 当前验证基线：Python 3.11.7 / Aurora 0.5.0 / 345 tests / 92.40% coverage
+> 更新时间：2026-07-14 13:30 CST
+> 当前验证基线：Python 3.11.13 / Aurora 0.5.0 / 431 tests / 92.37% coverage
+> Gate 2：CONDITIONALLY_CLOSED_BY_OWNER
+> Gate 3：IN_PROGRESS (TASK_SPEC_APPROVED)
 
 ## 1. 总体进度
 
 ```text
-总体治理进度：42%
+总体治理进度：44%
 ```
-
-本次只更新任务状态，不调整总体百分比。M2-003B Gate 2通过后重新评估。
 
 ## 2. 里程碑状态
 
@@ -20,59 +20,50 @@ M2-001：CLOSED
 M2-002：CLOSED
 M2-003A / Gate 0：CLOSED / FINAL_PASS
 M2-003B / Gate 1：CLOSED
-M2-003B / Gate 2：READY_FOR_TASK_SPEC_CONFIRMATION
-M2-003C / Gate 3：PLANNED
+M2-003B / Gate 2：CONDITIONALLY_CLOSED_BY_OWNER
+M2-003C / Gate 3：IN_PROGRESS · TASK_SPEC_APPROVED
+M2-003D：BLOCKED
 ```
 
-## 3. 当前任务
+## 3. Gate 2 条件关闭遗留
+
+| 编号 | 内容 | 目标 |
+|------|------|------|
+| OPT-068 | 正式Provider编排链 | Gate 3 阶段二 |
+| OPT-069 | Provider语义字段清除 | Gate 3 阶段一（首个Commit） |
+| OPT-070 | 统一Provider Decoder | Gate 3 阶段二 |
+| OPT-071 | promotable_to_fact所有权 | Gate 3 阶段二 |
+
+## 4. Gate 3 实施计划
+
+### 阶段一：OPT-069 前置修复
+- FixtureProvider 不再读取 independence_group / promotable / promotable_to_fact
+- Raw payload 越权字段 → ERROR
+
+### 阶段二：正式Provider编排链
+- FixtureProvider → ProviderResponse → Decoder → ExtractionEnvelope
+- 关闭 OPT-068 / OPT-070 / OPT-071
+
+### 阶段三：草案持久化
+- ReviewBundle Preflight → Mapper → 确定性ID → 幂等 → 原子写入
+- Entity/DataPoint/Claim/Evidence 持久化 · Fact 禁止 · ProcessingRun 审计 · dry-run
+
+## 5. 服务器资源
 
 ```text
-任务：M2-003B Gate 2 认知安全验证
-状态：等待婉儿共同确认任务卡
-目标分支：feature/m2-003b-gate2-cognitive-safety
+仓库：/home/admin/.openclaw/workspace/Aurora
+Python：3.11.13
+pytest：431 passed
+Coverage：92.37%
+Git分支：main（Gate 2已merge）
 ```
 
-## 4. 本地资源
+## 6. 下一节点
 
 ```text
-仓库：E:\Aurora
-Python：3.11.7
-虚拟环境：E:\Aurora\.venv
-GitHub认证：GCM / 分支写入已验证
-pytest：345 passed
-Coverage：92.40%
-Git：main clean
+阶段一：创建 feature/m2-003c-gate3 → OPT-069 前置修复
 ```
 
-## 5. 目标QA资源
+---
 
-```text
-Python 3.11.13
-SQLite 3.26+
-无真实LLM
-无外网
-无GPU要求
-```
-
-## 6. 当前BLOCKER
-
-```text
-None
-```
-
-## 7. 待共同确认
-
-- Gate 2任务范围；
-- Provider越权字段采用严格拒绝还是移除+ERROR；
-- 冻结资产清单；
-- Review Checklist；
-- Gate 2退出条件。
-
-## 8. 下一节点
-
-```text
-TASK_SPEC_APPROVED
-→ 大G实施
-→ 大G交付前自检
-→ 大G与婉儿共同完成Round 1
-```
+_婉儿维护 · 2026-07-14_ 🎋
