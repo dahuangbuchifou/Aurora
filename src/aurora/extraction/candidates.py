@@ -82,7 +82,7 @@ class EvidenceCandidate(AuroraModel):
     evidence_type: str
     evidence_role: str
     target_object_id: str
-    independence_group: str
+    independence_group: str = ""
     source_quote: str
     quote_match_mode: str = "literal"
     source_unit_id: str = ""

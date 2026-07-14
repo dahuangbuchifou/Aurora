@@ -1,0 +1,43 @@
+{
+  "case_id": "provider_independence_override",
+  "description": "G2-5: Provider raw payload sets forbidden fields (source_quality_tier, verification_status). Must be rejected BEFORE DTO construction.",
+  "candidates": [
+    {
+      "candidate_type": "evidence",
+      "candidate_id": "pio_ev_001",
+      "evidence_type": "source_document",
+      "evidence_role": "support",
+      "target_object_id": "cl_001",
+      "independence_group": "provider_assigned_group_A",
+      "source_quality_tier": "tier_1",
+      "verification_status": "verified",
+      "source_quote": "汇率波动和原材料价格上涨是公司面临的主要不确定性因素",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_007",
+      "note": ""
+    },
+    {
+      "candidate_type": "claim",
+      "candidate_id": "pio_cl_001",
+      "statement": "汇率波动和原材料价格上涨是主要风险",
+      "claim_type": "risk_claim",
+      "claim_dimension": "operations",
+      "claimant_name": "未知来源",
+      "asserted_by": "未知来源",
+      "time_horizon": null,
+      "promotable_to_fact": false,
+      "source_quote": "汇率波动和原材料价格上涨是公司面临的主要不确定性因素",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_007",
+      "note": ""
+    }
+  ],
+  "provider_metadata": {
+    "name": "adversarial_fixture",
+    "version": "1.0",
+    "deterministic_mode": true,
+    "case_id": "provider_independence_override"
+  },
+  "warnings": [],
+  "errors": []
+}

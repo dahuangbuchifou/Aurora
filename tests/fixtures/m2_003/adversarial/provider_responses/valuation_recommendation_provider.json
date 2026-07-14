@@ -1,0 +1,29 @@
+{
+  "case_id": "valuation_recommendation",
+  "description": "G2-1: Valuation/recommendation text must not become Fact.",
+  "candidates": [
+    {
+      "candidate_type": "claim",
+      "candidate_id": "val_cl_001",
+      "statement": "170元以上不建议买入，当前估值偏高",
+      "claim_type": "recommendation",
+      "claim_dimension": "valuation",
+      "claimant_name": "分析师",
+      "asserted_by": "分析师",
+      "time_horizon": null,
+      "promotable_to_fact": true,
+      "source_quote": "170元以上不建议买入",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_002",
+      "note": ""
+    }
+  ],
+  "provider_metadata": {
+    "name": "adversarial_fixture",
+    "version": "1.0",
+    "deterministic_mode": true,
+    "case_id": "valuation_recommendation"
+  },
+  "warnings": [],
+  "errors": []
+}

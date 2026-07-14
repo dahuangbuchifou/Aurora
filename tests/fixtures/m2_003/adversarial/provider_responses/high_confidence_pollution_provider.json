@@ -1,0 +1,43 @@
+{
+  "case_id": "high_confidence_pollution",
+  "description": "G2-6 + B03 + B04: confidence=0.99 + provider promotable=True + prediction-type claim reference.",
+  "candidates": [
+    {
+      "candidate_type": "claim",
+      "candidate_id": "hc_cl_001",
+      "statement": "公司在AI芯片领域有先发优势",
+      "claim_type": "value_judgment",
+      "claim_dimension": "competition",
+      "claimant_name": "行业分析师",
+      "asserted_by": "行业分析师",
+      "time_horizon": null,
+      "promotable_to_fact": true,
+      "confidence": 0.99,
+      "source_quote": "公司在AI芯片领域的布局具有先发优势",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_006",
+      "note": ""
+    },
+    {
+      "candidate_type": "fact",
+      "candidate_id": "hc_fc_001",
+      "statement": "公司在AI芯片领域有先发优势",
+      "promotable": true,
+      "target_claim_id": "hc_cl_001",
+      "supporting_evidence_ids": [],
+      "confidence": 0.99,
+      "source_quote": "公司在AI芯片领域的布局具有先发优势",
+      "quote_match_mode": "literal",
+      "source_unit_id": "adv_cu_006",
+      "rejection_reason": ""
+    }
+  ],
+  "provider_metadata": {
+    "name": "adversarial_fixture",
+    "version": "1.0",
+    "deterministic_mode": true,
+    "case_id": "high_confidence_pollution"
+  },
+  "warnings": [],
+  "errors": []
+}

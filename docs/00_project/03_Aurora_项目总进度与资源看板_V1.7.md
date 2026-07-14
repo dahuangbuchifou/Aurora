@@ -1,15 +1,16 @@
-# Aurora 项目总进度与资源看板 V1.9
+# Aurora 项目总进度与资源看板 V1.8
 
-> 更新时间：2026-07-14 13:30 CST
+> 更新时间：2026-07-14 12:00 CST
 > 当前验证基线：Python 3.11.13 / Aurora 0.5.0 / 431 tests / 92.37% coverage
-> Gate 2：CONDITIONALLY_CLOSED_BY_OWNER
-> Gate 3：IN_PROGRESS (TASK_SPEC_APPROVED)
+> Gate 2 状态：FIX_IN_PROGRESS (Round 2 BLOCKERs addressed, awaiting owner closure)
 
 ## 1. 总体进度
 
 ```text
-总体治理进度：44%
+总体治理进度：42%
 ```
+
+M2-003B Gate 2 — 三轮修复完成，待大黄 Owner Closure Verification。
 
 ## 2. 里程碑状态
 
@@ -20,48 +21,46 @@ M2-001：CLOSED
 M2-002：CLOSED
 M2-003A / Gate 0：CLOSED / FINAL_PASS
 M2-003B / Gate 1：CLOSED
-M2-003B / Gate 2：CONDITIONALLY_CLOSED_BY_OWNER
-M2-003C / Gate 3：IN_PROGRESS · TASK_SPEC_APPROVED
-M2-003D：BLOCKED
+M2-003B / Gate 2：FIX_IN_PROGRESS → AWAITING_OWNER_CLOSURE
+M2-003C / Gate 3：BLOCKED_BY_GATE2
 ```
 
-## 3. Gate 2 条件关闭遗留
+## 3. Round 2 复核 → Final 修复
 
-| 编号 | 内容 | 目标 |
+大G Round 2：**FAIL** (3 BLOCKER + 2 MAJOR)
+
+| 编号 | 问题 | 状态 |
 |------|------|------|
-| OPT-068 | 正式Provider编排链 | Gate 3 阶段二 |
-| OPT-069 | Provider语义字段清除 | Gate 3 阶段一（首个Commit） |
-| OPT-070 | 统一Provider Decoder | Gate 3 阶段二 |
-| OPT-071 | promotable_to_fact所有权 | Gate 3 阶段二 |
+| R2-B01 | independence_group 必须恢复为禁用字段 | ✅ 已修复 |
+| R2-B02 | raw_payload 改为 candidate_id 关联（非位置） | ✅ 已修复 |
+| R2-B03 | 7类全入 ReviewBundle + 10x稳定性 | ✅ 已修复 |
+| R2-M01 | 不可晋级改为 fact_claim 白名单 | ✅ 已修复 |
+| R2-M02 | "完整管道"表述 | ✅ 报告已修正 |
 
-## 4. Gate 3 实施计划
+### 关键变更
+- `PROVIDER_FORBIDDEN_FIELDS`: 恢复为5个（含independence_group）
+- 白名单：`PROMOTABLE_CLAIM_TYPES = {"fact_claim"}`
+- raw_payloads: `dict[candidate_id, payload]`
+- 全7类对抗场景通过 ReviewBundle 10×稳定性验证
 
-### 阶段一：OPT-069 前置修复
-- FixtureProvider 不再读取 independence_group / promotable / promotable_to_fact
-- Raw payload 越权字段 → ERROR
-
-### 阶段二：正式Provider编排链
-- FixtureProvider → ProviderResponse → Decoder → ExtractionEnvelope
-- 关闭 OPT-068 / OPT-070 / OPT-071
-
-### 阶段三：草案持久化
-- ReviewBundle Preflight → Mapper → 确定性ID → 幂等 → 原子写入
-- Entity/DataPoint/Claim/Evidence 持久化 · Fact 禁止 · ProcessingRun 审计 · dry-run
-
-## 5. 服务器资源
+## 4. 服务器资源
 
 ```text
 仓库：/home/admin/.openclaw/workspace/Aurora
 Python：3.11.13
 pytest：431 passed
 Coverage：92.37%
-Git分支：main（Gate 2已merge）
+Git分支：feature/m2-003b-gate2-cognitive-safety（未merge）
+Commit：2eb04e3
 ```
 
-## 6. 下一节点
+## 5. 下一节点
 
 ```text
-阶段一：创建 feature/m2-003c-gate3 → OPT-069 前置修复
+Owner Closure Verification
+→ 大黄裁断
+→ Merge main
+→ M2-003C Gate 3 启动
 ```
 
 ---

@@ -1,0 +1,13 @@
+{
+  "case_id": "provider_independence_override",
+  "expected_fact_pollution_count": 0,
+  "expected_fake_quote_count": 0,
+  "expected_illegal_unit_count": 0,
+  "expected_prompt_injection_count": 0,
+  "expected_provider_override_count": 3,
+  "expected_high_confidence_pollution_count": 0,
+  "expected_rejected_candidate_ids": ["pio_ev_001"],
+  "expected_accepted_candidate_ids": ["pio_cl_001"],
+  "gate2_violations": ["G2-5"],
+  "note": "R2-B01: independence_group, source_quality_tier, AND verification_status all flagged as provider override"
+}

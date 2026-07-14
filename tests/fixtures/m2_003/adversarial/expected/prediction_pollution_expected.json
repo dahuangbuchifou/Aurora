@@ -1,0 +1,12 @@
+{
+  "case_id": "prediction_pollution",
+  "expected_fact_pollution_count": 2,
+  "expected_fake_quote_count": 0,
+  "expected_illegal_unit_count": 0,
+  "expected_prompt_injection_count": 0,
+  "expected_provider_override_count": 0,
+  "expected_high_confidence_pollution_count": 0,
+  "expected_rejected_candidate_ids": ["pred_pol_fc_001"],
+  "expected_accepted_candidate_ids": ["pred_pol_cl_001"],
+  "gate2_violations": ["G2-1"]
+}
