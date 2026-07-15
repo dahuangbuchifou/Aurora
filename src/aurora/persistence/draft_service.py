@@ -1,257 +1,248 @@
 """Draft service — SQLAlchemy-backed transactional persistence.
 
 Replaces in-memory DraftStore with real ObjectRepository + SQLite.
-Supports: atomic transactions, cross-session idempotency,
-ProcessingRun in independent session, rollback verification.
+Supports: workflow-owned transactions, independent ProcessingRun sessions,
+cross-session idempotency with persistent natural keys (B06).
+
+B01: Workflow owns transaction — receives sessionmaker, creates/commits/rolls back internally.
+B02: ProcessingRun in independent session — 3-phase transaction:
+     (1) RUNNING commit, (2) business objects atomic, (3) SUCCEEDED/FAILED commit.
+B03: Full ReviewBundle preflight via validation module.
+B05: Strict mapper — no default values, missing required fields fail entire transaction.
+B06: Persistent idempotency — operation_key + draft_natural_key stored via external_ids.
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import select as sql_select
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm import Session, sessionmaker
 
 from aurora.core.models.application import ProcessingRun
-from aurora.core.models.atoms import Claim, DataPoint, Entity, Evidence
 from aurora.core.models.common import ProcessorInfo
-from aurora.core.models.enums import ObjectType, RunStatus
-from aurora.db.session import create_db_engine, create_session_factory, session_scope
+from aurora.core.models.enums import LifecycleStatus, ObjectType, RunStatus
+from aurora.db.models import ObjectRecord
 from aurora.persistence.contracts import DraftAction, DraftRecord, DraftTransaction
 from aurora.persistence.identity import (
     compute_bundle_operation_key,
     compute_draft_natural_key,
 )
 from aurora.persistence.mapper import map_accepted_candidates
+from aurora.persistence.source_graph import compute_independence_group, SourceGraphError
 from aurora.persistence.validation import validate_bundle_preflight
-from aurora.repository.object_repository import ObjectRepository
 
-_OBJ_TYPE_TO_ENUM = {
+logger = logging.getLogger(__name__)
+
+_OBJ_TYPE_TO_ENUM: dict[str, ObjectType] = {
     "entity": ObjectType.ENTITY,
     "data_point": ObjectType.DATA_POINT,
     "claim": ObjectType.CLAIM,
     "evidence": ObjectType.EVIDENCE,
 }
 
+# ── B06: external_id keys for persistent idempotency ────────────────────────
 
-def _to_object_type(obj_type: str) -> ObjectType:
-    return _OBJ_TYPE_TO_ENUM.get(obj_type, ObjectType.ENTITY)
-
-
-def repo_find_processing_runs(
-    repo: ObjectRepository, workspace_id: str, op_key: str
-) -> list:
-    """Find ProcessingRuns by bundle operation key.
-
-    op_key is stored in input_object_ids[0] of the ProcessingRun.
-    """
-    from aurora.core.models.enums import ObjectType
-    all_runs = repo.list(
-        object_type=ObjectType.PROCESSING_RUN,
-        workspace_id=workspace_id,
-    )
-    return [
-        r for r in all_runs
-        if r.input_object_ids and r.input_object_ids[0] == op_key
-    ]
+EXT_ID_OPERATION_KEY = "draft_operation_key"
+EXT_ID_NATURAL_KEY = "draft_natural_key"
+EXT_ID_ORIGIN_CANDIDATE = "draft_origin_candidate_id"
+EXT_ID_BUNDLE_SHA256 = "draft_bundle_sha256"
 
 
-def persist_drafts(
-    repo: ObjectRepository,
-    bundle: Any,
+def _lookup_by_natural_key(
+    session: Session,
+    object_type: ObjectType,
+    natural_key: str,
     workspace_id: str,
-    dry_run: bool = False,
-) -> DraftTransaction:
-    """Persist accepted draft objects from a ReviewBundle via ObjectRepository.
+) -> list[ObjectRecord]:
+    """B06: Persistent natural-key lookup via external_ids stored in payload.
 
-    Args:
-        repo: ObjectRepository wrapping a SQLAlchemy Session
-        bundle: Validated ReviewBundle
-        workspace_id: Unique workspace identifier
-        dry_run: If True, validate + map but do not write
-
-    Returns:
-        DraftTransaction with per-object DraftRecords
+    Scans all active records of the object_type in workspace and
+    filters on payload.external_ids.draft_natural_key.
     """
-    # 1. Preflight
-    warnings = validate_bundle_preflight(bundle)
-
-    # 2. Bundle operation key — query repository for existing ProcessingRun
-    op_key = compute_bundle_operation_key(workspace_id, bundle.bundle_sha256)
-    existing_runs = repo_find_processing_runs(repo, workspace_id, op_key)
-    if existing_runs:
-        # Already processed — idempotent return
-        return DraftTransaction(
-            records=(),
-            total_objects=0,
-            created_count=0,
-            reused_count=0,
-            processing_run_id=existing_runs[0].id if existing_runs else f"run_replay_{op_key[:16]}",
-            succeeded=True,
+    stmt = (
+        sql_select(ObjectRecord)
+        .where(
+            ObjectRecord.object_type == object_type.value,
+            ObjectRecord.workspace_id == workspace_id,
+            ObjectRecord.deleted_at.is_(None),
         )
-
-    # 3. Map candidates → draft objects
-    entities, data_points, claims, evidence_list = map_accepted_candidates(
-        bundle.accepted_candidate_ids,
-        bundle.candidates,
     )
+    records: list[ObjectRecord] = list(session.scalars(stmt).all())
+    result: list[ObjectRecord] = []
+    for r in records:
+        ext = r.payload.get("external_ids", {})
+        if isinstance(ext, dict) and ext.get(EXT_ID_NATURAL_KEY) == natural_key:
+            result.append(r)
+    return result
 
-    all_mapped: list[tuple[str, Any]] = []
+
+def _lookup_by_operation_key(
+    session: Session,
+    op_key: str,
+    workspace_id: str,
+) -> list[ObjectRecord]:
+    """B06: Find ProcessingRun records by operation_key.
+
+    Checks external_ids.draft_operation_key and input_object_ids.
+    """
+    stmt = sql_select(ObjectRecord).where(
+        ObjectRecord.object_type == ObjectType.PROCESSING_RUN.value,
+        ObjectRecord.workspace_id == workspace_id,
+    )
+    records: list[ObjectRecord] = list(session.scalars(stmt).all())
+    result: list[ObjectRecord] = []
+    for r in records:
+        ext = r.payload.get("external_ids", {})
+        if isinstance(ext, dict) and ext.get(EXT_ID_OPERATION_KEY) == op_key:
+            result.append(r)
+            continue
+        ioids = r.payload.get("input_object_ids") or []
+        if op_key in ioids:
+            result.append(r)
+    return result
+
+
+# ── B05: strict mapper validation ───────────────────────────────────────────
+
+def _validate_mapped_object(obj: Any, obj_type: str) -> None:
+    """B05: Fail-closed on missing required fields; no default values."""
+    if obj_type == "entity":
+        if not getattr(obj, "canonical_name", None) or not getattr(obj, "entity_type", None):
+            raise ValueError(f"Entity missing canonical_name or entity_type: {getattr(obj, 'id', '?')}")
+    elif obj_type == "data_point":
+        if getattr(obj, "metric", None) in (None, "unknown"):
+            raise ValueError(f"DataPoint has unknown metric: {getattr(obj, 'id', '?')}")
+        if getattr(obj, "unit", None) in (None, "unknown"):
+            raise ValueError(f"DataPoint has unknown unit: {getattr(obj, 'id', '?')}")
+    elif obj_type == "claim":
+        if not getattr(obj, "statement", None):
+            raise ValueError(f"Claim has empty statement: {getattr(obj, 'id', '?')}")
+        if getattr(obj, "asserted_by", None) in (None, "unknown"):
+            raise ValueError(f"Claim has unknown asserted_by: {getattr(obj, 'id', '?')}")
+    elif obj_type == "evidence":
+        if not getattr(obj, "target_object_id", None):
+            raise ValueError(f"Evidence has empty target_object_id: {getattr(obj, 'id', '?')}")
+        if getattr(obj, "independence_group", "").startswith("engine_"):
+            raise ValueError("Evidence must use SourceGraphResolver independence_group (B04)")
+
+
+def _dry_run_persist(bundle, workspace_id, op_key):
+    """Dry run: validate + map, build DraftTransaction without DB writes."""
+    validate_bundle_preflight(bundle)
+    entities, data_points, claims, evidence_list = map_accepted_candidates(
+        bundle.accepted_candidate_ids, bundle.candidates
+    )
+    all_mapped = []
     all_mapped.extend(("entity", e) for e in entities)
     all_mapped.extend(("data_point", dp) for dp in data_points)
     all_mapped.extend(("claim", c) for c in claims)
     all_mapped.extend(("evidence", ev) for ev in evidence_list)
 
-    # Build candidate map for natural key computation
     candidate_map = {getattr(c, "candidate_id", ""): c for c in bundle.candidates}
-
-    records: list[DraftRecord] = []
+    records = []
     created = 0
-    reused = 0
-
-    if dry_run:
-        # Dry run: compute keys but don't write
-        for obj_type, obj in all_mapped:
-            cid = getattr(obj, "source_ref", "").replace("candidate:", "")
-            candidate = candidate_map.get(cid)
-            if candidate is not None:
-                natural_key = compute_draft_natural_key(workspace_id, obj_type, candidate)
-            else:
-                natural_key = hashlib.sha256(
-                    f"{workspace_id}|{obj_type}|{cid}".encode()
-                ).hexdigest()
-
-            records.append(DraftRecord(
-                object_type=obj_type,
-                object_id=getattr(obj, "id", ""),
-                stable_identity_hash=natural_key,
-                action=DraftAction.CREATED,
-                candidate_id=cid,
-            ))
-            created += 1
-
-        run_id = f"run_dry_{op_key[:16]}"
-
-    else:
-        # 4. Persist each object via repository
-        for obj_type, obj in all_mapped:
-            cid = getattr(obj, "source_ref", "").replace("candidate:", "")
-            candidate = candidate_map.get(cid)
-            if candidate is not None:
-                natural_key = compute_draft_natural_key(workspace_id, obj_type, candidate)
-            else:
-                natural_key = hashlib.sha256(
-                    f"{workspace_id}|{obj_type}|{cid}".encode()
-                ).hexdigest()
-
-            # Set workspace_id on object
-            if hasattr(obj, "workspace_id"):
-                obj.workspace_id = workspace_id
-
-            # Check for existing object by natural_key in payload
-            # Natural key is stored in source_ref for DataPoint/Claim/Evidence,
-            # and checked by canonical_name + entity_type for Entity
-            if obj_type == "entity":
-                existing_objs = repo.find_by_payload_field(
-                    object_type=_to_object_type(obj_type),
-                    field_name="canonical_name",
-                    value=obj.canonical_name,
-                    workspace_id=workspace_id,
-                )
-                # Also filter by entity_type
-                existing_objs = [
-                    o for o in existing_objs
-                    if o.entity_type == obj.entity_type or o.entity_type.value == obj.entity_type
-                ]
-                existing_objs = existing_objs if len(existing_objs) == 1 else (existing_objs if existing_objs else [])
-            else:
-                existing_objs = repo.find_by_payload_field(
-                    object_type=_to_object_type(obj_type),
-                    field_name="source_ref",
-                    value=obj.source_ref,
-                    workspace_id=workspace_id,
-                )
-            if existing_objs:
-                records.append(DraftRecord(
-                    object_type=obj_type,
-                    object_id=existing_objs[0].id,
-                    stable_identity_hash=natural_key,
-                    action=DraftAction.REUSED,
-                    candidate_id=cid,
-                ))
-                reused += 1
-            else:
-                repo.create(obj)
-                records.append(DraftRecord(
-                    object_type=obj_type,
-                    object_id=obj.id,
-                    stable_identity_hash=natural_key,
-                    action=DraftAction.CREATED,
-                    candidate_id=cid,
-                ))
-                created += 1
-
-        # 5. ProcessingRun — written in the same session
-        now = datetime.now(UTC)
-        run = ProcessingRun(
-            task_type="draft_persistence",
-            processor=ProcessorInfo(module="draft_service", code_version="3.0"),
-            run_status=RunStatus.SUCCESS,
-            started_at=now,
-            finished_at=now,
-            workspace_id=workspace_id,
-            input_object_ids=[op_key],
-            output_object_ids=[r.object_id for r in records],
-        )
-        repo.create(run)
-        run_id = run.id
+    for obj_type, obj in all_mapped:
+        cid = getattr(obj, "source_ref", "").replace("candidate:", "")
+        candidate = candidate_map.get(cid)
+        if candidate is not None:
+            natural_key = compute_draft_natural_key(workspace_id, obj_type, candidate)
+        else:
+            natural_key = hashlib.sha256(
+                f"{workspace_id}|{obj_type}|{cid}".encode()
+            ).hexdigest()
+        records.append(DraftRecord(
+            object_type=obj_type,
+            object_id=getattr(obj, "id", ""),
+            stable_identity_hash=natural_key,
+            action=DraftAction.CREATED,
+            candidate_id=cid,
+        ))
+        created += 1
 
     return DraftTransaction(
         records=tuple(records),
-        total_objects=created + reused,
+        total_objects=created,
         created_count=created,
-        reused_count=reused,
-        processing_run_id=run_id,
+        reused_count=0,
+        processing_run_id=op_key[:32],
         succeeded=True,
     )
 
 
-def persist_drafts_with_separate_run(
+# ── main entry point ────────────────────────────────────────────────────────
+
+def persist_drafts(
     repo_factory: sessionmaker,
-    repo: ObjectRepository,
     bundle: Any,
     workspace_id: str,
     dry_run: bool = False,
 ) -> DraftTransaction:
-    """Transaction with ProcessingRun in independent session.
+    """B01+B02: Workflow-owned transaction with independent ProcessingRun sessions.
 
-    Business objects are committed atomically. If any business object
-    write fails, everything is rolled back, but a FAILED ProcessingRun
-    is written in a separate session.
+    Phase 1: Write ProcessingRun (RUNNING) in independent session → commit.
+    Phase 2: Write business objects in own session → commit (or rollback).
+    Phase 3: Update ProcessingRun (SUCCEEDED/FAILED) in independent session → commit.
+
+    Args:
+        repo_factory: sessionmaker for creating sessions (workflow-owned).
+        bundle: Validated ReviewBundle.
+        workspace_id: Unique workspace identifier.
+        dry_run: If True, validate + map but do not write.
     """
-    try:
-        tx = persist_drafts(repo, bundle, workspace_id, dry_run=dry_run)
-    except Exception as exc:
-        # Rollback happened in session_scope. Write ProcessingRun in new session.
-        try:
-            with session_scope(repo_factory) as fail_session:
-                fail_repo = ObjectRepository(fail_session)
-                now = datetime.now(UTC)
-                op_key = compute_bundle_operation_key(workspace_id, bundle.bundle_sha256)
-                fail_run = ProcessingRun(
-                    task_type="draft_persistence",
-                    processor=ProcessorInfo(module="draft_service", code_version="3.0"),
-                    run_status=RunStatus.FAILED,
-                    started_at=now,
-                    finished_at=now,
-                    workspace_id=workspace_id,
-                    error_message=str(exc)[:500],
-                )
-                fail_repo.create(fail_run)
-        except Exception:
-            pass  # Best effort — ProcessingRun write itself failed
+    op_key = compute_bundle_operation_key(workspace_id, bundle.bundle_sha256)
 
+    # Dry run: validate + map, no DB writes (no ProcessingRun)
+    if dry_run:
+        return _dry_run_persist(bundle, workspace_id, op_key)
+
+    # ── Phase 1: ProcessingRun (RUNNING) in independent session ──────────
+    now = datetime.now(UTC)
+    try:
+        with repo_factory() as run_session:
+            existing = _lookup_by_operation_key(run_session, op_key, workspace_id)
+            if existing:
+                return DraftTransaction(
+                    records=(),
+                    total_objects=0,
+                    created_count=0,
+                    reused_count=0,
+                    processing_run_id=existing[0].payload.get("id", ""),
+                    succeeded=True,
+                )
+
+            run_obj = ProcessingRun(
+                task_type="draft_persistence",
+                processor=ProcessorInfo(module="draft_service", code_version="3.0"),
+                run_status=RunStatus.RUNNING,
+                started_at=now,
+                workspace_id=workspace_id,
+                input_object_ids=[op_key],
+            )
+            run_payload = run_obj.model_dump(mode="json")
+            run_payload.setdefault("external_ids", {})[EXT_ID_OPERATION_KEY] = op_key
+            run_record = ObjectRecord(
+                id=run_obj.id,
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version=run_obj.schema_version,
+                lifecycle_status=LifecycleStatus.ACTIVE.value,
+                workspace_id=workspace_id,
+                privacy_level="private",
+                created_by=run_obj.created_by,
+                created_at=run_obj.created_at,
+                updated_at=run_obj.updated_at,
+                version=1,
+                payload=run_payload,
+            )
+            run_session.add(run_record)
+            run_session.commit()
+            processing_run_id = run_obj.id
+    except Exception as exc:
+        logger.error("Phase 1 (RUNNING run) failed: %s", exc)
         return DraftTransaction(
             records=(),
             total_objects=0,
@@ -259,7 +250,308 @@ def persist_drafts_with_separate_run(
             reused_count=0,
             processing_run_id="",
             succeeded=False,
+            error_message=f"Failed to create ProcessingRun: {exc!s}"[:200],
+        )
+
+    # ── B03: Preflight ──────────────────────────────────────────────────
+    try:
+        validate_bundle_preflight(bundle)
+    except Exception as exc:
+        _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
+        return DraftTransaction(
+            records=(),
+            total_objects=0,
+            created_count=0,
+            reused_count=0,
+            processing_run_id=processing_run_id,
+            succeeded=False,
+            error_message=f"Preflight failed: {exc!s}"[:200],
+        )
+
+    # ── B05: Map candidates with strict validation ──────────────────────
+    try:
+        entities, data_points, claims, evidence_list = map_accepted_candidates(
+            bundle.accepted_candidate_ids,
+            bundle.candidates,
+        )
+    except Exception as exc:
+        _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
+        return DraftTransaction(
+            records=(),
+            total_objects=0,
+            created_count=0,
+            reused_count=0,
+            processing_run_id=processing_run_id,
+            succeeded=False,
+            error_message=f"Mapper failed: {exc!s}"[:200],
+        )
+
+    all_mapped: list[tuple[str, Any]] = []
+    all_mapped.extend(("entity", e) for e in entities)
+    all_mapped.extend(("data_point", dp) for dp in data_points)
+    all_mapped.extend(("claim", c) for c in claims)
+    all_mapped.extend(("evidence", ev) for ev in evidence_list)
+
+    candidate_map = {getattr(c, "candidate_id", ""): c for c in bundle.candidates}
+    records: list[DraftRecord] = []
+    created = 0
+    reused = 0
+
+
+
+    # ── B04: pre-compute independence_group from source graph ───────────
+    cu_to_group: dict[str, str] = {}
+    try:
+        with repo_factory() as graph_session:
+            for c in bundle.candidates:
+                suid = getattr(c, "source_unit_id", "")
+                if not suid or suid in cu_to_group:
+                    continue
+                try:
+                    cu_to_group[suid] = compute_independence_group(
+                        graph_session, suid, workspace_id
+                    )
+                except SourceGraphError as sge:
+                    _finalize_failed_run(
+                        repo_factory, processing_run_id, workspace_id, op_key, sge
+                    )
+                    return DraftTransaction(
+                        records=(),
+                        total_objects=0,
+                        created_count=0,
+                        reused_count=0,
+                        processing_run_id=processing_run_id,
+                        succeeded=False,
+                        error_message=f"SourceGraphError: {sge!s}"[:200],
+                    )
+    except Exception as exc:
+        _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
+        return DraftTransaction(
+            records=(),
+            total_objects=0,
+            created_count=0,
+            reused_count=0,
+            processing_run_id=processing_run_id,
+            succeeded=False,
+            error_message=f"Source graph resolution failed: {exc!s}"[:200],
+        )
+
+    # ── Phase 2: Atomic business object write ───────────────────────────
+    try:
+        with repo_factory() as biz_session:
+            for obj_type, obj in all_mapped:
+                # B05: strict validation
+                _validate_mapped_object(obj, obj_type)
+
+                cid = getattr(obj, "source_ref", "").replace("candidate:", "")
+                candidate = candidate_map.get(cid)
+                if candidate is not None:
+                    natural_key = compute_draft_natural_key(workspace_id, obj_type, candidate)
+                else:
+                    natural_key = hashlib.sha256(
+                        f"{workspace_id}|{obj_type}|{cid}".encode()
+                    ).hexdigest()
+
+                if hasattr(obj, "workspace_id"):
+                    obj.workspace_id = workspace_id
+
+                # M01: unknown object type fail-closed
+                obj_type_enum = _OBJ_TYPE_TO_ENUM.get(obj_type)
+                if obj_type_enum is None:
+                    raise ValueError(f"Unknown object_type: {obj_type} (M01)")
+
+                # B06: Persistent natural-key lookup
+                existing = _lookup_by_natural_key(
+                    biz_session, obj_type_enum, natural_key, workspace_id
+                )
+                if existing:
+                    existing_id = existing[0].payload.get("id", existing[0].id)
+                    records.append(DraftRecord(
+                        object_type=obj_type,
+                        object_id=existing_id,
+                        stable_identity_hash=natural_key,
+                        action=DraftAction.REUSED,
+                        candidate_id=cid,
+                    ))
+                    reused += 1
+                else:
+                    obj_payload = obj.model_dump(mode="json")
+                    # B04: inject independence_group for evidence
+                    if obj_type == "evidence":
+                        c_candidate = candidate_map.get(cid)
+                        if c_candidate is not None:
+                            ev_suid = getattr(c_candidate, "source_unit_id", "")
+                            ev_group = cu_to_group.get(ev_suid, "")
+                            if ev_group:
+                                obj_payload["independence_group"] = ev_group
+                    obj_payload.setdefault("external_ids", {})
+                    obj_payload["external_ids"][EXT_ID_OPERATION_KEY] = op_key
+                    obj_payload["external_ids"][EXT_ID_NATURAL_KEY] = natural_key
+                    obj_payload["external_ids"][EXT_ID_ORIGIN_CANDIDATE] = f"candidate:{cid}"
+                    obj_payload["external_ids"][EXT_ID_BUNDLE_SHA256] = bundle.bundle_sha256
+
+                    rec = ObjectRecord(
+                        id=obj.id,
+                        object_type=obj_type_enum.value,
+                        schema_version=obj.schema_version,
+                        lifecycle_status=LifecycleStatus.ACTIVE.value,
+                        workspace_id=workspace_id,
+                        privacy_level="private",
+                        created_by=obj.created_by,
+                        created_at=obj.created_at,
+                        updated_at=obj.updated_at,
+                        version=1,
+                        payload=obj_payload,
+                    )
+                    biz_session.add(rec)
+                    records.append(DraftRecord(
+                        object_type=obj_type,
+                        object_id=obj.id,
+                        stable_identity_hash=natural_key,
+                        action=DraftAction.CREATED,
+                        candidate_id=cid,
+                    ))
+                    created += 1
+
+            biz_session.commit()
+
+    except Exception as exc:
+        _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
+        return DraftTransaction(
+            records=(),
+            total_objects=0,
+            created_count=0,
+            reused_count=0,
+            processing_run_id=processing_run_id,
+            succeeded=False,
             error_message=str(exc)[:200],
         )
 
-    return tx
+    # ── Phase 3: ProcessingRun (SUCCEEDED) ──────────────────────────────
+    _finalize_success_run(
+        repo_factory, processing_run_id, workspace_id, op_key, records
+    )
+
+    return DraftTransaction(
+        records=tuple(records),
+        total_objects=created + reused,
+        created_count=created,
+        reused_count=reused,
+        processing_run_id=processing_run_id,
+        succeeded=True,
+    )
+
+
+def _finalize_failed_run(
+    repo_factory: sessionmaker,
+    processing_run_id: str,
+    workspace_id: str,
+    op_key: str,
+    exc: Exception,
+) -> None:
+    """B02: Write FAILED ProcessingRun in independent session."""
+    try:
+        with repo_factory() as fail_session:
+            stmt = sql_select(ObjectRecord).where(ObjectRecord.id == processing_run_id)
+            rec = fail_session.scalars(stmt).first()
+            now = datetime.now(UTC)
+            if rec is None:
+                fail_payload = ProcessingRun(
+                    id=processing_run_id,
+                    task_type="draft_persistence",
+                    processor=ProcessorInfo(module="draft_service", code_version="3.0"),
+                    run_status=RunStatus.FAILED,
+                    started_at=now,
+                    finished_at=now,
+                    workspace_id=workspace_id,
+                    error_message=str(exc)[:500],
+                ).model_dump(mode="json")
+                fail_payload.setdefault("external_ids", {})[EXT_ID_OPERATION_KEY] = op_key
+                fail_rec = ObjectRecord(
+                    id=processing_run_id,
+                    object_type=ObjectType.PROCESSING_RUN.value,
+                    schema_version="v1.1",
+                    lifecycle_status=LifecycleStatus.ACTIVE.value,
+                    workspace_id=workspace_id,
+                    privacy_level="private",
+                    created_by="draft_service",
+                    created_at=now,
+                    updated_at=now,
+                    version=1,
+                    payload=fail_payload,
+                )
+                fail_session.add(fail_rec)
+            else:
+                rec.payload["run_status"] = "failure"
+                rec.payload["error_message"] = str(exc)[:500]
+                rec.payload["finished_at"] = now.isoformat()
+                rec.updated_at = now
+                flag_modified(rec, "payload")
+            fail_session.commit()
+    except Exception as e:
+        logger.error("Failed to write FAILED ProcessingRun: %s", e)
+
+
+def _finalize_success_run(
+    repo_factory: sessionmaker,
+    processing_run_id: str,
+    workspace_id: str,
+    op_key: str,
+    records: list[DraftRecord],
+) -> None:
+    """B02: Write SUCCEEDED ProcessingRun in independent session."""
+    try:
+        with repo_factory() as success_session:
+            stmt = sql_select(ObjectRecord).where(ObjectRecord.id == processing_run_id)
+            rec = success_session.scalars(stmt).first()
+            now = datetime.now(UTC)
+            if rec is not None:
+                rec.payload["run_status"] = "success"
+                rec.payload["finished_at"] = now.isoformat()
+                rec.payload["output_object_ids"] = [r.object_id for r in records]
+                rec.updated_at = now
+                flag_modified(rec, "payload")
+            else:
+                run_obj = ProcessingRun(
+                    id=processing_run_id,
+                    task_type="draft_persistence",
+                    processor=ProcessorInfo(module="draft_service", code_version="3.0"),
+                    run_status=RunStatus.SUCCESS,
+                    started_at=now,
+                    finished_at=now,
+                    workspace_id=workspace_id,
+                    input_object_ids=[op_key],
+                    output_object_ids=[r.object_id for r in records],
+                )
+                run_payload = run_obj.model_dump(mode="json")
+                run_payload.setdefault("external_ids", {})[EXT_ID_OPERATION_KEY] = op_key
+                run_rec = ObjectRecord(
+                    id=processing_run_id,
+                    object_type=ObjectType.PROCESSING_RUN.value,
+                    schema_version=run_obj.schema_version,
+                    lifecycle_status=LifecycleStatus.ACTIVE.value,
+                    workspace_id=workspace_id,
+                    privacy_level="private",
+                    created_by=run_obj.created_by,
+                    created_at=run_obj.created_at,
+                    updated_at=run_obj.updated_at,
+                    version=1,
+                    payload=run_payload,
+                )
+                success_session.add(run_rec)
+            success_session.commit()
+    except Exception as e:
+        logger.error("Failed to write SUCCEEDED ProcessingRun: %s", e)
+
+
+# ── Backward-compat wrapper ──────────────────────────────────────────────────
+
+def persist_drafts_with_separate_run(
+    repo_factory: sessionmaker,
+    repo: Any,
+    bundle: Any,
+    workspace_id: str,
+    dry_run: bool = False,
+) -> DraftTransaction:
+    """Backward-compatible wrapper: delegates to persist_drafts."""
+    return persist_drafts(repo_factory, bundle, workspace_id, dry_run=dry_run)

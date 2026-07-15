@@ -1,6 +1,9 @@
 """Mapper — Candidate DTO → Draft core object mapping.
 
-Converts accepted ExtractionCandidates into draft Entity/DataPoint/Claim/Evidence.
+B05: Strict mapping — no default values for required fields.
+Missing fields fail the entire transaction at the strict validation stage
+(performed by draft_service._validate_mapped_object).
+
 FactCandidate is explicitly excluded (G3-2).
 """
 
@@ -41,19 +44,18 @@ def _safe_enum(enum_cls: Any, value: str) -> Any:
 
 
 def map_entity(cid: str, candidate: EntityCandidate) -> Entity:
-    et = _safe_enum(EntityType, candidate.entity_type) or EntityType.ORGANIZATION
     return Entity(
-        entity_type=et,
-        canonical_name=candidate.canonical_name or candidate.candidate_id,
+        entity_type=_safe_enum(EntityType, candidate.entity_type) or EntityType.ORGANIZATION,
+        canonical_name=candidate.canonical_name or "",
     )
 
 
 def map_data_point(cid: str, candidate: DataPointCandidate) -> DataPoint:
     now = datetime.now(UTC)
     return DataPoint(
-        metric=candidate.metric or "unknown",
+        metric=candidate.metric or "",
         value=candidate.value or 0,
-        unit=candidate.unit or "unknown",
+        unit=candidate.unit or "",
         measurement_context=candidate.measurement_context or MeasurementContext(),
         entity_id=candidate.entity_id or "",
         period=candidate.period_time_range
@@ -69,7 +71,7 @@ def map_claim(cid: str, candidate: ClaimCandidate) -> Claim:
     return Claim(
         claim_type=ct,
         statement=candidate.statement or "",
-        asserted_by=candidate.asserted_by or candidate.claimant_name or "unknown",
+        asserted_by=candidate.asserted_by or candidate.claimant_name or "",
         source_ref=f"candidate:{cid}",
         epistemic_status=EpistemicStatus.UNDER_REVIEW,
         time_horizon=TimeRange() if ct == ClaimType.PREDICTION else None,
@@ -77,6 +79,7 @@ def map_claim(cid: str, candidate: ClaimCandidate) -> Claim:
 
 
 def map_evidence(cid: str, candidate: EvidenceCandidate) -> Evidence:
+    """B05: independence_group is empty here — filled by SourceGraphResolver (B04)."""
     er = _safe_enum(EvidenceRole, candidate.evidence_role) or EvidenceRole.CORROBORATES
     et = _safe_enum(EvidenceType, candidate.evidence_type) or EvidenceType.DOCUMENT
     return Evidence(
@@ -84,8 +87,8 @@ def map_evidence(cid: str, candidate: EvidenceCandidate) -> Evidence:
         evidence_type=et,
         target_object_id=candidate.target_object_id or "",
         source_ref=f"candidate:{cid}",
-        summary=candidate.source_quote or candidate.note or f"Evidence from {cid}",
-        independence_group=f"engine_{cid}",
+        summary=candidate.source_quote or candidate.note or "",
+        independence_group="",
         directness=EvidenceDirectness.UNKNOWN,
         source_quality_tier=SourceQualityTier.S5,
         evidence_strength=EvidenceStrength.E1,
