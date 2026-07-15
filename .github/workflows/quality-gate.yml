@@ -18,11 +18,11 @@ jobs:
         python-version: ["3.11"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -45,8 +45,9 @@ jobs:
         run: |
           manifest="docs/qa/M2-003B_Gate2_frozen_assets.sha256"
           if [ ! -f "$manifest" ]; then
-            echo "WARN: No frozen asset manifest — skip"
-            exit 0
+            echo "FAIL: No frozen asset manifest — refusing to proceed"
+            echo "The frozen asset manifest must be present for Gate checks."
+            exit 1
           fi
           python3 -c "
           import hashlib, sys, os
@@ -80,15 +81,23 @@ jobs:
         run: |
           base_ref="${{ github.event.pull_request.base.sha || github.event.before }}"
           if [ -z "$base_ref" ] || [ "$base_ref" = "0000000000000000000000000000000000000000" ]; then
-            echo "Schema: no base ref (first push) — skip"
+            echo "Schema: no base ref (first push) — hard check against schemas/"
+            changes=$(git diff --name-only HEAD~1 HEAD -- schemas/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
+            if [ "$changes" -gt 0 ]; then
+              echo "FAIL: Unauthorized schema changes detected (first push):"
+              git diff --name-only HEAD~1 HEAD -- schemas/ 2>/dev/null
+              exit 1
+            fi
+            echo "Schema: no changes (first push)"
             exit 0
           fi
-          changes=$(git diff --name-only "$base_ref" HEAD -- schemas/ alembic/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
+          changes=$(git diff --name-only "$base_ref" HEAD -- schemas/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
           if [ "$changes" -eq 0 ]; then
             echo "Schema: no changes"
           else
-            echo "WARN: Schema changes detected:"
-            git diff --name-only "$base_ref" HEAD -- schemas/ alembic/ 2>/dev/null
+            echo "FAIL: Unauthorized schema changes detected:"
+            git diff --name-only "$base_ref" HEAD -- schemas/ 2>/dev/null
+            exit 1
           fi
 
       - name: alembic-check
@@ -96,15 +105,23 @@ jobs:
         run: |
           base_ref="${{ github.event.pull_request.base.sha || github.event.before }}"
           if [ -z "$base_ref" ] || [ "$base_ref" = "0000000000000000000000000000000000000000" ]; then
-            echo "Alembic: no base ref — skip"
+            echo "Alembic: no base ref — hard check for new migrations"
+            new_migrations=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- alembic/versions/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
+            if [ "$new_migrations" -gt 0 ]; then
+              echo "FAIL: Unauthorized Alembic migrations (first push):"
+              git diff --name-only --diff-filter=A HEAD~1 HEAD -- alembic/versions/ 2>/dev/null
+              exit 1
+            fi
+            echo "Alembic: no new migrations (first push)"
             exit 0
           fi
           new_migrations=$(git diff --name-only --diff-filter=A "$base_ref" HEAD -- alembic/versions/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
           if [ "$new_migrations" -eq 0 ]; then
             echo "Alembic: no new migrations"
           else
-            echo "WARN: New Alembic migrations:"
+            echo "FAIL: Unauthorized Alembic migrations:"
             git diff --name-only --diff-filter=A "$base_ref" HEAD -- alembic/versions/ 2>/dev/null
+            exit 1
           fi
 
       - name: summary
