@@ -13,6 +13,7 @@ from aurora.persistence.contracts import DraftAction, DraftRecord, DraftTransact
 from aurora.persistence.draft_service import persist_drafts, persist_drafts_with_separate_run
 from aurora.persistence.identity import compute_bundle_operation_key, compute_draft_natural_key
 from aurora.persistence.mapper import map_accepted_candidates
+from aurora.persistence.persistence_policy import PersistencePolicy
 from aurora.persistence.source_graph import SourceGraphError, compute_independence_group, resolve_root_source
 from aurora.persistence.validation import PreflightError, validate_bundle_preflight
 
@@ -20,6 +21,7 @@ __all__ = [
     "DraftAction",
     "DraftRecord",
     "DraftTransaction",
+    "PersistencePolicy",
     "PreflightError",
     "SourceGraphError",
     "compute_bundle_operation_key",

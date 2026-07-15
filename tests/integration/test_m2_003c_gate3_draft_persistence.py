@@ -198,6 +198,13 @@ class TestFullPipeline:
         assert tx.created_count > 0
 
         # B01: Verify objects exist in DB via fresh session
+        # R3-05: Exact counts per object type (includes seed + pipeline objects)
+        expected_counts = {
+            "entity": 1,     # 1 seed entity (ent_company)
+            "data_point": 0, # no data points for prediction_pollution case
+            "claim": 1,      # 1 pipeline-created claim
+            "evidence": 0,   # no evidence for prediction_pollution case
+        }
         with repo_factory() as s:
             from aurora.db.models import ObjectRecord
             from sqlalchemy import select as sql_select
@@ -206,7 +213,7 @@ class TestFullPipeline:
                 cnt = len(s.scalars(
                     sql_select(ObjectRecord).where(ObjectRecord.object_type == ot)
                 ).all())
-                assert cnt >= 0, f"Query for {ot} should succeed"
+                assert cnt == expected_counts.get(ot, -1), f"Query for {ot}: expected {expected_counts.get(ot)}, got {cnt}"
 
             # Verify at least some objects got created
             total = s.scalars(sql_select(ObjectRecord)).all()

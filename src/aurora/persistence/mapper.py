@@ -6,7 +6,7 @@ R2-B05: Evidence independence_group set to placeholder; resolved later via Sourc
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from aurora.core.models.atoms import Claim, DataPoint, Entity, Evidence
 from aurora.core.models.common import MeasurementContext, TimeRange
@@ -150,10 +150,13 @@ def map_evidence(
     cid: str,
     candidate: EvidenceCandidate,
     candidate_to_core: dict[str, str] | None = None,
+    independence_group: str = "",
 ) -> Evidence:
     """R2-B05: target_object_id resolved via candidate_id→core_object_id map.
 
-    independence_group is a placeholder — filled by SourceGraphResolver.
+    R3-03: independence_group can be passed from caller (resolved via SourceGraph).
+    Falls back to "pending_source_graph" placeholder when not provided — validation
+    in draft_service blocks this from reaching DB when policy.require_source_graph is True.
     evidence_role/evidence_type=None when unrecognized (upstream fails).
     """
     target = ""
@@ -165,13 +168,15 @@ def map_evidence(
     er = _safe_enum(EvidenceRole, candidate.evidence_role)
     et = _safe_enum(EvidenceType, candidate.evidence_type)
 
+    ig = independence_group if independence_group else "pending_source_graph"
+
     return Evidence(
         evidence_role=er,
         evidence_type=et,
         target_object_id=target,
         source_ref=f"candidate:{cid}",
         summary=candidate.source_quote or candidate.note or "pending_summary",
-        independence_group="pending_source_graph",
+        independence_group=ig,
         directness=EvidenceDirectness.UNKNOWN,
         source_quality_tier=SourceQualityTier.S5,
         evidence_strength=EvidenceStrength.E1,
@@ -181,6 +186,7 @@ def map_evidence(
 def map_accepted_candidates(
     accepted_candidate_ids: list[str],
     candidates: list[Any],
+    existing_object_resolver: Callable[..., Any] | None = None,
 ) -> tuple[list[Entity], list[DataPoint], list[Claim], list[Evidence], dict[str, str]]:
     """R2-B05: Map accepted candidates in dependency order.
 
@@ -189,6 +195,8 @@ def map_accepted_candidates(
 
     candidate_to_core maps candidate_id → deterministic core object ID
     for reference resolution in Evidence.target_object_id.
+
+    R3-04: Final consistency check ensures all cross-references are resolvable.
     """
     entities: list[Entity] = []
     data_points: list[DataPoint] = []
@@ -238,5 +246,40 @@ def map_accepted_candidates(
         ev = map_evidence(cid, c, candidate_to_core)
         candidate_to_core[cid] = ev.id
         evidence_list.append(ev)
+
+    # ── R3-04: Final consistency check for core ID references ──────────
+    # Collect all known core IDs + candidate IDs
+    known_ids: set[str] = set(candidate_to_core.values()) | set(candidate_to_core.keys())
+
+    # Check DataPoint.entity_id
+    for dp in data_points:
+        eid = getattr(dp, "entity_id", "")
+        if eid and eid not in known_ids:
+            if existing_object_resolver is None or existing_object_resolver(eid) is None:
+                raise ValueError(
+                    f"DataPoint {dp.id} references entity_id={eid} "
+                    f"which cannot be resolved to a core object"
+                )
+
+    # Check Evidence.target_object_id
+    for ev in evidence_list:
+        toid = getattr(ev, "target_object_id", "")
+        if toid and toid not in known_ids:
+            if existing_object_resolver is None or existing_object_resolver(toid) is None:
+                raise ValueError(
+                    f"Evidence {ev.id} references target_object_id={toid} "
+                    f"which cannot be resolved to a core object"
+                )
+
+    # Check Claim.subject_entity_ids
+    for cl in claims:
+        seids = getattr(cl, "subject_entity_ids", None) or []
+        for seid in seids:
+            if seid not in known_ids:
+                if existing_object_resolver is None or existing_object_resolver(seid) is None:
+                    raise ValueError(
+                        f"Claim {cl.id} references subject_entity_id={seid} "
+                        f"which cannot be resolved to a core object"
+                    )
 
     return entities, data_points, claims, evidence_list, candidate_to_core

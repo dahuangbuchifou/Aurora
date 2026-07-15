@@ -20,6 +20,7 @@ from aurora.persistence.draft_service import (
     DraftTransaction,
     persist_drafts,
 )
+from aurora.persistence.persistence_policy import PersistencePolicy
 
 
 def run_draft_persistence(
@@ -29,6 +30,7 @@ def run_draft_persistence(
     workspace_id: str = "aurora_gate3_default",
     dry_run: bool = False,
     preflight_kwargs: dict[str, Any] | None = None,
+    policy: PersistencePolicy | None = None,
 ) -> tuple[ReviewBundle, DraftTransaction]:
     """B01: End-to-end draft persistence pipeline (workflow-owned session).
 
@@ -68,12 +70,24 @@ def run_draft_persistence(
         run_id=f"run_{case_id}_persist",
     )
 
+    # R3-01: Build a default policy from available params if none provided
+    if policy is None:
+        pk = preflight_kwargs or {}
+        policy = PersistencePolicy(
+            allowed_providers=pk.get("allowed_providers", frozenset({"fixture_provider"})),
+            allowed_profiles=pk.get("allowed_profiles", frozenset({"adversarial_profile"})),
+            workspace_id=workspace_id,
+            existing_object_resolver=pk.get("existing_object_resolver"),
+            dry_run=dry_run,
+        )
+
     tx = persist_drafts(
         repo_factory=repo_factory,
         bundle=bundle,
         workspace_id=workspace_id,
         dry_run=dry_run,
         preflight_kwargs=preflight_kwargs,
+        policy=policy,
     )
 
     return bundle, tx

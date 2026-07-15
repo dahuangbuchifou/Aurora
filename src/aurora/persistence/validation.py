@@ -220,6 +220,27 @@ def validate_bundle_preflight(
                             f"which is neither accepted, present as candidate, nor pre-existing"
                         )
 
+    # ── R3-02: Validate provider_name/provider_version/profile_version ──
+    provider_name = getattr(bundle, "provider_name", "")
+    provider_version = getattr(bundle, "provider_version", "")
+    profile_version = getattr(bundle, "profile_version", "")
+
+    # Check provider_name consistency against provider_metadata if present
+    provider_metadata = getattr(bundle, "provider_metadata", None)
+    if provider_metadata is not None:
+        meta_name = getattr(provider_metadata, "name", "")
+        if meta_name and provider_name != meta_name:
+            warnings.append(
+                f"provider_name '{provider_name}' differs from "
+                f"provider_metadata.name '{meta_name}'"
+            )
+
+    # R3-02: provider_version and profile_version must not be empty
+    if provider_version == "":
+        raise PreflightError("provider_version is empty")
+    if profile_version == "":
+        raise PreflightError("profile_version is empty")
+
     # ── R2-B02: Accepted dependency check — all accepted must have
     #            their dependencies (entities for DataPoint/Evidence) accepted
     #            or already present as core objects
