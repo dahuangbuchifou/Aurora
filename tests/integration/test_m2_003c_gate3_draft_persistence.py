@@ -153,6 +153,46 @@ def _seed_source_graph(repo_factory):
             ))
         s.commit()
 
+        # R2-B02: Pre-existing Entity for cross-bundle reference (forged_or_outside_unit)
+        from aurora.core.models.enums import ObjectType as OT
+        ent_payload = {
+            "id": "ent_company", "object_type": "entity",
+            "entity_type": "organization", "canonical_name": "Test Corp",
+            "schema_version": "1.1", "workspace_id": "aurora_gate3_default",
+            "status": "active", "created_by": "test", "created_at": now, "updated_at": now,
+            "aliases": [], "attributes": {}, "privacy_level": "private",
+        }
+        s.add(ObjectRecord(
+            id="ent_company", object_type="entity", schema_version="1.1",
+            lifecycle_status="active", workspace_id="aurora_gate3_default",
+            privacy_level="private", created_by="test", created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc), version=1, payload=ent_payload,
+        ))
+        s.commit()
+
+
+# ── Preflight kwargs helper ───────────────────────────────────────────────
+
+def _make_preflight_kwargs(repo_factory):
+    """Build preflight_kwargs with a minimal existing_object_resolver.
+
+    Used when DataPoint/Evidence references entities from other bundles.
+    """
+    def _resolver(obj_id: str):
+        """Look up object in DB; return dict if found, None otherwise."""
+        with repo_factory() as s:
+            from aurora.db.models import ObjectRecord
+            rec = s.get(ObjectRecord, obj_id)
+            if rec is not None:
+                return {"id": rec.id, "object_type": rec.object_type}
+        return None
+
+    return {
+        "allowed_providers": frozenset({"fixture_provider"}),
+        "allowed_profiles": frozenset({"adversarial_profile"}),
+        "existing_object_resolver": _resolver,
+    }
+
 
 # ── Full Pipeline ────────────────────────────────────────────────────────────
 
@@ -194,9 +234,17 @@ class TestFullPipeline:
             from sqlalchemy import select as sql_select
             for ot in (ObjectType.ENTITY, ObjectType.DATA_POINT, ObjectType.CLAIM, ObjectType.EVIDENCE):
                 cnt = s.scalars(
-                    sql_select(ObjectRecord).where(ObjectRecord.object_type == ot.value)
+                    sql_select(ObjectRecord).where(
+                        ObjectRecord.object_type == ot.value,
+                        ObjectRecord.workspace_id == "aurora_gate3_default",
+                    )
                 ).all()
-                assert len(cnt) == 0, f"{ot} should be 0 after dry run"
+                # Dry run should not write — only pre-existing seed objects allowed
+                # ent_company entity is seeded by _seed_source_graph for cross-bundle tests
+                if ot == ObjectType.ENTITY:
+                    assert len(cnt) <= 1, f"{ot} should have at most 1 (seed entity) after dry run"
+                else:
+                    assert len(cnt) == 0, f"{ot} should be 0 after dry run"
 
     def test_dry_then_real(self, repo_factory):
         """Dry run → real persist: both succeed, DB has real objects."""
@@ -278,7 +326,8 @@ class TestFullPipeline:
         """All 7 adversarial cases work with real SQLite."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        _, tx = run_draft_persistence(repo_factory, window, case_id)
+        pk = _make_preflight_kwargs(repo_factory) if case_id == "forged_or_outside_unit" else None
+        _, tx = run_draft_persistence(repo_factory, window, case_id, preflight_kwargs=pk)
         assert tx.succeeded
 
 

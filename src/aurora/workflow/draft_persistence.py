@@ -28,6 +28,7 @@ def run_draft_persistence(
     case_id: str,
     workspace_id: str = "aurora_gate3_default",
     dry_run: bool = False,
+    preflight_kwargs: dict[str, Any] | None = None,
 ) -> tuple[ReviewBundle, DraftTransaction]:
     """B01: End-to-end draft persistence pipeline (workflow-owned session).
 
@@ -72,6 +73,7 @@ def run_draft_persistence(
         bundle=bundle,
         workspace_id=workspace_id,
         dry_run=dry_run,
+        preflight_kwargs=preflight_kwargs,
     )
 
     return bundle, tx

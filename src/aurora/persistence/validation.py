@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+from typing import Any, Callable
 
-from aurora.extraction.findings import FindingSeverity
 from aurora.extraction.review_bundle import ReviewBundle
 
 
@@ -17,8 +17,24 @@ class PreflightError(Exception):
     """Bundle failed preflight validation."""
 
 
-def validate_bundle_preflight(bundle: ReviewBundle) -> list[str]:
+def validate_bundle_preflight(
+    bundle: ReviewBundle,
+    workspace_id: str | None = None,
+    allowed_providers: frozenset[str] | None = None,
+    allowed_profiles: frozenset[str] | None = None,
+    existing_object_resolver: Callable[[str], dict[str, Any] | None] | None = None,
+) -> list[str]:
     """R2-B01 + R2-B02: Full preflight checks.
+
+    Args:
+        bundle: Validated ReviewBundle to check.
+        workspace_id: The target workspace id — must match bundle and all refs.
+        allowed_providers: Set of allowed provider ids. Any candidate with a
+                          provider_id not in this set fails.
+        allowed_profiles: Set of allowed profile ids. Any candidate with a
+                         profile_id not in this set fails.
+        existing_object_resolver: Resolves pre-existing core object ids for
+                                  candidate-to-core dependency validation.
 
     Returns list of warnings (non-fatal). Raises PreflightError on failure.
     """
@@ -41,9 +57,7 @@ def validate_bundle_preflight(bundle: ReviewBundle) -> list[str]:
     if not stored_window_sha or len(stored_window_sha) < 16:
         raise PreflightError("ContextWindow hash missing or too short in context_hashes")
 
-    # Recompute from content_unit_window using ContentUnitRef.to_hash_dict
     cu_window = bundle.content_unit_window or ()
-    # Use ContentUnitRef's own to_hash_dict() for correct hash computation
     hash_dict = {
         "context_schema_version": "1.0",
         "document_id": getattr(bundle, "document_id", ""),
@@ -114,16 +128,43 @@ def validate_bundle_preflight(bundle: ReviewBundle) -> list[str]:
                 )
 
     # ── R2-B02: Workspace consistency ───────────────────────────────────
-    bundle_ws = getattr(bundle, "workspace_id", None)
+    bundle_ws = workspace_id or getattr(bundle, "workspace_id", None)
     if bundle_ws:
         for u in cu_window:
             u_ws = getattr(u, "workspace_id", None)
             if u_ws and u_ws != bundle_ws:
                 raise PreflightError(
-                    f"ContentUnit {u.unit_id} workspace={u_ws} != bundle workspace={bundle_ws}"
+                    f"ContentUnit {u.unit_id} workspace={u_ws} != workspace={bundle_ws}"
+                )
+        for c in bundle.candidates:
+            c_ws = getattr(c, "workspace_id", None)
+            if c_ws and c_ws != bundle_ws:
+                raise PreflightError(
+                    f"Candidate {getattr(c, 'candidate_id', '?')} "
+                    f"workspace={c_ws} != workspace={bundle_ws}"
                 )
 
-    # ── R2-B02: Candidate references resolvable ─────────────────────────
+    # ── R2-B02: Provider allow-list ─────────────────────────────────────
+    if allowed_providers is not None:
+        for c in bundle.candidates:
+            pid = getattr(c, "provider_id", None)
+            if pid and pid not in allowed_providers:
+                raise PreflightError(
+                    f"Candidate {getattr(c, 'candidate_id', '?')} has "
+                    f"disallowed provider_id={pid}"
+                )
+
+    # ── R2-B02: Profile allow-list ──────────────────────────────────────
+    if allowed_profiles is not None:
+        for c in bundle.candidates:
+            pid = getattr(c, "profile_id", None)
+            if pid and pid not in allowed_profiles:
+                raise PreflightError(
+                    f"Candidate {getattr(c, 'candidate_id', '?')} has "
+                    f"disallowed profile_id={pid}"
+                )
+
+    # ── R2-B02: Candidate references within accepted set ─────────────────
     accepted_ids = set(bundle.accepted_candidate_ids)
     candidate_ids = {getattr(c, "candidate_id", "") for c in bundle.candidates}
     for cid in accepted_ids:
@@ -139,11 +180,13 @@ def validate_bundle_preflight(bundle: ReviewBundle) -> list[str]:
             target = getattr(c, "target_object_id", "")
             if not target:
                 raise PreflightError(f"Evidence {cid} has empty target_object_id")
+            # Check in candidates AND in pre-existing objects
             if target not in accepted_ids and target not in candidate_ids:
-                raise PreflightError(
-                    f"Evidence {cid} targets {target} which is "
-                    f"neither accepted nor present as a candidate"
-                )
+                if existing_object_resolver is None or existing_object_resolver(target) is None:
+                    raise PreflightError(
+                        f"Evidence {cid} targets {target} which is "
+                        f"neither accepted, present as candidate, nor a pre-existing object"
+                    )
 
     # ── R2-B02: DataPoint entity_id references ───────────────────────────
     for c in bundle.candidates:
@@ -154,12 +197,52 @@ def validate_bundle_preflight(bundle: ReviewBundle) -> list[str]:
             eid = getattr(c, "entity_id", "")
             if not eid:
                 raise PreflightError(f"DataPoint {cid} has empty entity_id")
-            # entity_id should reference an EntityCandidate or pre-existing Entity
-            if eid not in candidate_ids:
-                # May reference entity from another bundle — warn but proceed
-                warnings.append(
-                    f"DataPoint {cid} references entity_id={eid} "
-                    f"not in current bundle candidates (cross-bundle ref)"
-                )
+            # Must reference an accepted EntityCandidate or pre-existing Entity
+            if eid not in accepted_ids and eid not in candidate_ids:
+                if existing_object_resolver is None or existing_object_resolver(eid) is None:
+                    raise PreflightError(
+                        f"DataPoint {cid} references entity_id={eid} "
+                        f"which is neither accepted, present as candidate, nor pre-existing"
+                    )
+
+    # ── R2-B02: Claim subject_entity references ─────────────────────────
+    for c in bundle.candidates:
+        cid = getattr(c, "candidate_id", "")
+        if cid not in accepted_ids:
+            continue
+        if c.__class__.__name__ == "ClaimCandidate":
+            subj = getattr(c, "subject_entity_ids", None) or []
+            for seid in subj:
+                if seid not in accepted_ids and seid not in candidate_ids:
+                    if existing_object_resolver is None or existing_object_resolver(seid) is None:
+                        raise PreflightError(
+                            f"Claim {cid} references subject_entity_id={seid} "
+                            f"which is neither accepted, present as candidate, nor pre-existing"
+                        )
+
+    # ── R2-B02: Accepted dependency check — all accepted must have
+    #            their dependencies (entities for DataPoint/Evidence) accepted
+    #            or already present as core objects
+    for c in bundle.candidates:
+        cid = getattr(c, "candidate_id", "")
+        if cid not in accepted_ids:
+            continue
+        cls_name = c.__class__.__name__
+        if cls_name in ("DataPointCandidate",):
+            eid = getattr(c, "entity_id", "")
+            if eid and eid not in accepted_ids:
+                if existing_object_resolver is None or existing_object_resolver(eid) is None:
+                    raise PreflightError(
+                        f"DataPoint {cid} depends on entity_id={eid} "
+                        f"which is not accepted and not pre-existing"
+                    )
+        if cls_name == "EvidenceCandidate":
+            target = getattr(c, "target_object_id", "")
+            if target and target not in accepted_ids:
+                if existing_object_resolver is None or existing_object_resolver(target) is None:
+                    raise PreflightError(
+                        f"Evidence {cid} depends on target={target} "
+                        f"which is not accepted and not pre-existing"
+                    )
 
     return warnings

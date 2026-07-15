@@ -89,7 +89,7 @@ def _lookup_by_operation_key(
     """R2-B07: Find ProcessingRun records by operation_key, return run_status.
 
     Checks external_ids.draft_operation_key and input_object_ids.
-    Returns (records, current_status) where status is 'success'/'failure'/'running' or None.
+    Returns (records, current_status) where status is 'success'/'failed'/'running' or None.
     """
     stmt = sql_select(ObjectRecord).where(
         ObjectRecord.object_type == ObjectType.PROCESSING_RUN.value,
@@ -125,6 +125,8 @@ def _validate_mapped_object(obj: Any, obj_type: str) -> None:
             raise ValueError(f"DataPoint has empty metric: {getattr(obj, 'id', '?')}")
         if not getattr(obj, "unit", None):
             raise ValueError(f"DataPoint has empty unit: {getattr(obj, 'id', '?')}")
+        if getattr(obj, "period", None) is None:
+            raise ValueError(f"DataPoint has null period: {getattr(obj, 'id', '?')}")
     elif obj_type == "claim":
         if getattr(obj, "claim_type", None) is None:
             raise ValueError(f"Claim has null claim_type (unrecognized enum): {getattr(obj, 'id', '?')}")
@@ -146,7 +148,7 @@ def _validate_mapped_object(obj: Any, obj_type: str) -> None:
 
 def _dry_run_persist(bundle, workspace_id, op_key):
     """Dry run: validate + map, build DraftTransaction without DB writes."""
-    validate_bundle_preflight(bundle)
+    validate_bundle_preflight(bundle, workspace_id=workspace_id)
     entities, data_points, claims, evidence_list, _c2c = map_accepted_candidates(
         bundle.accepted_candidate_ids, bundle.candidates
     )
@@ -194,6 +196,7 @@ def persist_drafts(
     bundle: Any,
     workspace_id: str,
     dry_run: bool = False,
+    preflight_kwargs: dict[str, Any] | None = None,
 ) -> DraftTransaction:
     """B01+B02: Workflow-owned transaction with independent ProcessingRun sessions.
 
@@ -213,12 +216,15 @@ def persist_drafts(
     if dry_run:
         return _dry_run_persist(bundle, workspace_id, op_key)
 
+    pk = preflight_kwargs or {}
+
     # ── Phase 1: ProcessingRun (RUNNING) in independent session ──────────
     now = datetime.now(UTC)
     try:
         with repo_factory() as run_session:
             existing, existing_status = _lookup_by_operation_key(run_session, op_key, workspace_id)
             if existing and existing_status == "success":
+                # R2-B07: SUCCESS → idempotent return (no re-run)
                 return DraftTransaction(
                     records=(),
                     total_objects=0,
@@ -228,11 +234,12 @@ def persist_drafts(
                     succeeded=True,
                 )
             if existing and existing_status == "running":
+                # R2-B07: RUNNING → conflict, do NOT report success
                 raise RuntimeError(
                     f"ProcessingRun {existing[0].id} is still RUNNING — "
                     f"concurrent conflict"
                 )
-            # FAILURE → allow retry (fall through to create new run)
+            # R2-B07: FAILED → allow controlled retry (fall through to create new run)
 
             run_obj = ProcessingRun(
                 task_type="draft_persistence",
@@ -274,7 +281,7 @@ def persist_drafts(
 
     # ── B03: Preflight ──────────────────────────────────────────────────
     try:
-        validate_bundle_preflight(bundle)
+        validate_bundle_preflight(bundle, workspace_id=workspace_id, **pk)
     except Exception as exc:
         _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
         return DraftTransaction(
@@ -451,9 +458,23 @@ def persist_drafts(
         )
 
     # ── Phase 3: ProcessingRun (SUCCEEDED) ──────────────────────────────
-    _finalize_success_run(
+    if not _finalize_success_run(
         repo_factory, processing_run_id, workspace_id, op_key, records
-    )
+    ):
+        # R2-B06: Phase 3 audit update failed → main flow must not report success
+        _finalize_failed_run(
+            repo_factory, processing_run_id, workspace_id, op_key,
+            RuntimeError("Phase 3 ProcessingRun update failed — audit integrity breach")
+        )
+        return DraftTransaction(
+            records=(),
+            total_objects=0,
+            created_count=0,
+            reused_count=0,
+            processing_run_id=processing_run_id,
+            succeeded=False,
+            error_message="Phase 3 audit update failed"[:200],
+        )
 
     return DraftTransaction(
         records=tuple(records),
@@ -471,8 +492,11 @@ def _finalize_failed_run(
     workspace_id: str,
     op_key: str,
     exc: Exception,
-) -> None:
-    """B02: Write FAILED ProcessingRun in independent session."""
+) -> bool:
+    """B02: Write FAILED ProcessingRun in independent session.
+
+    Returns True if the audit record was successfully written.
+    """
     try:
         with repo_factory() as fail_session:
             stmt = sql_select(ObjectRecord).where(ObjectRecord.id == processing_run_id)
@@ -505,14 +529,17 @@ def _finalize_failed_run(
                 )
                 fail_session.add(fail_rec)
             else:
-                rec.payload["run_status"] = "failure"
+                # R2-B06: Use RunStatus.FAILED.value = "failed" (not "failure")
+                rec.payload["run_status"] = RunStatus.FAILED.value
                 rec.payload["error_message"] = str(exc)[:500]
                 rec.payload["finished_at"] = now.isoformat()
                 rec.updated_at = now
                 flag_modified(rec, "payload")
             fail_session.commit()
+            return True
     except Exception as e:
         logger.error("Failed to write FAILED ProcessingRun: %s", e)
+        return False
 
 
 def _finalize_success_run(
@@ -521,15 +548,18 @@ def _finalize_success_run(
     workspace_id: str,
     op_key: str,
     records: list[DraftRecord],
-) -> None:
-    """B02: Write SUCCEEDED ProcessingRun in independent session."""
+) -> bool:
+    """B02: Write SUCCEEDED ProcessingRun in independent session.
+
+    Returns True if the audit record was successfully written.
+    """
     try:
         with repo_factory() as success_session:
             stmt = sql_select(ObjectRecord).where(ObjectRecord.id == processing_run_id)
             rec = success_session.scalars(stmt).first()
             now = datetime.now(UTC)
             if rec is not None:
-                rec.payload["run_status"] = "success"
+                rec.payload["run_status"] = RunStatus.SUCCESS.value
                 rec.payload["finished_at"] = now.isoformat()
                 rec.payload["output_object_ids"] = [r.object_id for r in records]
                 rec.updated_at = now
@@ -563,8 +593,10 @@ def _finalize_success_run(
                 )
                 success_session.add(run_rec)
             success_session.commit()
+            return True
     except Exception as e:
         logger.error("Failed to write SUCCEEDED ProcessingRun: %s", e)
+        return False
 
 
 # ── Backward-compat wrapper ──────────────────────────────────────────────────
