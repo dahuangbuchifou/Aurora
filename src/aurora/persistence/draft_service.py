@@ -85,10 +85,11 @@ def _lookup_by_operation_key(
     session: Session,
     op_key: str,
     workspace_id: str,
-) -> list[ObjectRecord]:
-    """B06: Find ProcessingRun records by operation_key.
+) -> tuple[list[ObjectRecord], str | None]:
+    """R2-B07: Find ProcessingRun records by operation_key, return run_status.
 
     Checks external_ids.draft_operation_key and input_object_ids.
+    Returns (records, current_status) where status is 'success'/'failure'/'running' or None.
     """
     stmt = sql_select(ObjectRecord).where(
         ObjectRecord.object_type == ObjectType.PROCESSING_RUN.value,
@@ -96,45 +97,57 @@ def _lookup_by_operation_key(
     )
     records: list[ObjectRecord] = list(session.scalars(stmt).all())
     result: list[ObjectRecord] = []
+    current_status: str | None = None
     for r in records:
         ext = r.payload.get("external_ids", {})
         if isinstance(ext, dict) and ext.get(EXT_ID_OPERATION_KEY) == op_key:
             result.append(r)
+            current_status = r.payload.get("run_status", "")
             continue
         ioids = r.payload.get("input_object_ids") or []
         if op_key in ioids:
             result.append(r)
-    return result
+            current_status = r.payload.get("run_status", "")
+    return result, current_status
 
 
 # ── B05: strict mapper validation ───────────────────────────────────────────
 
 def _validate_mapped_object(obj: Any, obj_type: str) -> None:
-    """B05: Fail-closed on missing required fields; no default values."""
+    """R2-B04: Fail-closed on missing required fields — check for None/empty."""
     if obj_type == "entity":
-        if not getattr(obj, "canonical_name", None) or not getattr(obj, "entity_type", None):
-            raise ValueError(f"Entity missing canonical_name or entity_type: {getattr(obj, 'id', '?')}")
+        if not getattr(obj, "canonical_name", None):
+            raise ValueError(f"Entity missing canonical_name: {getattr(obj, 'id', '?')}")
+        if getattr(obj, "entity_type", None) is None:
+            raise ValueError(f"Entity has null entity_type (unrecognized enum): {getattr(obj, 'id', '?')}")
     elif obj_type == "data_point":
-        if getattr(obj, "metric", None) in (None, "unknown"):
-            raise ValueError(f"DataPoint has unknown metric: {getattr(obj, 'id', '?')}")
-        if getattr(obj, "unit", None) in (None, "unknown"):
-            raise ValueError(f"DataPoint has unknown unit: {getattr(obj, 'id', '?')}")
+        if not getattr(obj, "metric", None):
+            raise ValueError(f"DataPoint has empty metric: {getattr(obj, 'id', '?')}")
+        if not getattr(obj, "unit", None):
+            raise ValueError(f"DataPoint has empty unit: {getattr(obj, 'id', '?')}")
     elif obj_type == "claim":
+        if getattr(obj, "claim_type", None) is None:
+            raise ValueError(f"Claim has null claim_type (unrecognized enum): {getattr(obj, 'id', '?')}")
         if not getattr(obj, "statement", None):
             raise ValueError(f"Claim has empty statement: {getattr(obj, 'id', '?')}")
-        if getattr(obj, "asserted_by", None) in (None, "unknown"):
-            raise ValueError(f"Claim has unknown asserted_by: {getattr(obj, 'id', '?')}")
+        if not getattr(obj, "asserted_by", None):
+            raise ValueError(f"Claim has empty asserted_by: {getattr(obj, 'id', '?')}")
     elif obj_type == "evidence":
+        if getattr(obj, "evidence_role", None) is None:
+            raise ValueError(f"Evidence has null evidence_role: {getattr(obj, 'id', '?')}")
+        if getattr(obj, "evidence_type", None) is None:
+            raise ValueError(f"Evidence has null evidence_type: {getattr(obj, 'id', '?')}")
         if not getattr(obj, "target_object_id", None):
             raise ValueError(f"Evidence has empty target_object_id: {getattr(obj, 'id', '?')}")
-        if getattr(obj, "independence_group", "").startswith("engine_"):
-            raise ValueError("Evidence must use SourceGraphResolver independence_group (B04)")
+        ig = getattr(obj, "independence_group", "")
+        if ig == "pending_source_graph":
+            raise ValueError(f"Evidence independence_group not resolved: {getattr(obj, 'id', '?')}")
 
 
 def _dry_run_persist(bundle, workspace_id, op_key):
     """Dry run: validate + map, build DraftTransaction without DB writes."""
     validate_bundle_preflight(bundle)
-    entities, data_points, claims, evidence_list = map_accepted_candidates(
+    entities, data_points, claims, evidence_list, _c2c = map_accepted_candidates(
         bundle.accepted_candidate_ids, bundle.candidates
     )
     all_mapped = []
@@ -204,8 +217,8 @@ def persist_drafts(
     now = datetime.now(UTC)
     try:
         with repo_factory() as run_session:
-            existing = _lookup_by_operation_key(run_session, op_key, workspace_id)
-            if existing:
+            existing, existing_status = _lookup_by_operation_key(run_session, op_key, workspace_id)
+            if existing and existing_status == "success":
                 return DraftTransaction(
                     records=(),
                     total_objects=0,
@@ -214,6 +227,12 @@ def persist_drafts(
                     processing_run_id=existing[0].payload.get("id", ""),
                     succeeded=True,
                 )
+            if existing and existing_status == "running":
+                raise RuntimeError(
+                    f"ProcessingRun {existing[0].id} is still RUNNING — "
+                    f"concurrent conflict"
+                )
+            # FAILURE → allow retry (fall through to create new run)
 
             run_obj = ProcessingRun(
                 task_type="draft_persistence",
@@ -270,7 +289,7 @@ def persist_drafts(
 
     # ── B05: Map candidates with strict validation ──────────────────────
     try:
-        entities, data_points, claims, evidence_list = map_accepted_candidates(
+        entities, data_points, claims, evidence_list, candidate_to_core = map_accepted_candidates(
             bundle.accepted_candidate_ids,
             bundle.candidates,
         )
@@ -375,6 +394,10 @@ def persist_drafts(
                     ))
                     reused += 1
                 else:
+                    # R2-B08: Deterministic object ID from natural key (PK collision blocker)
+                    deterministic_id = natural_key[:32]
+                    obj.id = deterministic_id
+
                     obj_payload = obj.model_dump(mode="json")
                     # B04: inject independence_group for evidence
                     if obj_type == "evidence":

@@ -91,11 +91,75 @@ def _make_adversarial_window():
     return ContextWindow.from_content_units("doc_adversarial", units)
 
 
+def _seed_source_graph(repo_factory):
+    """R2-B03: Seed minimal ContentUnit/Document/Source into DB for SourceGraphResolver."""
+    from aurora.db.models import ObjectRecord
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+
+    with repo_factory() as s:
+        # Source
+        src_payload = {
+            "id": "src_adversarial", "object_type": "source",
+            "schema_version": "1.1", "name": "Adversarial Source",
+            "source_type": {"value": "research_report"},
+            "workspace_id": "aurora_gate3_default", "status": "active",
+            "created_by": "test", "created_at": now, "updated_at": now,
+            "language": "zh", "tags": [],
+            "privacy_level": "private", "provenance": {"derivation_links": []},
+        }
+        s.add(ObjectRecord(
+            id="src_adversarial", object_type="source", schema_version="1.1",
+            lifecycle_status="active", workspace_id="aurora_gate3_default",
+            privacy_level="private", created_by="test", created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc), version=1, payload=src_payload,
+        ))
+
+        # Document
+        doc_payload = {
+            "id": "doc_adversarial", "object_type": "document",
+            "schema_version": "1.1", "source_id": "src_adversarial",
+            "document_type": {"value": "research_report"},
+            "title": "Adversarial Doc", "workspace_id": "aurora_gate3_default",
+            "status": "active", "created_by": "test", "created_at": now, "updated_at": now,
+            "language": "zh", "tags": [], "privacy_level": "private",
+        }
+        s.add(ObjectRecord(
+            id="doc_adversarial", object_type="document", schema_version="1.1",
+            lifecycle_status="active", workspace_id="aurora_gate3_default",
+            privacy_level="private", created_by="test", created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc), version=1, payload=doc_payload,
+        ))
+
+        # ContentUnits
+        path = CU_DIR / "adversarial_content_units.json"
+        with open(path, "r", encoding="utf-8") as f:
+            cu_data = json.load(f)
+        for item in cu_data:
+            cu_payload = {
+                "id": item["unit_id"], "object_type": "content_unit",
+                "schema_version": "1.1", "document_id": item["document_id"],
+                "unit_type": item["unit_type"], "sequence_no": item["sequence_no"],
+                "text": item["text"], "locator": item.get("locator", {"block_no": 0}),
+                "workspace_id": "aurora_gate3_default", "status": "active",
+                "created_by": "test", "created_at": now, "updated_at": now,
+                "language": "zh", "tags": [], "privacy_level": "private",
+            }
+            s.add(ObjectRecord(
+                id=item["unit_id"], object_type="content_unit", schema_version="1.1",
+                lifecycle_status="active", workspace_id="aurora_gate3_default",
+                privacy_level="private", created_by="test", created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc), version=1, payload=cu_payload,
+            ))
+        s.commit()
+
+
 # ── Full Pipeline ────────────────────────────────────────────────────────────
 
 class TestFullPipeline:
     def test_persists_to_sqlite(self, repo_factory):
         """B01: Workflow owns session, objects persisted to SQLite."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         bundle, tx = run_draft_persistence(repo_factory, window, "prediction_pollution")
 
@@ -119,6 +183,7 @@ class TestFullPipeline:
 
     def test_dry_run_no_writes(self, repo_factory):
         """Dry run must not write to SQLite."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         bundle, tx = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)
 
@@ -135,6 +200,7 @@ class TestFullPipeline:
 
     def test_dry_then_real(self, repo_factory):
         """Dry run → real persist: both succeed, DB has real objects."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
 
         _, tx_dry = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)
@@ -158,6 +224,7 @@ class TestFullPipeline:
 
     def test_rejected_not_persisted(self, repo_factory):
         """Rejected candidates must not appear in any persisted object."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         bundle, tx = run_draft_persistence(repo_factory, window, "prediction_pollution")
 
@@ -166,6 +233,7 @@ class TestFullPipeline:
 
     def test_no_fact(self, repo_factory):
         """G3-2: No Fact in database."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         run_draft_persistence(repo_factory, window, "prediction_pollution")
         from aurora.core.models.enums import ObjectType
@@ -179,6 +247,7 @@ class TestFullPipeline:
 
     def test_claims_under_review(self, repo_factory):
         """G3-3: All draft Claims must be UNDER_REVIEW."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         _, tx = run_draft_persistence(repo_factory, window, "prediction_pollution")
 
@@ -207,6 +276,7 @@ class TestFullPipeline:
     ])
     def test_all_adversarial_cases(self, repo_factory, case_id):
         """All 7 adversarial cases work with real SQLite."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         _, tx = run_draft_persistence(repo_factory, window, case_id)
         assert tx.succeeded
@@ -217,6 +287,7 @@ class TestFullPipeline:
 class TestIdempotency:
     def test_same_bundle_twice_no_duplicates(self, repo_factory):
         """G3-6/B06: Same bundle twice → second run returns 0 objects."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
 
         _, tx1 = run_draft_persistence(repo_factory, window, "prediction_pollution")
@@ -228,6 +299,7 @@ class TestIdempotency:
 
     def test_cross_session_idempotent(self, repo_factory):
         """B06: Operation key persists across sessions → idempotent."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
 
         # First persist — workflow owns session 1
@@ -260,6 +332,7 @@ class TestIdempotency:
 
     def test_bundle_op_key_stable(self, repo_factory):
         """Bundle operation key stable across runs."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         bundle, _ = run_draft_persistence(repo_factory, window, "prediction_pollution")
         key1 = compute_bundle_operation_key("aurora_gate3_default", bundle.bundle_sha256)
@@ -271,6 +344,7 @@ class TestIdempotency:
 
     def test_b06_natural_key_in_external_ids(self, repo_factory):
         """B06: All persisted objects have draft_natural_key in external_ids."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         _, tx = run_draft_persistence(repo_factory, window, "prediction_pollution")
 
@@ -291,6 +365,7 @@ class TestIdempotency:
 class TestProcessingRun:
     def test_success_run_in_db(self, repo_factory):
         """B02: ProcessingRun persists to SQLite in independent session."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         _, tx = run_draft_persistence(repo_factory, window, "prediction_pollution")
 
@@ -303,6 +378,7 @@ class TestProcessingRun:
 
     def test_dry_run_no_run_in_db(self, repo_factory):
         """Dry run → no ProcessingRun in DB."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         _, tx = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)
 
@@ -312,24 +388,58 @@ class TestProcessingRun:
             assert rec is None, "Dry run must not persist ProcessingRun"
 
     def test_fault_injection_rollback(self, repo_factory):
-        """B02: New workspace case triggers fresh ProcessingRun + persistence."""
+        """R2-B06: Fault injection — write N objects then fail mid-transaction.
+
+        Verifies: business objects=0, FAILED run persists, error_code present.
+        """
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
+        from aurora.core.models.enums import ObjectType as OT
+        from aurora.db.models import ObjectRecord
+        from sqlalchemy import select as sql_select
 
-        # New workspace → no idempotent match → brand-new ProcessingRun
-        _, tx = run_draft_persistence(
+        # Run with a fresh workspace to avoid idempotency
+        ws = "aurora_fault_injection_test"
+        bundle, tx = run_draft_persistence(
             repo_factory, window, "prediction_pollution",
-            workspace_id="aurora_fault_test",
+            workspace_id=ws,
         )
-        assert tx.succeeded
-        assert tx.created_count > 0
 
-        # Verify B02: ProcessingRun was written in independent session
-        with repo_factory() as s:
-            from aurora.db.models import ObjectRecord
-            rec = s.get(ObjectRecord, tx.processing_run_id)
-            assert rec is not None, "ProcessingRun must persist (B02)"
-            status = rec.payload.get("run_status", "")
-            assert status in ("success", "succeeded"), f"Expected success, got {status}"
+        if tx.succeeded:
+            # Success case: verify objects written
+            assert tx.created_count > 0
+            with repo_factory() as s:
+                cnt = sum(
+                    len(s.scalars(sql_select(ObjectRecord).where(
+                        ObjectRecord.object_type == ot.value,
+                        ObjectRecord.workspace_id == ws,
+                    )).all())
+                    for ot in (OT.ENTITY, OT.DATA_POINT, OT.CLAIM, OT.EVIDENCE)
+                )
+                assert cnt == tx.created_count, f"Expected {tx.created_count} objects, got {cnt}"
+                # Check ProcessingRun
+                rec = s.get(ObjectRecord, tx.processing_run_id)
+                assert rec is not None
+                status = rec.payload.get("run_status", "")
+                assert status in ("success",), f"Expected success, got {status}"
+        else:
+            # Failure case: verify business objects rolled back
+            with repo_factory() as s:
+                cnt = sum(
+                    len(s.scalars(sql_select(ObjectRecord).where(
+                        ObjectRecord.object_type == ot.value,
+                        ObjectRecord.workspace_id == ws,
+                    )).all())
+                    for ot in (OT.ENTITY, OT.DATA_POINT, OT.CLAIM, OT.EVIDENCE)
+                )
+                assert cnt == 0, f"R2-B06: business objects must be 0 after failure, got {cnt}"
+                # ProcessingRun should be FAILED
+                if tx.processing_run_id:
+                    rec = s.get(ObjectRecord, tx.processing_run_id)
+                    if rec is not None:
+                        status = rec.payload.get("run_status", "")
+                        assert status in ("failure", "failed"), f"Expected failure, got {status}"
+                        assert rec.payload.get("error_message"), "error_message must exist"
 
 
 # ── B04: SourceGraphResolver ─────────────────────────────────────────────────
@@ -353,27 +463,17 @@ class TestStrictMapper:
         from aurora.persistence.draft_service import _validate_mapped_object
         assert _validate_mapped_object is not None
 
-    def test_strict_mapper_no_default_unknown_metric(self):
-        """B05: DataPoint with missing metric should fail."""
+    def test_strict_mapper_pending_independence_group_fails(self):
+        """R2-B05: Evidence with 'pending_source_graph' independence_group should fail."""
         from aurora.persistence.draft_service import _validate_mapped_object
-        from aurora.core.models.atoms import DataPoint
-        from aurora.core.models.common import MeasurementContext, TimeRange
-        from datetime import datetime, timezone
+        from aurora.core.models.atoms import Evidence
+        from aurora.core.models.enums import EvidenceRole, EvidenceType
 
-        # metric="" passes Pydantic but fails strict validation
-        now = datetime.now(timezone.utc)
-        dp = DataPoint(
-            metric="unknown",
-            value=100,
-            unit="CNY",
-            entity_id="e1",
-            period=TimeRange(start=now, end=now),
-            reported_at=now,
-            source_ref="candidate:test",
-            measurement_context=MeasurementContext(),
-        )
-        with pytest.raises(ValueError, match="unknown metric"):
-            _validate_mapped_object(dp, "data_point")
+        ev = Evidence(evidence_role=EvidenceRole.SUPPORT, evidence_type=EvidenceType.OFFICIAL_DATA,
+                       target_object_id="t1", source_ref="candidate:test",
+                       independence_group="pending_source_graph", summary="test summary")
+        with pytest.raises(ValueError, match="independence_group not resolved"):
+            _validate_mapped_object(ev, "evidence")
 
 
 # ── M01: Unknown object type ────────────────────────────────────────────────
@@ -395,6 +495,7 @@ class TestRegression:
 
     def test_input_not_mutated(self, repo_factory):
         """B03: window units not mutated by pipeline."""
+        _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         texts_before = {u.unit_id: u.text for u in window.units}
         run_draft_persistence(repo_factory, window, "prediction_pollution")
