@@ -195,7 +195,7 @@ class TestFullPipeline:
         bundle, tx = run_draft_persistence(repo_factory, window, "prediction_pollution")
 
         assert tx.succeeded
-        assert tx.created_count > 0
+        assert tx.created_count == 1
 
         # B01: Verify objects exist in DB via fresh session
         # R3-05: Exact counts per object type (includes seed + pipeline objects)
@@ -225,7 +225,7 @@ class TestFullPipeline:
         window = _make_adversarial_window()
         bundle, tx = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)
 
-        assert tx.created_count > 0
+        assert tx.created_count == 1
         from aurora.core.models.enums import ObjectType
         with repo_factory() as s:
             from aurora.db.models import ObjectRecord
@@ -250,10 +250,10 @@ class TestFullPipeline:
         window = _make_adversarial_window()
 
         _, tx_dry = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)
-        assert tx_dry.created_count > 0
+        assert tx_dry.created_count == 1
 
         _, tx_real = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=False)
-        assert tx_real.created_count > 0
+        assert tx_real.created_count == 1
 
         from aurora.core.models.enums import ObjectType as OT
         with repo_factory() as s:
@@ -337,7 +337,7 @@ class TestIdempotency:
         window = _make_adversarial_window()
 
         _, tx1 = run_draft_persistence(repo_factory, window, "prediction_pollution")
-        assert tx1.created_count > 0
+        assert tx1.created_count == 1
 
         _, tx2 = run_draft_persistence(repo_factory, window, "prediction_pollution")
         assert tx2.total_objects == 0, "G3-6: Second run must return 0"
@@ -452,7 +452,7 @@ class TestProcessingRun:
 
         if tx.succeeded:
             # Success case: verify objects written
-            assert tx.created_count > 0
+            assert tx.created_count == 1
             with repo_factory() as s:
                 cnt = sum(
                     len(s.scalars(sql_select(ObjectRecord).where(
@@ -1026,3 +1026,722 @@ class TestRegression:
         run_draft_persistence(repo_factory, window, "prediction_pollution")
         for u in window.units:
             assert u.text == texts_before[u.unit_id]
+
+# ── DraftService Coverage Gap Tests ──────────────────────────────────────────
+# Append to tests/integration/test_m2_003c_gate3_draft_persistence.py
+
+
+class TestDraftServiceCoverageGap:
+    """Cover remaining branches in draft_service.py to reach 90%+."""
+
+    def test_lookup_by_natural_key_matching(self, repo_factory):
+        """_lookup_by_natural_key returns matching records (REUSED path)."""
+        from aurora.persistence.draft_service import _lookup_by_natural_key, EXT_ID_NATURAL_KEY
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        nk = "test_nk_" + "a" * 56
+        ws = "ws_nk_test_x"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="rec_nk_test_x",
+                object_type=ObjectType.ENTITY.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"external_ids": {EXT_ID_NATURAL_KEY: nk}},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result = _lookup_by_natural_key(s, ObjectType.ENTITY, nk, ws)
+            assert len(result) == 1
+
+    def test_lookup_by_operation_key_via_input_object_ids(self, repo_factory):
+        """_lookup_by_operation_key matches via input_object_ids list."""
+        from aurora.persistence.draft_service import _lookup_by_operation_key
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        ws = "ws_ioid_test_x"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="run_ioid_x",
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"input_object_ids": ["target_op_key_x"], "run_status": "success"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result, status = _lookup_by_operation_key(s, "target_op_key_x", ws)
+            assert len(result) == 1
+            assert status == "success"
+
+    def test_lookup_by_operation_key_running_status(self, repo_factory):
+        """_lookup_by_operation_key with 'running' status."""
+        from aurora.persistence.draft_service import _lookup_by_operation_key, EXT_ID_OPERATION_KEY
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        ws = "ws_running_test_x"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="run_running_x",
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"external_ids": {EXT_ID_OPERATION_KEY: "op_key_running_x"}, "run_status": "running"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result, status = _lookup_by_operation_key(s, "op_key_running_x", ws)
+            assert len(result) == 1
+            assert status == "running"
+
+    def test_lookup_by_operation_key_failed_status(self, repo_factory):
+        """_lookup_by_operation_key with 'failed' status."""
+        from aurora.persistence.draft_service import _lookup_by_operation_key, EXT_ID_OPERATION_KEY
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        ws = "ws_failed_test_x"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="run_failed_x",
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"external_ids": {EXT_ID_OPERATION_KEY: "op_key_failed_x"}, "run_status": "failed"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result, status = _lookup_by_operation_key(s, "op_key_failed_x", ws)
+            assert len(result) == 1
+            assert status == "failed"
+
+    def test_resolve_core_references(self):
+        """R3-04: _resolve_core_references converts Evidence target IDs."""
+        from aurora.persistence.draft_service import _resolve_core_references
+        from aurora.core.models.atoms import Evidence
+        from aurora.core.models.enums import EvidenceRole, EvidenceType
+
+        ev1 = Evidence(
+            evidence_role=EvidenceRole.SUPPORT, evidence_type=EvidenceType.DIRECT_QUOTE,
+            target_object_id="cand_1", source_ref="candidate:ev1",
+            independence_group="grp1",
+            summary="test summary",
+        )
+        ev2 = Evidence(
+            evidence_role=EvidenceRole.REFUTE, evidence_type=EvidenceType.OFFICIAL_DATA,
+            target_object_id="cand_2", source_ref="candidate:ev2",
+            independence_group="grp2",
+            summary="test summary 2",
+        )
+        c2c = {"cand_1": "core_entity_1"}
+        result = _resolve_core_references([ev1, ev2], c2c)
+        assert result[0].target_object_id == "core_entity_1"
+        assert result[1].target_object_id == "cand_2"  # not in c2c, unchanged
+
+    def test_validate_evidence_with_policy_allow_pending(self):
+        """R3-03: _validate_mapped_object with require_source_graph=False."""
+        from aurora.persistence.draft_service import _validate_mapped_object
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        from aurora.core.models.atoms import Evidence
+        from aurora.core.models.enums import EvidenceRole, EvidenceType
+
+        ev = Evidence(
+            evidence_role=EvidenceRole.SUPPORT, evidence_type=EvidenceType.DIRECT_QUOTE,
+            target_object_id="t1", source_ref="candidate:ev",
+            independence_group="pending_source_graph",
+            summary="test",
+        )
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"test"}),
+            allowed_profiles=frozenset({"test"}),
+            workspace_id="ws_test",
+            require_source_graph=False,
+        )
+        _validate_mapped_object(ev, "evidence", policy=policy)
+
+    def test_validate_evidence_no_policy_rejects_pending(self):
+        """R3-03: _validate_mapped_object with policy=None rejects pending_source_graph."""
+        from aurora.persistence.draft_service import _validate_mapped_object
+        from aurora.core.models.atoms import Evidence
+        from aurora.core.models.enums import EvidenceRole, EvidenceType
+
+        ev = Evidence(
+            evidence_role=EvidenceRole.SUPPORT, evidence_type=EvidenceType.DIRECT_QUOTE,
+            target_object_id="t1", source_ref="candidate:ev",
+            independence_group="pending_source_graph",
+            summary="test",
+        )
+        with pytest.raises(ValueError, match="independence_group not resolved"):
+            _validate_mapped_object(ev, "evidence", policy=None)
+
+    def test_persist_drafts_direct_with_policy(self, repo_factory):
+        """Call persist_drafts directly with PersistencePolicy (exercises R3-01 path)."""
+        from aurora.persistence.draft_service import persist_drafts
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        _seed_source_graph(repo_factory)
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"fixture"}),
+            allowed_profiles=frozenset({"v1_adversarial"}),
+            workspace_id="aurora_gate3_default",
+        )
+        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        assert tx.succeeded
+        assert tx.created_count == 1
+
+    def test_persist_drafts_direct_dryrun_with_policy(self, repo_factory):
+        """Direct persist_drafts in dry_run mode with policy."""
+        from aurora.persistence.draft_service import persist_drafts
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        _seed_source_graph(repo_factory)
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"fixture"}),
+            allowed_profiles=frozenset({"v1_adversarial"}),
+            workspace_id="aurora_gate3_default",
+            dry_run=True,
+        )
+        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", dry_run=True, policy=policy)
+        assert tx.succeeded
+        assert tx.created_count == 1
+
+    def test_persist_drafts_no_policy_raises(self, repo_factory):
+        """R3-01: persist_drafts without policy raises ValueError."""
+        from aurora.persistence.draft_service import persist_drafts
+        _seed_source_graph(repo_factory)
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+        with pytest.raises(ValueError, match="PersistencePolicy is required"):
+            persist_drafts(repo_factory, bundle, "aurora_gate3_default")
+
+    def test_backward_compat_wrapper_with_policy(self, repo_factory):
+        """Backward-compat wrapper with explicit policy."""
+        from aurora.persistence.draft_service import persist_drafts_with_separate_run
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        _seed_source_graph(repo_factory)
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"fixture"}),
+            allowed_profiles=frozenset({"v1_adversarial"}),
+            workspace_id="aurora_gate3_default",
+        )
+        tx = persist_drafts_with_separate_run(
+            repo_factory, None, bundle, "aurora_gate3_default", policy=policy
+        )
+        assert tx.succeeded
+
+
+class TestDraftServiceFinalizeCoverage:
+    """Cover _finalize_success_run / _finalize_failed_run gap paths."""
+
+    def test_finalize_success_run_rec_not_found(self, repo_factory):
+        """_finalize_success_run creates new record when ProcessingRun not found."""
+        from aurora.persistence.draft_service import _finalize_success_run
+        from aurora.persistence.contracts import DraftRecord, DraftAction
+
+        records = [DraftRecord(
+            object_type="entity", object_id="fake_id",
+            stable_identity_hash="a" * 64,
+            action=DraftAction.CREATED, candidate_id="c1"
+        )]
+        result = _finalize_success_run(
+            repo_factory, "run_not_exist_789", "ws_test2", "op_key_success", records
+        )
+        assert result is True
+
+    def test_finalize_success_run_rec_found_updates(self, repo_factory):
+        """_finalize_success_run updates existing ProcessingRun record (rec not None)."""
+        from aurora.persistence.draft_service import _finalize_success_run
+        from aurora.persistence.contracts import DraftRecord, DraftAction
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+
+        rid = "run_found_success_upd"
+        now = datetime.now(timezone.utc)
+        ws = "ws_success_upd"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id=rid,
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"run_status": "running"},
+            )
+            s.add(rec)
+            s.commit()
+
+        records = [DraftRecord(
+            object_type="entity", object_id="fake_id",
+            stable_identity_hash="a" * 64,
+            action=DraftAction.CREATED, candidate_id="c1"
+        )]
+        result = _finalize_success_run(
+            repo_factory, rid, ws, "op_key_succ_upd", records
+        )
+        assert result is True
+
+    def test_finalize_failed_run_rec_not_found(self, repo_factory):
+        """_finalize_failed_run creates new record when ProcessingRun not found."""
+        from aurora.persistence.draft_service import _finalize_failed_run
+
+        result = _finalize_failed_run(
+            repo_factory, "run_not_exist_456", "ws_test4",
+            "op_key_fail", ValueError("test failure")
+        )
+        assert result is True
+
+    def test_finalize_failed_run_rec_found_updates(self, repo_factory):
+        """_finalize_failed_run updates existing ProcessingRun with FAILED status."""
+        from aurora.persistence.draft_service import _finalize_failed_run
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+
+        rid = "run_found_fail_upd"
+        now = datetime.now(timezone.utc)
+        ws = "ws_fail_upd"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id=rid,
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"run_status": "running"},
+            )
+            s.add(rec)
+            s.commit()
+
+        result = _finalize_failed_run(
+            repo_factory, rid, ws,
+            "op_key_fail_upd", ValueError("test failure upd")
+        )
+        assert result is True
+
+    def test_lookup_by_natural_key_bad_external_ids(self, repo_factory):
+        """_lookup_by_natural_key ignores records with non-dict external_ids."""
+        from aurora.persistence.draft_service import _lookup_by_natural_key
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        ws = "ws_bad_ext2"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="rec_bad_ext2",
+                object_type=ObjectType.ENTITY.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"external_ids": "not_a_dict"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result = _lookup_by_natural_key(s, ObjectType.ENTITY, "nk_test_999", ws)
+            assert result == []
+
+    def test_lookup_by_natural_key_deleted_record(self, repo_factory):
+        """_lookup_by_natural_key: soft-deleted records excluded."""
+        from aurora.persistence.draft_service import _lookup_by_natural_key, EXT_ID_NATURAL_KEY
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        ws = "ws_deleted_nk"
+        nk = "nk_deleted" + "0" * 54
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="rec_soft_del",
+                object_type=ObjectType.ENTITY.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                deleted_at=now,
+                payload={"external_ids": {EXT_ID_NATURAL_KEY: nk}},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result = _lookup_by_natural_key(s, ObjectType.ENTITY, nk, ws)
+            assert result == []
+
+    def test_lookup_by_operation_key_ioids_no_match(self, repo_factory):
+        """_lookup_by_operation_key: record with input_object_ids not containing op_key."""
+        from aurora.persistence.draft_service import _lookup_by_operation_key
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        ws = "ws_ioids_nomatch"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="run_ioids_nomatch",
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"input_object_ids": ["other"], "run_status": "success"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result, status = _lookup_by_operation_key(s, "unlisted_key", ws)
+            assert result == []
+            assert status is None
+
+    def test_lookup_by_operation_key_no_external_ids(self, repo_factory):
+        """_lookup_by_operation_key: record payload without external_ids dict."""
+        from aurora.persistence.draft_service import _lookup_by_operation_key
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        ws = "ws_noext_ids"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="run_noext_ids",
+                object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1",
+                lifecycle_status="active",
+                workspace_id=ws,
+                privacy_level="private",
+                created_by="test",
+                created_at=now, updated_at=now,
+                version=1,
+                payload={"run_status": "running"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result, status = _lookup_by_operation_key(s, "any_key", ws)
+            assert result == []
+            assert status is None
+
+
+class TestPersistDraftsFaultInjection:
+    """Exercise draft_service.py error paths via real persist_drafts calls."""
+
+    def test_idempotent_same_bundle_twice(self, repo_factory):
+        """Persist same bundle twice -> second call returns idempotent result (SUCCESS status)."""
+        from aurora.persistence.draft_service import persist_drafts
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        _seed_source_graph(repo_factory)
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"fixture"}),
+            allowed_profiles=frozenset({"v1_adversarial"}),
+            workspace_id="aurora_gate3_default",
+        )
+        tx1 = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        assert tx1.succeeded
+        tx2 = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        assert tx2.succeeded
+        assert tx2.created_count == 0  # idempotent: no re-creation
+
+    def test_backward_compat_wrapper_named_args(self, repo_factory):
+        """persist_drafts_with_separate_run with explicit named args."""
+        from aurora.persistence.draft_service import persist_drafts_with_separate_run
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        _seed_source_graph(repo_factory)
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"fixture"}),
+            allowed_profiles=frozenset({"v1_adversarial"}),
+            workspace_id="aurora_gate3_default",
+        )
+        tx = persist_drafts_with_separate_run(
+            repo_factory=repo_factory, repo=None, bundle=bundle,
+            workspace_id="aurora_gate3_default", dry_run=False, policy=policy
+        )
+        assert tx.succeeded
+
+    def test_bundle_empty_content_units(self, repo_factory):
+        """Preflight failure: bundle with empty content_unit_window - exercises preflight failure path."""
+        from aurora.persistence.draft_service import persist_drafts
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        from aurora.extraction.review_bundle import ReviewBundle
+        from aurora.extraction.providers.fixture_provider import FixtureProvider
+        _seed_source_graph(repo_factory)
+
+        window = _make_adversarial_window()
+        provider = FixtureProvider()
+        resp = provider.extract_for_case("prediction_pollution", window)
+
+        bundle = ReviewBundle.create(
+            document_id=window.document_id,
+            provider_name=resp.provider_metadata.name,
+            provider_version=resp.provider_metadata.version,
+            deterministic_mode=resp.provider_metadata.deterministic_mode,
+            candidates=resp.candidates,
+            content_unit_window=(),
+            validation_findings=(),
+            context_hashes=None,
+            case_id="prediction_pollution",
+            run_id="run_fault_test",
+        )
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"fixture"}),
+            allowed_profiles=frozenset({"v1_adversarial"}),
+            workspace_id="aurora_gate3_default",
+        )
+        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        assert not tx.succeeded
+
+
+class TestDraftServiceUnitInIntegration:
+    """Use integration fixture to cover draft_service.py standalone functions."""
+
+    def test_lookup_by_nk_ignores_non_dict_ext(self, repo_factory):
+        from aurora.persistence.draft_service import _lookup_by_natural_key
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        now = datetime.now(timezone.utc)
+        ws = "ws_test_nkdict"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="rec_string_ext", object_type=ObjectType.ENTITY.value,
+                schema_version="v1.1", lifecycle_status="active", workspace_id=ws,
+                privacy_level="private", created_by="test",
+                created_at=now, updated_at=now, version=1,
+                payload={"external_ids": "not_a_dict"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result = _lookup_by_natural_key(s, ObjectType.ENTITY, "nk_any", ws)
+            assert result == []
+
+    def test_lookup_by_nk_ignores_none_ext(self, repo_factory):
+        from aurora.persistence.draft_service import _lookup_by_natural_key
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        now = datetime.now(timezone.utc)
+        ws = "ws_test_nknone"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="rec_none_ext", object_type=ObjectType.ENTITY.value,
+                schema_version="v1.1", lifecycle_status="active", workspace_id=ws,
+                privacy_level="private", created_by="test",
+                created_at=now, updated_at=now, version=1,
+                payload={},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result = _lookup_by_natural_key(s, ObjectType.ENTITY, "nk_any", ws)
+            assert result == []
+
+    def test_lookup_by_op_key_oid_match(self, repo_factory):
+        from aurora.persistence.draft_service import _lookup_by_operation_key
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        now = datetime.now(timezone.utc)
+        ws = "ws_oid_match"
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="run_oid_match", object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1", lifecycle_status="active", workspace_id=ws,
+                privacy_level="private", created_by="test",
+                created_at=now, updated_at=now, version=1,
+                payload={"external_ids": {}, "input_object_ids": ["mock_op_abc"],
+                         "run_status": "success"},
+            )
+            s.add(rec)
+            s.commit()
+        with repo_factory() as s:
+            result, status = _lookup_by_operation_key(s, "mock_op_abc", ws)
+            assert len(result) == 1
+            assert status == "success"
+
+    def test_lookup_by_op_key_empty(self, repo_factory):
+        from aurora.persistence.draft_service import _lookup_by_operation_key
+        with repo_factory() as s:
+            result, status = _lookup_by_operation_key(s, "nonexistent", "ws_empty")
+            assert result == []
+            assert status is None
+
+    def test_finalize_success_run_rec_not_found(self, repo_factory):
+        from aurora.persistence.draft_service import _finalize_success_run
+        from aurora.persistence.contracts import DraftRecord, DraftAction
+        records = [DraftRecord(
+            object_type="entity", object_id="fake_id",
+            stable_identity_hash="a" * 64, action=DraftAction.CREATED, candidate_id="c1"
+        )]
+        result = _finalize_success_run(repo_factory, "run_not_exist", "ws_x", "opk", records)
+        assert result is True
+
+    def test_finalize_failed_run_rec_not_found(self, repo_factory):
+        from aurora.persistence.draft_service import _finalize_failed_run
+        result = _finalize_failed_run(repo_factory, "run_not_exist", "ws_x", "opk",
+                                       ValueError("fail"))
+        assert result is True
+
+    def test_finalize_failed_run_rec_found(self, repo_factory):
+        from aurora.persistence.draft_service import _finalize_failed_run
+        from aurora.core.models.enums import ObjectType
+        from aurora.db.models import ObjectRecord
+        now = datetime.now(timezone.utc)
+        with repo_factory() as s:
+            rec = ObjectRecord(
+                id="run_to_fail", object_type=ObjectType.PROCESSING_RUN.value,
+                schema_version="v1.1", lifecycle_status="active",
+                workspace_id="ws_to_fail", privacy_level="private", created_by="test",
+                created_at=now, updated_at=now, version=1,
+                payload={"run_status": "running", "external_ids": {}},
+            )
+            s.add(rec)
+            s.commit()
+        result = _finalize_failed_run(repo_factory, "run_to_fail", "ws_to_fail", "opk",
+                                       ValueError("fail"))
+        assert result is True
+
+    def test_resolve_core_references(self):
+        from aurora.persistence.draft_service import _resolve_core_references
+        from aurora.core.models.atoms import Evidence
+        from aurora.core.models.enums import EvidenceRole, EvidenceType
+        ev1 = Evidence(
+            evidence_role=EvidenceRole.SUPPORT, evidence_type=EvidenceType.DIRECT_QUOTE,
+            target_object_id="cand_1", source_ref="candidate:ev1",
+            independence_group="grp1", summary="s1"
+        )
+        ev2 = Evidence(
+            evidence_role=EvidenceRole.REFUTE, evidence_type=EvidenceType.DIRECT_QUOTE,
+            target_object_id="cand_2", source_ref="candidate:ev2",
+            independence_group="grp2", summary="s2"
+        )
+        result = _resolve_core_references([ev1, ev2], {"cand_1": "core_e1"})
+        assert result[0].target_object_id == "core_e1"
+        assert result[1].target_object_id == "cand_2"
+
+    def test_validate_mapped_object_entity_missing_name(self):
+        from aurora.persistence.draft_service import _validate_mapped_object
+        from aurora.core.models.atoms import Entity
+        e = Entity.model_construct(id="e_no_name", canonical_name="", entity_type="company",
+                                    workspace_id="ws", created_by="test")
+        with pytest.raises(ValueError, match="missing canonical_name"):
+            _validate_mapped_object(e, "entity")
+
+    def test_validate_mapped_object_claim_empty_statement(self):
+        from aurora.persistence.draft_service import _validate_mapped_object
+        from aurora.core.models.atoms import Claim
+        c = Claim.model_construct(id="c_no_stmt", claim_type="prediction", statement="",
+                                   asserted_by="Y", workspace_id="ws", created_by="test",
+                                   source_ref="candidate:1")
+        with pytest.raises(ValueError, match="empty statement"):
+            _validate_mapped_object(c, "claim")
+
+    def test_validate_mapped_object_claim_empty_asserted_by(self):
+        from aurora.persistence.draft_service import _validate_mapped_object
+        from aurora.core.models.atoms import Claim
+        c = Claim.model_construct(id="c_no_as", claim_type="prediction", statement="X",
+                                   asserted_by="", workspace_id="ws", created_by="test",
+                                   source_ref="candidate:1")
+        with pytest.raises(ValueError, match="empty asserted_by"):
+            _validate_mapped_object(c, "claim")
+
+    def test_validate_mapped_object_evidence_empty_target(self):
+        from aurora.persistence.draft_service import _validate_mapped_object
+        from aurora.core.models.atoms import Evidence
+        from aurora.core.models.enums import EvidenceRole, EvidenceType
+        ev = Evidence(
+            evidence_role=EvidenceRole.SUPPORT, evidence_type=EvidenceType.DIRECT_QUOTE,
+            target_object_id="", source_ref="candidate:ev",
+            independence_group="grp1", summary="s"
+        )
+        with pytest.raises(ValueError, match="empty target_object_id"):
+            _validate_mapped_object(ev, "evidence")
+
+    def test_backward_compat_wrapper_dry(self, repo_factory):
+        from aurora.persistence.draft_service import persist_drafts_with_separate_run
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+        tx = persist_drafts_with_separate_run(
+            repo_factory=repo_factory, repo=None, bundle=bundle,
+            workspace_id="ws_bc_dry", dry_run=True, policy=None,
+        )
+        assert tx.succeeded
+
+
+class TestPhase2SuccessFull:
+    """Ensure all Phase 2 success lines are exercised."""
+
+    def test_full_success_pipeline(self, repo_factory):
+        from aurora.persistence.draft_service import persist_drafts
+        from aurora.persistence.persistence_policy import PersistencePolicy
+        _seed_source_graph(repo_factory)
+        window = _make_adversarial_window()
+        bundle = run_draft_persistence(repo_factory, window, "prediction_pollution", dry_run=True)[0]
+
+        policy = PersistencePolicy(
+            allowed_providers=frozenset({"fixture"}),
+            allowed_profiles=frozenset({"v1_adversarial"}),
+            workspace_id="aurora_gate3_default",
+        )
+        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        assert tx.succeeded
+        assert tx.created_count == 1
+        assert tx.reused_count == 0

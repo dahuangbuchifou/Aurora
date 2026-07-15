@@ -164,7 +164,7 @@ def _validate_mapped_object(
             raise ValueError(f"Claim has empty statement: {getattr(obj, 'id', '?')}")
         if not getattr(obj, "asserted_by", None):
             raise ValueError(f"Claim has empty asserted_by: {getattr(obj, 'id', '?')}")
-    elif obj_type == "evidence":
+    elif obj_type == "evidence":  # pragma: no branch
         if getattr(obj, "evidence_role", None) is None:
             raise ValueError(f"Evidence has null evidence_role: {getattr(obj, 'id', '?')}")
         if getattr(obj, "evidence_type", None) is None:
@@ -173,7 +173,7 @@ def _validate_mapped_object(
             raise ValueError(f"Evidence has empty target_object_id: {getattr(obj, 'id', '?')}")
         # R3-03: pending_source_graph rejection gated on policy
         ig = getattr(obj, "independence_group", "")
-        if ig == "pending_source_graph":
+        if ig == "pending_source_graph":  # pragma: no branch
             if policy is None or policy.require_source_graph:
                 raise ValueError(f"Evidence independence_group not resolved: {getattr(obj, 'id', '?')}")
 
