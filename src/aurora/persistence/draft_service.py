@@ -177,7 +177,7 @@ def _validate_mapped_object(
             raise ValueError(f"Evidence independence_group is empty for: {getattr(obj, 'id', '?')}")
 
 
-def _dry_run_persist(bundle, workspace_id, op_key, policy=None):
+def _dry_run_persist(bundle, workspace_id, op_key, policy):
     """Dry run: validate + map, build DraftTransaction without DB writes."""
     validate_bundle_preflight(bundle, workspace_id=workspace_id, policy=policy)
     entities, data_points, claims, evidence_list, _c2c = map_accepted_candidates(
@@ -225,6 +225,7 @@ def _dry_run_persist(bundle, workspace_id, op_key, policy=None):
 def persist_drafts(
     repo_factory: sessionmaker,
     bundle: Any,
+    *,
     workspace_id: str,
     policy: PersistencePolicy,
     dry_run: bool = False,
@@ -666,9 +667,10 @@ def persist_drafts_with_separate_run(
     repo_factory: sessionmaker,
     repo: Any,
     bundle: Any,
+    *,
     workspace_id: str,
     policy: PersistencePolicy,
     dry_run: bool = False,
 ) -> DraftTransaction:
     """Backward-compatible wrapper: delegates to persist_drafts."""
-    return persist_drafts(repo_factory, bundle, workspace_id, policy=policy, dry_run=dry_run)
+    return persist_drafts(repo_factory, bundle, workspace_id=workspace_id, policy=policy, dry_run=dry_run)

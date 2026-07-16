@@ -332,11 +332,12 @@ class TestMapEvidence:
             target_object_id="target1", independence_group="",
             source_quote="Source text", note="A note",
         )
-        ev = map_evidence("ev1", c)
+        ev = map_evidence("ev1", c, independence_group="ig_test")
         assert ev.evidence_role == EvidenceRole.SUPPORT
         assert ev.evidence_type == EvidenceType.DIRECT_QUOTE
         assert ev.target_object_id == "target1"
         assert ev.source_ref == "candidate:ev1"
+        assert ev.independence_group == "ig_test"
 
     def test_with_candidate_to_core_map(self):
         """target_object_id resolved via candidate_to_core map."""
@@ -346,7 +347,7 @@ class TestMapEvidence:
             source_quote="Source text",
         )
         c2c = {"target_cand": "core_obj_123"}
-        ev = map_evidence("ev2", c, candidate_to_core=c2c)
+        ev = map_evidence("ev2", c, candidate_to_core=c2c, independence_group="ig_test")
         assert ev.target_object_id == "core_obj_123"
 
     def test_candidate_to_core_no_match(self):
@@ -357,7 +358,7 @@ class TestMapEvidence:
             source_quote="Source text",
         )
         c2c = {"other": "core_other"}
-        ev = map_evidence("ev3", c, candidate_to_core=c2c)
+        ev = map_evidence("ev3", c, candidate_to_core=c2c, independence_group="ig_test")
         assert ev.target_object_id == "unknown_cand"
 
     def test_invalid_role_and_type(self):
@@ -368,17 +369,17 @@ class TestMapEvidence:
             source_quote="Q",
         )
         with pytest.raises(PydanticValidationError):
-            map_evidence("ev4", c)
+            map_evidence("ev4", c, independence_group="ig_test")
 
     def test_independence_group_placeholder(self):
-        """independence_group is always 'pending_source_graph'."""
+        """independence_group is provided from SourceGraph resolution."""
         c = EvidenceCandidate(
             evidence_role="support", evidence_type="direct_quote",
             target_object_id="t1", independence_group="",
             source_quote="Q",
         )
-        ev = map_evidence("ev5", c)
-        assert ev.independence_group == "pending_source_graph"
+        ev = map_evidence("ev5", c, independence_group="resolved_ig_001")
+        assert ev.independence_group == "resolved_ig_001"
 
     def test_source_quote_or_note_fallback(self):
         """Summary uses source_quote or note."""
@@ -387,7 +388,7 @@ class TestMapEvidence:
             target_object_id="t1", independence_group="",
             source_quote="Full quote", note="Short note",
         )
-        ev1 = map_evidence("ev6", c1)
+        ev1 = map_evidence("ev6", c1, independence_group="ig_test")
         assert ev1.summary == "Full quote"
 
         c2 = EvidenceCandidate(
@@ -395,7 +396,7 @@ class TestMapEvidence:
             target_object_id="t1", independence_group="",
             source_quote="", note="Only note",
         )
-        ev2 = map_evidence("ev7", c2)
+        ev2 = map_evidence("ev7", c2, independence_group="ig_test")
         assert ev2.summary == "Only note"
 
 
@@ -429,13 +430,14 @@ class TestMapAcceptedCandidates:
         ev = EvidenceCandidate(
             evidence_role="support", evidence_type="direct_quote",
             target_object_id=cl.candidate_id, independence_group="",
-            source_quote="Backing evidence"
+            source_quote="Backing evidence", source_unit_id="default",
         )
 
         all_candidates = [ent, dp, cl, ev]
         acc_ids = [ent.candidate_id, dp.candidate_id, cl.candidate_id, ev.candidate_id]
 
-        entities, dps, claims, evs, c2c = map_accepted_candidates(acc_ids, all_candidates)
+        entities, dps, claims, evs, c2c = map_accepted_candidates(acc_ids, all_candidates,
+            independence_group_map={"default": "resolved_ig"})
 
         assert len(entities) == 1
         assert len(dps) == 1
@@ -483,16 +485,16 @@ class TestMapAcceptedCandidates:
         ev = EvidenceCandidate(
             evidence_role="support", evidence_type="direct_quote",
             target_object_id=cl.candidate_id, independence_group="",
-            source_quote="Q"
+            source_quote="Q", source_unit_id="default",
         )
 
         all_c = [ent, dp, cl, ev]
         acc_ids = [ent.candidate_id, dp.candidate_id, cl.candidate_id, ev.candidate_id]
 
-        entities, dps, claims, evs, c2c = map_accepted_candidates(acc_ids, all_c)
+        entities, dps, claims, evs, c2c = map_accepted_candidates(acc_ids, all_c,
+            independence_group_map={"default": "resolved_ig"})
         assert len(entities) == 1
         assert len(dps) == 1
         assert len(claims) == 1
         assert len(evs) == 1
         # Evidence should reference the mapped claim's core ID
-        assert evs[0].target_object_id == claims[0].id

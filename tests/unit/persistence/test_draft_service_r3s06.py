@@ -268,7 +268,7 @@ class TestFourClassFullPersistence:
             seed_session.commit()
 
         # Execute
-        tx = persist_drafts(SessionLocal, bundle, "ws_test", policy=policy)
+        tx = persist_drafts(SessionLocal, bundle, workspace_id="ws_test", policy=policy)
 
         # Assert: must succeed
         assert tx.succeeded, f"Transaction failed: {tx.error_message}"
@@ -438,7 +438,7 @@ class TestForcedMidTransactionFailure:
                 ))
             seed_session.commit()
 
-        tx = persist_drafts(SessionLocal, bundle, "ws_test", policy=policy)
+        tx = persist_drafts(SessionLocal, bundle, workspace_id="ws_test", policy=policy)
 
         # Hard assertion: must be FAILED
         assert not tx.succeeded, (

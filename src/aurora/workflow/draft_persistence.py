@@ -26,6 +26,7 @@ from aurora.persistence.persistence_policy import PersistencePolicy
 def run_draft_persistence(
     repo_factory: sessionmaker,
     window: ContextWindow,
+    *,
     case_id: str,
     policy: PersistencePolicy,
     workspace_id: str = "aurora_gate3_default",

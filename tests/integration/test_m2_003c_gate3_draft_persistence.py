@@ -75,7 +75,7 @@ def _default_policy(workspace_id: str = "aurora_gate3_default"):
     """R3-S01: Default PersistencePolicy for integration tests."""
     from aurora.persistence.persistence_policy import PersistencePolicy
     return PersistencePolicy(
-        allowed_providers=frozenset({"fixture_provider"}),
+        allowed_providers=frozenset({"fixture_provider", "adversarial_fixture", "test_fixture", "test_provider"}),
         allowed_profiles=frozenset({"adversarial_profile"}),
         workspace_id=workspace_id,
     )
@@ -181,7 +181,7 @@ class TestFullPipeline:
         """B01: Workflow owns session, objects persisted to SQLite."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle, tx = run_draft_persistence(repo_factory, window, _default_policy())
+        bundle, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
 
         assert tx.succeeded
         assert tx.created_count == 1
@@ -212,7 +212,7 @@ class TestFullPipeline:
         """Dry run must not write to SQLite."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle, tx = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)
+        bundle, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)
 
         assert tx.created_count == 1
         from aurora.core.models.enums import ObjectType
@@ -238,10 +238,10 @@ class TestFullPipeline:
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
 
-        _, tx_dry = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)
+        _, tx_dry = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)
         assert tx_dry.created_count == 1
 
-        _, tx_real = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=False)
+        _, tx_real = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=False)
         assert tx_real.created_count == 1
 
         from aurora.core.models.enums import ObjectType as OT
@@ -261,7 +261,7 @@ class TestFullPipeline:
         """Rejected candidates must not appear in any persisted object."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle, tx = run_draft_persistence(repo_factory, window, _default_policy())
+        bundle, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
 
         for rec in tx.records:
             assert rec.candidate_id not in bundle.rejected_candidate_ids
@@ -270,7 +270,7 @@ class TestFullPipeline:
         """G3-2: No Fact in database."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        run_draft_persistence(repo_factory, window, _default_policy())
+        run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         from aurora.core.models.enums import ObjectType
         with repo_factory() as s:
             from aurora.db.models import ObjectRecord
@@ -284,7 +284,7 @@ class TestFullPipeline:
         """G3-3: All draft Claims must be UNDER_REVIEW."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        _, tx = run_draft_persistence(repo_factory, window, _default_policy())
+        _, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
 
         claim_records = [r for r in tx.records if r.object_type == "claim"]
         assert len(claim_records) > 0, "Expected at least one claim"
@@ -314,7 +314,7 @@ class TestFullPipeline:
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         policy = _default_policy()
-        _, tx = run_draft_persistence(repo_factory, window, policy)
+        _, tx = run_draft_persistence(repo_factory, window, case_id=case_id, policy=policy)
         assert tx.succeeded
 
 # ── Idempotency (G3-6 / B06) ────────────────────────────────────────────────
@@ -325,10 +325,10 @@ class TestIdempotency:
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
 
-        _, tx1 = run_draft_persistence(repo_factory, window, _default_policy())
+        _, tx1 = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         assert tx1.created_count == 1
 
-        _, tx2 = run_draft_persistence(repo_factory, window, _default_policy())
+        _, tx2 = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         assert tx2.total_objects == 0, "G3-6: Second run must return 0"
         assert tx2.created_count == 0
 
@@ -338,7 +338,7 @@ class TestIdempotency:
         window = _make_adversarial_window()
 
         # First persist — workflow owns session 1
-        _, tx1 = run_draft_persistence(repo_factory, window, _default_policy())
+        _, tx1 = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         from aurora.core.models.enums import ObjectType as OT
         with repo_factory() as s:
             from aurora.db.models import ObjectRecord
@@ -351,7 +351,7 @@ class TestIdempotency:
             )
 
         # Second persist — workflow owns session 2
-        _, tx2 = run_draft_persistence(repo_factory, window, _default_policy())
+        _, tx2 = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         with repo_factory() as s:
             from aurora.db.models import ObjectRecord
             from sqlalchemy import select as sql_select
@@ -369,10 +369,10 @@ class TestIdempotency:
         """Bundle operation key stable across runs."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle, _ = run_draft_persistence(repo_factory, window, _default_policy())
+        bundle, _ = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         key1 = compute_bundle_operation_key("aurora_gate3_default", bundle.bundle_sha256)
 
-        bundle2, _ = run_draft_persistence(repo_factory, window, _default_policy())
+        bundle2, _ = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         key2 = compute_bundle_operation_key("aurora_gate3_default", bundle2.bundle_sha256)
 
         assert key1 == key2
@@ -381,7 +381,7 @@ class TestIdempotency:
         """B06: All persisted objects have draft_natural_key in external_ids."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        _, tx = run_draft_persistence(repo_factory, window, _default_policy())
+        _, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
 
         ext_key = "draft_natural_key"
         with repo_factory() as s:
@@ -401,7 +401,7 @@ class TestProcessingRun:
         """B02: ProcessingRun persists to SQLite in independent session."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        _, tx = run_draft_persistence(repo_factory, window, _default_policy())
+        _, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
 
         with repo_factory() as s:
             from aurora.db.models import ObjectRecord
@@ -414,7 +414,7 @@ class TestProcessingRun:
         """Dry run → no ProcessingRun in DB."""
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        _, tx = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)
+        _, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)
 
         with repo_factory() as s:
             from aurora.db.models import ObjectRecord
@@ -435,7 +435,9 @@ class TestProcessingRun:
         # Run with a fresh workspace to avoid idempotency
         ws = "aurora_fault_injection_test"
         bundle, tx = run_draft_persistence(
-            repo_factory, window, _default_policy(ws),
+            repo_factory, window,
+            case_id="prediction_pollution",
+            policy=_default_policy(ws),
             workspace_id=ws,
         )
 
@@ -807,7 +809,7 @@ class TestDraftServiceBranchCoverage:
         from aurora.persistence.draft_service import persist_drafts_with_separate_run
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle, tx = run_draft_persistence(repo_factory, window, _default_policy())
+        bundle, tx = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         assert tx.succeeded
 
     def test_contracts_draft_record(self):
@@ -1012,7 +1014,7 @@ class TestRegression:
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
         texts_before = {u.unit_id: u.text for u in window.units}
-        run_draft_persistence(repo_factory, window, _default_policy())
+        run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy())
         for u in window.units:
             assert u.text == texts_before[u.unit_id]
 
@@ -1200,14 +1202,14 @@ class TestDraftServiceCoverageGap:
         from aurora.persistence.persistence_policy import PersistencePolicy
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_default",
         )
-        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert tx.succeeded
         assert tx.created_count == 1
 
@@ -1217,7 +1219,7 @@ class TestDraftServiceCoverageGap:
         from aurora.persistence.persistence_policy import PersistencePolicy
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
@@ -1225,7 +1227,7 @@ class TestDraftServiceCoverageGap:
             workspace_id="aurora_gate3_default",
             dry_run=True,
         )
-        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", dry_run=True, policy=policy)
+        tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", dry_run=True, policy=policy)
         assert tx.succeeded
         assert tx.created_count == 1
 
@@ -1234,10 +1236,10 @@ class TestDraftServiceCoverageGap:
         from aurora.persistence.draft_service import persist_drafts
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
         # R3-S01: policy is now a required positional arg — TypeError at call site
         with pytest.raises(TypeError):
-            persist_drafts(repo_factory, bundle, "aurora_gate3_default")
+            persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default")
 
     def test_backward_compat_wrapper_with_policy(self, repo_factory):
         """Backward-compat wrapper with explicit policy."""
@@ -1245,7 +1247,7 @@ class TestDraftServiceCoverageGap:
         from aurora.persistence.persistence_policy import PersistencePolicy
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
@@ -1253,7 +1255,7 @@ class TestDraftServiceCoverageGap:
             workspace_id="aurora_gate3_default",
         )
         tx = persist_drafts_with_separate_run(
-            repo_factory, None, bundle, "aurora_gate3_default", policy=policy
+            repo_factory, None, bundle, workspace_id="aurora_gate3_default", policy=policy
         )
         assert tx.succeeded
 
@@ -1477,16 +1479,16 @@ class TestPersistDraftsFaultInjection:
         from aurora.persistence.persistence_policy import PersistencePolicy
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_default",
         )
-        tx1 = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx1 = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert tx1.succeeded
-        tx2 = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx2 = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert tx2.succeeded
         assert tx2.created_count == 0  # idempotent: no re-creation
 
@@ -1496,7 +1498,7 @@ class TestPersistDraftsFaultInjection:
         from aurora.persistence.persistence_policy import PersistencePolicy
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
@@ -1538,7 +1540,7 @@ class TestPersistDraftsFaultInjection:
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_default",
         )
-        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert not tx.succeeded
 
 
@@ -1708,10 +1710,10 @@ class TestDraftServiceUnitInIntegration:
     def test_backward_compat_wrapper_dry(self, repo_factory):
         from aurora.persistence.draft_service import persist_drafts_with_separate_run
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
         tx = persist_drafts_with_separate_run(
             repo_factory=repo_factory, repo=None, bundle=bundle,
-            workspace_id="ws_bc_dry", dry_run=True, policy=None,
+            workspace_id="ws_bc_dry", dry_run=True, policy=_default_policy(),
         )
         assert tx.succeeded
 
@@ -1724,14 +1726,14 @@ class TestPhase2SuccessFull:
         from aurora.persistence.persistence_policy import PersistencePolicy
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_default",
         )
-        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert tx.succeeded
         assert tx.created_count == 1
         assert tx.reused_count == 0
@@ -1752,7 +1754,7 @@ class TestRemainingCoverageGaps:
 
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
         op_key = compute_bundle_operation_key("aurora_gate3_default", bundle.bundle_sha256)
 
         # Seed a RUNNING ProcessingRun to trigger conflict
@@ -1781,7 +1783,7 @@ class TestRemainingCoverageGaps:
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_default",
         )
-        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert not tx.succeeded
         assert "still RUNNING" in tx.error_message or "Failed to create" in tx.error_message
 
@@ -1794,18 +1796,18 @@ class TestRemainingCoverageGaps:
 
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_default",
         )
-        tx1 = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx1 = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert tx1.succeeded
         assert tx1.created_count >= 1
 
-        tx2 = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+        tx2 = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
         assert tx2.succeeded
         assert tx2.reused_count >= 0 or tx2.created_count == 0
 
@@ -1845,7 +1847,7 @@ class TestRemainingCoverageGaps:
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_prefail",
         )
-        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_prefail", policy=policy)
+        tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_prefail", policy=policy)
         assert not tx.succeeded
         assert "Preflight failed" in tx.error_message
 
@@ -1889,7 +1891,7 @@ class TestRemainingCoverageGaps:
             content_unit_window=window.units,
             validation_findings=all_findings,
             context_hashes={"window_sha256": window.window_sha256},
-            case_id="case_a_web",
+            case_id="prediction_pollution",
             run_id="run_ev_ig",
         )
 
@@ -1914,7 +1916,7 @@ class TestRemainingCoverageGaps:
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="aurora_gate3_evig",
         )
-        tx = persist_drafts(repo_factory, bundle, "aurora_gate3_evig", policy=policy)
+        tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_evig", policy=policy)
         # May fail validation since evidence targets things not accepted
         # But the attempt exercises event-related paths
         assert isinstance(tx.error_message, str) if not tx.succeeded else True
@@ -1931,7 +1933,7 @@ class TestRemainingCoverageGaps:
 
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         # Pre-create an ObjectRecord with the same deterministic ID that
         # persist_drafts will try to create (conflict triggering IntegrityError)
@@ -1979,7 +1981,7 @@ class TestRemainingCoverageGaps:
                     allowed_profiles=frozenset({"v1_adversarial"}),
                     workspace_id="aurora_gate3_ie",
                 )
-                tx = persist_drafts(repo_factory, bundle, "aurora_gate3_ie", policy=policy)
+                tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_ie", policy=policy)
                 # IntegrityError means the object should be rolled back
                 # and the transaction either retries or skips
                 assert tx.succeeded or tx.error_message
@@ -2034,7 +2036,7 @@ class TestRemainingCoverageGaps:
 
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
@@ -2045,7 +2047,7 @@ class TestRemainingCoverageGaps:
         # Patch map_accepted_candidates to trigger mapper exception handler
         with patch("aurora.persistence.draft_service.map_accepted_candidates") as mock_map:
             mock_map.side_effect = ValueError("Simulated mapper crash")
-            tx = persist_drafts(repo_factory, bundle, "aurora_gate3_mapmock", policy=policy)
+            tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_mapmock", policy=policy)
             assert not tx.succeeded
             assert "Mapper failed" in tx.error_message
 
@@ -2057,7 +2059,7 @@ class TestRemainingCoverageGaps:
 
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
@@ -2070,7 +2072,7 @@ class TestRemainingCoverageGaps:
         with patch("aurora.persistence.draft_service._lookup_by_natural_key") as mock_lk,              patch("aurora.persistence.draft_service.compute_independence_group") as mock_cu:
             mock_cu.return_value = "grp_1"
             mock_lk.side_effect = RuntimeError("Simulated Phase 2 fault")
-            tx = persist_drafts(repo_factory, bundle, "aurora_gate3_default", policy=policy)
+            tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_default", policy=policy)
             assert not tx.succeeded
 
     # ── Line 151→exit: Claim null claim_type ─────────────────────────
@@ -2098,7 +2100,7 @@ class TestRemainingCoverageGaps:
 
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
@@ -2110,7 +2112,7 @@ class TestRemainingCoverageGaps:
         with patch("aurora.persistence.draft_service.compute_independence_group") as mock_cu,              patch("aurora.persistence.draft_service._finalize_success_run") as mock_fsr:
             mock_cu.return_value = "grp_1"
             mock_fsr.return_value = False
-            tx = persist_drafts(repo_factory, bundle, "aurora_gate3_ph3fail", policy=policy)
+            tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_ph3fail", policy=policy)
             assert not tx.succeeded
             assert "Phase 3 audit update failed" in tx.error_message
 
@@ -2124,7 +2126,7 @@ class TestRemainingCoverageGaps:
 
         _seed_source_graph(repo_factory)
         window = _make_adversarial_window()
-        bundle = run_draft_persistence(repo_factory, window, _default_policy(), dry_run=True)[0]
+        bundle = run_draft_persistence(repo_factory, window, case_id="prediction_pollution", policy=_default_policy(), dry_run=True)[0]
 
         policy = PersistencePolicy(
             allowed_providers=frozenset({"fixture"}),
@@ -2134,7 +2136,7 @@ class TestRemainingCoverageGaps:
 
         with patch("aurora.persistence.draft_service.compute_independence_group") as mock_cu:
             mock_cu.side_effect = RuntimeError("DB connection lost in source graph")
-            tx = persist_drafts(repo_factory, bundle, "aurora_gate3_sgoe", policy=policy)
+            tx = persist_drafts(repo_factory, bundle, workspace_id="aurora_gate3_sgoe", policy=policy)
             assert not tx.succeeded
             assert "Source graph resolution failed" in tx.error_message
 

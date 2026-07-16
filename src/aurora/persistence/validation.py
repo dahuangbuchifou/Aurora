@@ -2,6 +2,7 @@
 
 R2-B01: Bundle Hash and ContextWindow Hash are truly recomputed and matched.
 R2-B02: Full preflight including workspace, Provider, Profile, dependency checks.
+R3-S02: All preflight checks driven by PersistencePolicy — no legacy keyword arguments.
 """
 
 from __future__ import annotations
@@ -19,32 +20,23 @@ class PreflightError(Exception):
 
 def validate_bundle_preflight(
     bundle: ReviewBundle,
-    workspace_id: str | None = None,
-    policy: Any | None = None,
+    workspace_id: str,
+    policy: Any,
 ) -> list[str]:
     """R2-B01 + R2-B02 + R3-S02: Full preflight checks driven by PersistencePolicy.
 
     Args:
         bundle: Validated ReviewBundle to check.
         workspace_id: The target workspace id — must match bundle and all refs.
-        policy: PersistencePolicy (required for real production path).
-
-    R3-S02: Policy drives all allow-list + workspace checks directly.
-    Candidate-level provider_id/profile_id checks are replaced with
-    Bundle-level provider_name/provider_version/profile_version checks.
+        policy: PersistencePolicy (required). Drives all allow-list + workspace checks.
 
     Returns list of warnings (non-fatal). Raises PreflightError on failure.
     """
-    # R3-S02: Extract policy-driven params (fallback for dry-run/test without policy)
-    allowed_providers: frozenset[str] | None = None
-    allowed_profiles: frozenset[str] | None = None
-    existing_object_resolver: Callable | None = None
-    policy_ws: str | None = None
-    if policy is not None:
-        allowed_providers = getattr(policy, 'allowed_providers', None)
-        allowed_profiles = getattr(policy, 'allowed_profiles', None)
-        existing_object_resolver = getattr(policy, 'existing_object_resolver', None)
-        policy_ws = getattr(policy, 'workspace_id', None)
+    allowed_providers: frozenset[str] | None = getattr(policy, "allowed_providers", None)
+    allowed_profiles: frozenset[str] | None = getattr(policy, "allowed_profiles", None)
+    existing_object_resolver: Callable | None = getattr(policy, "existing_object_resolver", None)
+    policy_ws: str | None = getattr(policy, "workspace_id", None)
+
     warnings: list[str] = []
 
     # ── R2-B01: Bundle Hash re‑computation ──────────────────────────────
@@ -152,39 +144,41 @@ def validate_bundle_preflight(
                 )
 
     # ── R3-S02: Bundle-level Provider/Profile/Workspace checks via Policy ──
-    if policy is not None:
-        # Provider name must be in allowed_providers
-        provider_name = getattr(bundle, "provider_name", "")
-        allowed_prov = allowed_providers or frozenset()
-        if provider_name and provider_name not in allowed_prov:
+    # Provider name must be in allowed_providers
+    provider_name = getattr(bundle, "provider_name", "")
+    allowed_prov = allowed_providers or frozenset()
+    if provider_name and provider_name not in allowed_prov:
+        raise PreflightError(
+            f"Provider '{provider_name}' not in allowed_providers: {set(allowed_prov)}"
+        )
+
+    # Provider version must be in allowed_provider_versions if set
+    allowed_prov_ver = getattr(policy, "allowed_provider_versions", None)
+    if allowed_prov_ver is not None:
+        prov_ver = getattr(bundle, "provider_version", "")
+        if prov_ver and prov_ver not in allowed_prov_ver:
             raise PreflightError(
-                f"Provider '{provider_name}' not in allowed_providers: {set(allowed_prov)}"
-            )
-        # Provider version must be in allowed_provider_versions if set
-        allowed_prov_ver = getattr(policy, 'allowed_provider_versions', None)
-        if allowed_prov_ver is not None:
-            prov_ver = getattr(bundle, "provider_version", "")
-            if prov_ver and prov_ver not in allowed_prov_ver:
-                raise PreflightError(
-                    f"Provider version '{prov_ver}' not in allowed_provider_versions: {set(allowed_prov_ver)}"
-                )
-        # Profile version must be in allowed_profile_versions if set
-        allowed_prof_ver = getattr(policy, 'allowed_profile_versions', None)
-        if allowed_prof_ver is not None:
-            prof_ver = getattr(bundle, "profile_version", "")
-            if prof_ver and prof_ver not in allowed_prof_ver:
-                raise PreflightError(
-                    f"Profile version '{prof_ver}' not in allowed_profile_versions: {set(allowed_prof_ver)}"
-                )
-        # Workspace ID must match policy
-        if policy_ws and workspace_id and policy_ws != workspace_id:
-            raise PreflightError(
-                f"Workspace mismatch: policy.workspace_id='{policy_ws}' != persisted workspace_id='{workspace_id}'"
+                f"Provider version '{prov_ver}' not in allowed_provider_versions: {set(allowed_prov_ver)}"
             )
 
-    # ── R3-S02 (legacy): Candidate-level Provider allow-list (retained for
-    #    backward compat when policy=None, e.g. dry-run tests) ──────────────
-    if policy is None and allowed_providers is not None:
+    # Profile version must be in allowed_profile_versions if set
+    allowed_prof_ver = getattr(policy, "allowed_profile_versions", None)
+    if allowed_prof_ver is not None:
+        prof_ver = getattr(bundle, "profile_version", "")
+        if prof_ver and prof_ver not in allowed_prof_ver:
+            raise PreflightError(
+                f"Profile version '{prof_ver}' not in allowed_profile_versions: {set(allowed_prof_ver)}"
+            )
+
+    # Workspace ID must match policy
+    if policy_ws and workspace_id and policy_ws != workspace_id:
+        raise PreflightError(
+            f"Workspace mismatch: policy.workspace_id='{policy_ws}' != persisted workspace_id='{workspace_id}'"
+        )
+
+    # ── R3-S02: Candidate-level provider/profile checks via Policy ──────
+    # Every accepted candidate's provider_id must be in allowed_providers
+    if allowed_providers is not None:
         for c in bundle.candidates:
             pid = getattr(c, "provider_id", None)
             if pid and pid not in allowed_providers:
@@ -193,7 +187,7 @@ def validate_bundle_preflight(
                     f"disallowed provider_id={pid}"
                 )
 
-    if policy is None and allowed_profiles is not None:
+    if allowed_profiles is not None:
         for c in bundle.candidates:
             pid = getattr(c, "profile_id", None)
             if pid and pid not in allowed_profiles:
@@ -218,7 +212,6 @@ def validate_bundle_preflight(
             target = getattr(c, "target_object_id", "")
             if not target:
                 raise PreflightError(f"Evidence {cid} has empty target_object_id")
-            # Check in candidates AND in pre-existing objects
             if target not in accepted_ids and target not in candidate_ids:
                 if existing_object_resolver is None or existing_object_resolver(target) is None:
                     raise PreflightError(
@@ -235,7 +228,6 @@ def validate_bundle_preflight(
             eid = getattr(c, "entity_id", "")
             if not eid:
                 raise PreflightError(f"DataPoint {cid} has empty entity_id")
-            # Must reference an accepted EntityCandidate or pre-existing Entity
             if eid not in accepted_ids and eid not in candidate_ids:
                 if existing_object_resolver is None or existing_object_resolver(eid) is None:
                     raise PreflightError(
@@ -263,7 +255,6 @@ def validate_bundle_preflight(
     provider_version = getattr(bundle, "provider_version", "")
     profile_version = getattr(bundle, "profile_version", "")
 
-    # Check provider_name consistency against provider_metadata if present
     provider_metadata = getattr(bundle, "provider_metadata", None)
     if provider_metadata is not None:
         meta_name = getattr(provider_metadata, "name", "")
@@ -273,15 +264,12 @@ def validate_bundle_preflight(
                 f"provider_metadata.name '{meta_name}'"
             )
 
-    # R3-02: provider_version and profile_version must not be empty
     if provider_version == "":
         raise PreflightError("provider_version is empty")
     if profile_version == "":
         raise PreflightError("profile_version is empty")
 
-    # ── R2-B02: Accepted dependency check — all accepted must have
-    #            their dependencies (entities for DataPoint/Evidence) accepted
-    #            or already present as core objects
+    # ── R2-B02: Accepted dependency check ────────────────────────────────
     for c in bundle.candidates:
         cid = getattr(c, "candidate_id", "")
         if cid not in accepted_ids:

@@ -76,7 +76,7 @@ class TestSourceGraphErrorHandler:
                 workspace_id="ws_test",
             )
 
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", policy=policy)
             assert not tx.succeeded
             assert "SourceGraphError" in tx.error_message
             mock_fail.assert_called_once()
@@ -123,7 +123,7 @@ class TestSourceGraphErrorHandler:
                 workspace_id="ws_test",
             )
 
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", policy=policy)
             assert not tx.succeeded
             assert "Source graph resolution failed" in tx.error_message
             mock_fail.assert_called_once()
@@ -150,7 +150,7 @@ class TestPhase1FailureHandler:
                 allowed_profiles=frozenset({"v1_adversarial"}),
                 workspace_id="ws_test",
             )
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", policy=policy)
             assert not tx.succeeded
             assert "Failed to create ProcessingRun" in tx.error_message
 
@@ -178,7 +178,7 @@ class TestPreflightFailureHandler:
                 allowed_profiles=frozenset({"v1_adversarial"}),
                 workspace_id="ws_test",
             )
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", policy=policy)
             assert not tx.succeeded
             assert "Preflight failed" in tx.error_message
             mock_fail.assert_called_once()
@@ -210,7 +210,7 @@ class TestMapperFailureHandler:
                 allowed_profiles=frozenset({"v1_adversarial"}),
                 workspace_id="ws_test",
             )
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", policy=policy)
             assert not tx.succeeded
             assert "Mapper failed" in tx.error_message
             mock_fail.assert_called_once()
@@ -262,7 +262,7 @@ class TestPhase2WriteException:
                 allowed_profiles=frozenset({"v1_adversarial"}),
                 workspace_id="ws_test",
             )
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", policy=policy)
             assert not tx.succeeded
             mock_fail.assert_called_once()
 
@@ -315,7 +315,7 @@ class TestPhase3AuditFailure:
                 allowed_profiles=frozenset({"v1_adversarial"}),
                 workspace_id="ws_test",
             )
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", policy=policy)
             assert not tx.succeeded
             assert "Phase 3 audit update failed" in tx.error_message
             mock_succ.assert_called_once()
@@ -355,6 +355,6 @@ class TestDryRunElsePath:
                 allowed_profiles=frozenset({"v1_adversarial"}),
                 workspace_id="ws_test",
             )
-            tx = persist_drafts(mock_sessionmaker, bundle, "ws_test", dry_run=True, policy=policy)
+            tx = persist_drafts(mock_sessionmaker, bundle, workspace_id="ws_test", dry_run=True, policy=policy)
             assert tx.succeeded
             assert tx.created_count > 0
