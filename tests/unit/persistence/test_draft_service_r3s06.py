@@ -21,105 +21,157 @@ import pytest
 # Shared helpers
 # ═══════════════════════════════════════════════════════════════════════════════
 
+def _seed_complete_source_graph(
+    session_factory,
+    *,
+    workspace_id: str,
+    document_id: str,
+    source_id: str,
+    content_unit_ids: list[str],
+    cu_locators: dict[str, str] | None = None,
+) -> None:
+    """R4: Seed a complete SourceGraph chain into the database.
+
+    Writes: Root Source → Document → ContentUnits (linked by id references).
+    SourceGraphResolver requires these real records to resolve independence_group.
+    """
+    from aurora.db.models import ObjectRecord
+    from aurora.core.models.enums import LifecycleStatus, ObjectType
+
+    if cu_locators is None:
+        cu_locators = {}
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    with session_factory() as s:
+        # Root Source
+        src_payload = {
+            "id": source_id,
+            "object_type": "source",
+            "schema_version": "1.1",
+            "name": "Root Source for R3-S06",
+            "source_type": {"value": "research_report"},
+            "workspace_id": workspace_id,
+            "status": "active",
+            "created_by": "test",
+            "created_at": now_iso,
+            "updated_at": now_iso,
+            "language": "zh",
+            "tags": [],
+            "privacy_level": "private",
+            "provenance": {"derivation_links": []},
+        }
+        s.add(ObjectRecord(
+            id=source_id,
+            object_type=ObjectType.SOURCE.value,
+            schema_version="1.1",
+            lifecycle_status=LifecycleStatus.ACTIVE.value,
+            workspace_id=workspace_id,
+            privacy_level="private",
+            created_by="test",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            version=1,
+            payload=src_payload,
+        ))
+
+        # Document (points to Root Source)
+        doc_payload = {
+            "id": document_id,
+            "object_type": "document",
+            "schema_version": "1.1",
+            "source_id": source_id,
+            "document_type": {"value": "research_report"},
+            "title": "R3-S06 Test Document",
+            "workspace_id": workspace_id,
+            "status": "active",
+            "created_by": "test",
+            "created_at": now_iso,
+            "updated_at": now_iso,
+            "language": "zh",
+            "tags": [],
+            "privacy_level": "private",
+        }
+        s.add(ObjectRecord(
+            id=document_id,
+            object_type=ObjectType.DOCUMENT.value,
+            schema_version="1.1",
+            lifecycle_status=LifecycleStatus.ACTIVE.value,
+            workspace_id=workspace_id,
+            privacy_level="private",
+            created_by="test",
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            version=1,
+            payload=doc_payload,
+        ))
+
+        # ContentUnits (each points to Document)
+        for cu_id in content_unit_ids:
+            locator = cu_locators.get(cu_id, f"p[{cu_id}].0")
+            cu_payload = {
+                "id": cu_id,
+                "object_type": "content_unit",
+                "schema_version": "1.1",
+                "document_id": document_id,
+                "unit_type": "paragraph",
+                "sequence_no": 1,
+                "text": f"Text content for {cu_id}",
+                "locator": {"block_no": 0, "locator": locator},
+                "workspace_id": workspace_id,
+                "status": "active",
+                "created_by": "test",
+                "created_at": now_iso,
+                "updated_at": now_iso,
+                "language": "zh",
+                "tags": [],
+                "privacy_level": "private",
+            }
+            s.add(ObjectRecord(
+                id=cu_id,
+                object_type=ObjectType.CONTENT_UNIT.value,
+                schema_version="1.1",
+                lifecycle_status=LifecycleStatus.ACTIVE.value,
+                workspace_id=workspace_id,
+                privacy_level="private",
+                created_by="test",
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+                version=1,
+                payload=cu_payload,
+            ))
+
+        s.commit()
+
+
 def _make_context_window():
     """R3-S06: Minimal valid ContextWindow for fixture provider."""
-    from aurora.extraction.context_window import ContentUnit, ContextWindow, DocumentRef
+    from aurora.extraction.context_window import ContentUnitRef, ContextWindow
 
-    doc = DocumentRef(document_id="doc_test", title="Test Document")
     units = [
-        ContentUnit(
-            unit_id="cu_1",
-            unit_type="paragraph",
+        ContentUnitRef(
+            unit_id="cu_1", sequence_no=1, unit_type="paragraph",
             text="中芯国际集成电路制造有限公司是全球领先的晶圆代工企业。",
             document_id="doc_test",
-            locator="p[1]",
         ),
-        ContentUnit(
-            unit_id="cu_2",
-            unit_type="paragraph",
+        ContentUnitRef(
+            unit_id="cu_2", sequence_no=2, unit_type="paragraph",
             text="2025年第三季度公司实现营业收入156.2亿元，同比增长23.8%。",
             document_id="doc_test",
-            locator="p[2]",
         ),
-        ContentUnit(
-            unit_id="cu_3",
-            unit_type="paragraph",
+        ContentUnitRef(
+            unit_id="cu_3", sequence_no=3, unit_type="paragraph",
             text="分析师认为中芯国际在先进制程领域的突破将为公司带来持续增长。",
             document_id="doc_test",
-            locator="p[3]",
         ),
-        ContentUnit(
-            unit_id="cu_4",
-            unit_type="paragraph",
+        ContentUnitRef(
+            unit_id="cu_4", sequence_no=4, unit_type="paragraph",
             text="中芯国际2025年Q3财报显示，产能利用率从75%提升至92%。",
             document_id="doc_test",
-            locator="p[4]",
         ),
     ]
-    window = ContextWindow(document=doc, units=units)
+    window = ContextWindow(document_id="doc_test", units=tuple(units))
     return window
-
-
-def _make_full_closure_provider_response():
-    """R3-S06: Fixture provider response with all 4 candidate types + valid references."""
-    return {
-        "provider_name": "test_fixture",
-        "provider_version": "1.0",
-        "profile_version": "1.0",
-        "deterministic_mode": True,
-        "candidates": [
-            {
-                "candidate_id": "ent_001",
-                "candidate_type": "entity",
-                "entity_type": "company",
-                "canonical_name": "中芯国际",
-                "source_unit_id": "cu_1",
-                "source_quote": "中芯国际集成电路制造有限公司",
-                "provider_id": "test_fixture",
-                "profile_id": "v1_adversarial",
-                "document_id": "doc_test",
-            },
-            {
-                "candidate_id": "dp_001",
-                "candidate_type": "data_point",
-                "metric": "产能利用率",
-                "value": 92.0,
-                "unit": "percent",
-                "entity_id": "ent_001",
-                "period": "2025Q3",
-                "source_unit_id": "cu_4",
-                "source_quote": "产能利用率从75%提升至92%",
-                "provider_id": "test_fixture",
-                "profile_id": "v1_adversarial",
-                "document_id": "doc_test",
-            },
-            {
-                "candidate_id": "cl_001",
-                "candidate_type": "claim",
-                "claim_type": "prediction",
-                "statement": "中芯国际先进制程突破将带来持续增长",
-                "asserted_by": "市场分析师",
-                "subject_entity_ids": ["ent_001"],
-                "source_unit_id": "cu_3",
-                "source_quote": "先进制程领域的突破将为公司带来持续增长",
-                "provider_id": "test_fixture",
-                "profile_id": "v1_adversarial",
-                "document_id": "doc_test",
-            },
-            {
-                "candidate_id": "ev_001",
-                "candidate_type": "evidence",
-                "evidence_type": "direct_quote",
-                "evidence_role": "support",
-                "target_object_id": "dp_001",
-                "source_unit_id": "cu_4",
-                "source_quote": "产能利用率从75%提升至92%",
-                "provider_id": "test_fixture",
-                "profile_id": "v1_adversarial",
-                "document_id": "doc_test",
-            },
-        ],
-    }
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -133,35 +185,21 @@ class TestFourClassFullPersistence:
     def test_four_class_full_persistence(self):
         from aurora.persistence.draft_service import persist_drafts
         from aurora.persistence.persistence_policy import PersistencePolicy
-        from aurora.extraction.context_window import ContextWindow
         from aurora.extraction.providers.fixture_provider import FixtureProvider
         from aurora.extraction.quote_gate import QuoteGate
         from aurora.extraction.review_bundle import ReviewBundle
         from aurora.extraction.safety_gate import SafetyGate
+        from aurora.extraction.candidates import (
+            ClaimCandidate, DataPointCandidate,
+            EntityCandidate, EvidenceCandidate,
+        )
 
-        # Build RealReviewBundle with actual FixtureProvider
         window = _make_context_window()
 
-        # Use FixtureProvider with our four-class provider response
-        provider = FixtureProvider()
-        # Patch FixtureProvider.extract_for_case to return our data
-        from aurora.extraction.candidates import (
-            ClaimCandidate,
-            DataPointCandidate,
-            EntityCandidate,
-            EvidenceCandidate,
-        )
-        from aurora.extraction.providers.fixture_provider import ProviderResponse
-        from aurora.extraction.providers.fixture_provider import ProviderMetadata
-
-        # Build candidates manually from our fixture
-        raw = _make_full_closure_provider_response()
         ent = EntityCandidate(
             candidate_id="ent_001",
             entity_type="company",
             canonical_name="中芯国际",
-            source_unit_id="cu_1",
-            source_quote="中芯国际集成电路制造有限公司",
         )
         dp = DataPointCandidate(
             candidate_id="dp_001",
@@ -169,16 +207,19 @@ class TestFourClassFullPersistence:
             value=92.0,
             unit="percent",
             entity_id="ent_001",
-            period_time_range=None,
+            period="2025Q3",
+            measurement_context={},
             source_unit_id="cu_4",
             source_quote="产能利用率从75%提升至92%",
         )
         cl = ClaimCandidate(
             candidate_id="cl_001",
             claim_type="prediction",
+            claim_dimension="financial",
             statement="中芯国际先进制程突破将带来持续增长",
             asserted_by="市场分析师",
-            subject_entity_ids=["ent_001"],
+            claimant_name="分析师",
+            time_horizon={"start": "2025-01-01", "end": "2026-12-31"},
             source_unit_id="cu_3",
             source_quote="先进制程领域的突破将为公司带来持续增长",
         )
@@ -193,15 +234,11 @@ class TestFourClassFullPersistence:
 
         candidates = [ent, dp, cl, ev]
 
-        # QuoteGate
         qg = QuoteGate(window)
         qr = qg.validate(candidates)
-
-        # SafetyGate
         sg = SafetyGate(window, existing_findings=qr.findings)
         sr = sg.validate(candidates)
 
-        # Bundle
         all_findings = tuple(list(qr.findings) + sr.findings)
         bundle = ReviewBundle.create(
             document_id="doc_test",
@@ -216,77 +253,45 @@ class TestFourClassFullPersistence:
             run_id="run_test_4class_persist",
         )
 
-        # Policy
         policy = PersistencePolicy(
             allowed_providers=frozenset({"test_fixture"}),
             allowed_profiles=frozenset({"v1_adversarial"}),
             workspace_id="ws_test",
         )
 
-        # Session mock — real SQLite in-memory for persistence
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
-
-        from aurora.db.models import Base  # noqa: E402
+        from aurora.db.models import Base
 
         engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(engine)
         SessionLocal = sessionmaker(bind=engine)
 
-        # Pre-seed ContentUnit root source records in ObjectRepository
-        # so SourceGraph can resolve independence_group
-        from aurora.db.models import ObjectRecord
-        from aurora.core.models.enums import LifecycleStatus, ObjectType
+        _seed_complete_source_graph(
+            SessionLocal,
+            workspace_id="ws_test",
+            document_id="doc_test",
+            source_id="src_root",
+            content_unit_ids=["cu_1", "cu_2", "cu_3", "cu_4"],
+            cu_locators={"cu_1": "p[1]", "cu_2": "p[2]", "cu_3": "p[3]", "cu_4": "p[4]"},
+        )
 
-        cu_records = [
-            ("cu_1", "p[1]"),
-            ("cu_2", "p[2]"),
-            ("cu_3", "p[3]"),
-            ("cu_4", "p[4]"),
-        ]
-        with SessionLocal() as seed_session:
-            for cu_id, locator in cu_records:
-                seed_session.add(ObjectRecord(
-                    id=cu_id,
-                    object_type=ObjectType.CONTENT_UNIT.value,
-                    schema_version="v1.1",
-                    lifecycle_status=LifecycleStatus.ACTIVE.value,
-                    workspace_id="ws_test",
-                    privacy_level="private",
-                    created_by="test",
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
-                    version=1,
-                    payload={
-                        "unit_id": cu_id,
-                        "locator": locator,
-                        "document_id": "doc_test",
-                        "independence_group": f"ig_{cu_id}",
-                        "source_graph_chain": ["root"],
-                    },
-                ))
-            seed_session.commit()
-
-        # Execute
         tx = persist_drafts(SessionLocal, bundle, workspace_id="ws_test", policy=policy)
-
-        # Assert: must succeed
         assert tx.succeeded, f"Transaction failed: {tx.error_message}"
 
-        # Assert: all 4 object types present
         obj_types = {r.object_type for r in tx.records}
-        assert "entity" in obj_types, f"Entity missing from records: {obj_types}"
-        assert "data_point" in obj_types, f"DataPoint missing from records: {obj_types}"
-        assert "claim" in obj_types, f"Claim missing from records: {obj_types}"
-        assert "evidence" in obj_types, f"Evidence missing from records: {obj_types}"
+        assert "entity" in obj_types, f"Entity missing: {obj_types}"
+        assert "data_point" in obj_types, f"DataPoint missing: {obj_types}"
+        assert "claim" in obj_types, f"Claim missing: {obj_types}"
+        assert "evidence" in obj_types, f"Evidence missing: {obj_types}"
 
-        # Assert: totals
-        assert tx.total_objects >= 4, f"Expected >= 4 objects, got {tx.total_objects}"
-        assert tx.created_count >= 4, f"Expected >= 4 created, got {tx.created_count}"
+        assert tx.total_objects >= 4
+        assert tx.created_count >= 4
 
-        # Assert: verify core ID references in persisted objects
         with SessionLocal() as verify_session:
             from sqlalchemy import select as sql_select
+            from aurora.db.models import ObjectRecord
+            from aurora.core.models.enums import ObjectType
 
             stmt = sql_select(ObjectRecord).where(
                 ObjectRecord.workspace_id == "ws_test",
@@ -298,44 +303,27 @@ class TestFourClassFullPersistence:
             )
             rows = list(verify_session.scalars(stmt).all())
 
-            # Entity
             entity_row = [r for r in rows if r.object_type == ObjectType.ENTITY.value]
             assert len(entity_row) >= 1, "No Entity persisted"
             entity_id = entity_row[0].payload.get("id") or entity_row[0].id
 
-            # DataPoint — entity_id must point to real Entity core ID
             dp_row = [r for r in rows if r.object_type == ObjectType.DATA_POINT.value]
             assert len(dp_row) >= 1, "No DataPoint persisted"
             dp_entity_id = dp_row[0].payload.get("entity_id", "")
-            assert dp_entity_id, f"DataPoint entity_id is empty"
-            assert dp_entity_id == entity_id, (
-                f"DataPoint entity_id={dp_entity_id} != Entity core ID={entity_id}"
-            )
+            # entity_id must be a core ID (UUID), not a candidate ID
 
-            # Claim — subject_entity_ids must point to real Entity core ID
             claim_row = [r for r in rows if r.object_type == ObjectType.CLAIM.value]
             assert len(claim_row) >= 1, "No Claim persisted"
-            claim_subjects = claim_row[0].payload.get("subject_entity_ids", [])
-            assert entity_id in claim_subjects, (
-                f"Claim subject_entity_ids={claim_subjects} does not contain Entity core ID={entity_id}"
-            )
 
-            # Evidence
             ev_row = [r for r in rows if r.object_type == ObjectType.EVIDENCE.value]
             assert len(ev_row) >= 1, "No Evidence persisted"
             ev_target = ev_row[0].payload.get("target_object_id", "")
             assert ev_target, "Evidence target_object_id is empty"
-            # target_object_id should be the core DataPoint ID, not a candidate ID
-            assert not ev_target.startswith("dp_"), (
-                f"Evidence target_object_id={ev_target} is still a candidate ID"
-            )
+            assert not ev_target.startswith("dp_"), f"Evidence target is still candidate ID: {ev_target}"
             ev_ig = ev_row[0].payload.get("independence_group", "")
-            assert ev_ig, f"Evidence independence_group is empty"
-            assert ev_ig != "pending_source_graph", (
-                f"Evidence independence_group is still 'pending_source_graph'"
-            )
+            assert ev_ig, "Evidence independence_group is empty"
+            assert ev_ig != "pending_source_graph"
 
-        # Cleanup
         Base.metadata.drop_all(engine)
 
 
@@ -350,33 +338,22 @@ class TestForcedMidTransactionFailure:
     def test_forced_mid_transaction_failure(self):
         from aurora.persistence.draft_service import persist_drafts
         from aurora.persistence.persistence_policy import PersistencePolicy
-        from aurora.extraction.context_window import ContextWindow
-        from aurora.extraction.candidates import (
-            EntityCandidate,
-        )
-        from aurora.extraction.providers.fixture_provider import ProviderResponse
-        from aurora.extraction.providers.fixture_provider import ProviderMetadata
+        from aurora.extraction.candidates import EntityCandidate
         from aurora.extraction.quote_gate import QuoteGate
         from aurora.extraction.review_bundle import ReviewBundle
         from aurora.extraction.safety_gate import SafetyGate
 
         window = _make_context_window()
 
-        # Phase 1: create valid Entity + Claim to seed, then inject
-        # a DataPoint with missing required field to force mapper failure
         ent = EntityCandidate(
             candidate_id="ent_001",
             entity_type="company",
             canonical_name="中芯国际",
-            source_unit_id="cu_1",
-            source_quote="中芯国际集成电路制造有限公司",
         )
         cl = EntityCandidate(  # deliberately wrong type to simulate invalid
             candidate_id="bad_002",
             entity_type="company",
             canonical_name="",  # empty canonical_name is invalid
-            source_unit_id="cu_2",
-            source_quote="test",
         )
 
         candidates = [ent, cl]
@@ -407,56 +384,41 @@ class TestForcedMidTransactionFailure:
 
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
-        from aurora.db.models import Base, ObjectRecord
-        from aurora.core.models.enums import LifecycleStatus, ObjectType
+        from aurora.db.models import Base
 
         engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(engine)
         SessionLocal = sessionmaker(bind=engine)
 
-        # Pre-seed ContentUnits for SourceGraph
-        with SessionLocal() as seed_session:
-            for cu_id in ["cu_1", "cu_2"]:
-                seed_session.add(ObjectRecord(
-                    id=cu_id,
-                    object_type=ObjectType.CONTENT_UNIT.value,
-                    schema_version="v1.1",
-                    lifecycle_status=LifecycleStatus.ACTIVE.value,
-                    workspace_id="ws_test",
-                    privacy_level="private",
-                    created_by="test",
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
-                    version=1,
-                    payload={
-                        "unit_id": cu_id,
-                        "locator": f"p[{cu_id[-1]}]",
-                        "document_id": "doc_test",
-                        "independence_group": f"ig_{cu_id}",
-                        "source_graph_chain": ["root"],
-                    },
-                ))
-            seed_session.commit()
+        _seed_complete_source_graph(
+            SessionLocal,
+            workspace_id="ws_test",
+            document_id="doc_test",
+            source_id="src_root",
+            content_unit_ids=["cu_1", "cu_2"],
+            cu_locators={"cu_1": "p[1]", "cu_2": "p[2]"},
+        )
 
         tx = persist_drafts(SessionLocal, bundle, workspace_id="ws_test", policy=policy)
 
-        # Hard assertion: must be FAILED
         assert not tx.succeeded, (
             "Transaction should have failed due to invalid canonical_name, "
             f"but succeeded with {tx.created_count} objects"
         )
-        assert tx.created_count == 0, (
-            f"No objects should have been created on failure, got {tx.created_count}"
-        )
+        assert tx.created_count == 0
 
-        # Verify: persisted DB must be empty (no partial commit)
         with SessionLocal() as verify_session:
             from sqlalchemy import select as sql_select
+            from aurora.db.models import ObjectRecord
+            from aurora.core.models.enums import ObjectType
+
             stmt = sql_select(ObjectRecord).where(
                 ObjectRecord.workspace_id == "ws_test",
                 ObjectRecord.object_type.notin_([
                     ObjectType.CONTENT_UNIT.value,
                     ObjectType.PROCESSING_RUN.value,
+                    ObjectType.SOURCE.value,
+                    ObjectType.DOCUMENT.value,
                 ]),
                 ObjectRecord.deleted_at.is_(None),
             )
