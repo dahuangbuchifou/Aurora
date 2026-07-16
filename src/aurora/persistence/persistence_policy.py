@@ -14,8 +14,10 @@ class PersistencePolicy:
     """Policy controlling draft persistence behavior.
 
     Attributes:
-        allowed_providers: Set of allowed provider IDs.
+        allowed_providers: Set of allowed provider names.
+        allowed_provider_versions: Set of allowed provider versions (optional).
         allowed_profiles: Set of allowed profile IDs.
+        allowed_profile_versions: Set of allowed profile versions (optional).
         workspace_id: Target workspace identifier.
         existing_object_resolver: Resolves pre-existing core object IDs
             for cross-bundle reference validation. Optional.
@@ -30,3 +32,5 @@ class PersistencePolicy:
     existing_object_resolver: Callable[[str], dict | None] | None = None
     dry_run: bool = False
     require_source_graph: bool = True
+    allowed_provider_versions: frozenset[str] | None = None
+    allowed_profile_versions: frozenset[str] | None = None

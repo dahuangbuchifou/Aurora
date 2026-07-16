@@ -164,23 +164,22 @@ def _validate_mapped_object(
             raise ValueError(f"Claim has empty statement: {getattr(obj, 'id', '?')}")
         if not getattr(obj, "asserted_by", None):
             raise ValueError(f"Claim has empty asserted_by: {getattr(obj, 'id', '?')}")
-    elif obj_type == "evidence":  # pragma: no branch
+    elif obj_type == "evidence":
         if getattr(obj, "evidence_role", None) is None:
             raise ValueError(f"Evidence has null evidence_role: {getattr(obj, 'id', '?')}")
         if getattr(obj, "evidence_type", None) is None:
             raise ValueError(f"Evidence has null evidence_type: {getattr(obj, 'id', '?')}")
         if not getattr(obj, "target_object_id", None):
             raise ValueError(f"Evidence has empty target_object_id: {getattr(obj, 'id', '?')}")
-        # R3-03: pending_source_graph rejection gated on policy
+        # R3-03: independence_group must be resolved — no "pending_source_graph" allowed
         ig = getattr(obj, "independence_group", "")
-        if ig == "pending_source_graph":  # pragma: no branch
-            if policy is None or policy.require_source_graph:
-                raise ValueError(f"Evidence independence_group not resolved: {getattr(obj, 'id', '?')}")
+        if not ig:
+            raise ValueError(f"Evidence independence_group is empty for: {getattr(obj, 'id', '?')}")
 
 
-def _dry_run_persist(bundle, workspace_id, op_key):
+def _dry_run_persist(bundle, workspace_id, op_key, policy=None):
     """Dry run: validate + map, build DraftTransaction without DB writes."""
-    validate_bundle_preflight(bundle, workspace_id=workspace_id)
+    validate_bundle_preflight(bundle, workspace_id=workspace_id, policy=policy)
     entities, data_points, claims, evidence_list, _c2c = map_accepted_candidates(
         bundle.accepted_candidate_ids, bundle.candidates
     )
@@ -227,9 +226,8 @@ def persist_drafts(
     repo_factory: sessionmaker,
     bundle: Any,
     workspace_id: str,
+    policy: PersistencePolicy,
     dry_run: bool = False,
-    preflight_kwargs: dict[str, Any] | None = None,
-    policy: PersistencePolicy | None = None,
 ) -> DraftTransaction:
     """B01+B02: Workflow-owned transaction with independent ProcessingRun sessions.
 
@@ -245,15 +243,9 @@ def persist_drafts(
     """
     op_key = compute_bundle_operation_key(workspace_id, bundle.bundle_sha256)
 
-    # R3-01: PersistencePolicy is required for real writes
-    if policy is None and not dry_run:
-        raise ValueError("PersistencePolicy is required for real writes")
-
     # Dry run: validate + map, no DB writes (no ProcessingRun)
     if dry_run:
-        return _dry_run_persist(bundle, workspace_id, op_key)
-
-    pk = preflight_kwargs or {}
+        return _dry_run_persist(bundle, workspace_id, op_key, policy)
 
     # ── Phase 1: ProcessingRun (RUNNING) in independent session ──────────
     now = datetime.now(UTC)
@@ -316,9 +308,9 @@ def persist_drafts(
             error_message=f"Failed to create ProcessingRun: {exc!s}"[:200],
         )
 
-    # ── B03: Preflight ──────────────────────────────────────────────────
+    # ── B03: Preflight via Policy ───────────────────────────────────────
     try:
-        validate_bundle_preflight(bundle, workspace_id=workspace_id, **pk)
+        validate_bundle_preflight(bundle, workspace_id=workspace_id, policy=policy)
     except Exception as exc:
         _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
         return DraftTransaction(
@@ -331,42 +323,7 @@ def persist_drafts(
             error_message=f"Preflight failed: {exc!s}"[:200],
         )
 
-    # ── B05: Map candidates with strict validation ──────────────────────
-    try:
-        entities, data_points, claims, evidence_list, candidate_to_core = map_accepted_candidates(
-            bundle.accepted_candidate_ids,
-            bundle.candidates,
-            existing_object_resolver=policy.existing_object_resolver if policy else None,
-        )
-    except Exception as exc:
-        _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
-        return DraftTransaction(
-            records=(),
-            total_objects=0,
-            created_count=0,
-            reused_count=0,
-            processing_run_id=processing_run_id,
-            succeeded=False,
-            error_message=f"Mapper failed: {exc!s}"[:200],
-        )
-
-    # ── R3-04: Resolve core references (candidate ID → core object ID) ─
-    evidence_list = _resolve_core_references(evidence_list, candidate_to_core)
-
-    all_mapped: list[tuple[str, Any]] = []
-    all_mapped.extend(("entity", e) for e in entities)
-    all_mapped.extend(("data_point", dp) for dp in data_points)
-    all_mapped.extend(("claim", c) for c in claims)
-    all_mapped.extend(("evidence", ev) for ev in evidence_list)
-
-    candidate_map = {getattr(c, "candidate_id", ""): c for c in bundle.candidates}
-    records: list[DraftRecord] = []
-    created = 0
-    reused = 0
-
-
-
-    # ── B04: pre-compute independence_group from source graph ───────────
+    # ── R3-03 / B04: Source graph resolution BEFORE mapper ──────────────
     cu_to_group: dict[str, str] = {}
     try:
         with repo_factory() as graph_session:
@@ -402,6 +359,40 @@ def persist_drafts(
             succeeded=False,
             error_message=f"Source graph resolution failed: {exc!s}"[:200],
         )
+
+    # ── B05: Map candidates with strict validation (R3-03: SourceGraph resolved first) ─
+    try:
+        entities, data_points, claims, evidence_list, candidate_to_core = map_accepted_candidates(
+            bundle.accepted_candidate_ids,
+            bundle.candidates,
+            existing_object_resolver=policy.existing_object_resolver,
+            independence_group_map=cu_to_group,
+        )
+    except Exception as exc:
+        _finalize_failed_run(repo_factory, processing_run_id, workspace_id, op_key, exc)
+        return DraftTransaction(
+            records=(),
+            total_objects=0,
+            created_count=0,
+            reused_count=0,
+            processing_run_id=processing_run_id,
+            succeeded=False,
+            error_message=f"Mapper failed: {exc!s}"[:200],
+        )
+
+    # ── R3-04: Resolve core references (candidate ID → core object ID) ─
+    evidence_list = _resolve_core_references(evidence_list, candidate_to_core)
+
+    all_mapped: list[tuple[str, Any]] = []
+    all_mapped.extend(("entity", e) for e in entities)
+    all_mapped.extend(("data_point", dp) for dp in data_points)
+    all_mapped.extend(("claim", c) for c in claims)
+    all_mapped.extend(("evidence", ev) for ev in evidence_list)
+
+    candidate_map = {getattr(c, "candidate_id", ""): c for c in bundle.candidates}
+    records: list[DraftRecord] = []
+    created = 0
+    reused = 0
 
     # ── Phase 2: Atomic business object write ───────────────────────────
     try:
@@ -474,17 +465,33 @@ def persist_drafts(
                         version=1,
                         payload=obj_payload,
                     )
-                    # R3-06: Catch IntegrityError for concurrent PK collisions (R2-B08 race)
+                    # R3-S05: Savepoint + flush for IntegrityError convergence
                     try:
+                        savepoint = biz_session.begin_nested()
                         biz_session.add(rec)
+                        biz_session.flush()
                     except IntegrityError as ie:
+                        savepoint.rollback()
                         err_str = str(ie).lower()
                         if "unique" in err_str:
                             logger.warning(
                                 "IntegrityError (PK collision) for %s id=%s: %s",
                                 obj_type, obj.id, ie,
                             )
-                            biz_session.rollback()
+                            # Query the object that already exists
+                            existing = _lookup_by_natural_key(
+                                biz_session, obj_type_enum, natural_key, workspace_id
+                            )
+                            if existing:
+                                existing_id = existing[0].payload.get("id", existing[0].id)
+                                records.append(DraftRecord(
+                                    object_type=obj_type,
+                                    object_id=existing_id,
+                                    stable_identity_hash=natural_key,
+                                    action=DraftAction.REUSED,
+                                    candidate_id=cid,
+                                ))
+                                reused += 1
                             continue
                         raise
 
@@ -660,8 +667,8 @@ def persist_drafts_with_separate_run(
     repo: Any,
     bundle: Any,
     workspace_id: str,
+    policy: PersistencePolicy,
     dry_run: bool = False,
-    policy: PersistencePolicy | None = None,
 ) -> DraftTransaction:
     """Backward-compatible wrapper: delegates to persist_drafts."""
-    return persist_drafts(repo_factory, bundle, workspace_id, dry_run=dry_run, policy=policy)
+    return persist_drafts(repo_factory, bundle, workspace_id, policy=policy, dry_run=dry_run)

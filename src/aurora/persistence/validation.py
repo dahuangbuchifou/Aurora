@@ -20,24 +20,31 @@ class PreflightError(Exception):
 def validate_bundle_preflight(
     bundle: ReviewBundle,
     workspace_id: str | None = None,
-    allowed_providers: frozenset[str] | None = None,
-    allowed_profiles: frozenset[str] | None = None,
-    existing_object_resolver: Callable[[str], dict[str, Any] | None] | None = None,
+    policy: Any | None = None,
 ) -> list[str]:
-    """R2-B01 + R2-B02: Full preflight checks.
+    """R2-B01 + R2-B02 + R3-S02: Full preflight checks driven by PersistencePolicy.
 
     Args:
         bundle: Validated ReviewBundle to check.
         workspace_id: The target workspace id — must match bundle and all refs.
-        allowed_providers: Set of allowed provider ids. Any candidate with a
-                          provider_id not in this set fails.
-        allowed_profiles: Set of allowed profile ids. Any candidate with a
-                         profile_id not in this set fails.
-        existing_object_resolver: Resolves pre-existing core object ids for
-                                  candidate-to-core dependency validation.
+        policy: PersistencePolicy (required for real production path).
+
+    R3-S02: Policy drives all allow-list + workspace checks directly.
+    Candidate-level provider_id/profile_id checks are replaced with
+    Bundle-level provider_name/provider_version/profile_version checks.
 
     Returns list of warnings (non-fatal). Raises PreflightError on failure.
     """
+    # R3-S02: Extract policy-driven params (fallback for dry-run/test without policy)
+    allowed_providers: frozenset[str] | None = None
+    allowed_profiles: frozenset[str] | None = None
+    existing_object_resolver: Callable | None = None
+    policy_ws: str | None = None
+    if policy is not None:
+        allowed_providers = getattr(policy, 'allowed_providers', None)
+        allowed_profiles = getattr(policy, 'allowed_profiles', None)
+        existing_object_resolver = getattr(policy, 'existing_object_resolver', None)
+        policy_ws = getattr(policy, 'workspace_id', None)
     warnings: list[str] = []
 
     # ── R2-B01: Bundle Hash re‑computation ──────────────────────────────
@@ -144,8 +151,40 @@ def validate_bundle_preflight(
                     f"workspace={c_ws} != workspace={bundle_ws}"
                 )
 
-    # ── R2-B02: Provider allow-list ─────────────────────────────────────
-    if allowed_providers is not None:
+    # ── R3-S02: Bundle-level Provider/Profile/Workspace checks via Policy ──
+    if policy is not None:
+        # Provider name must be in allowed_providers
+        provider_name = getattr(bundle, "provider_name", "")
+        allowed_prov = allowed_providers or frozenset()
+        if provider_name and provider_name not in allowed_prov:
+            raise PreflightError(
+                f"Provider '{provider_name}' not in allowed_providers: {set(allowed_prov)}"
+            )
+        # Provider version must be in allowed_provider_versions if set
+        allowed_prov_ver = getattr(policy, 'allowed_provider_versions', None)
+        if allowed_prov_ver is not None:
+            prov_ver = getattr(bundle, "provider_version", "")
+            if prov_ver and prov_ver not in allowed_prov_ver:
+                raise PreflightError(
+                    f"Provider version '{prov_ver}' not in allowed_provider_versions: {set(allowed_prov_ver)}"
+                )
+        # Profile version must be in allowed_profile_versions if set
+        allowed_prof_ver = getattr(policy, 'allowed_profile_versions', None)
+        if allowed_prof_ver is not None:
+            prof_ver = getattr(bundle, "profile_version", "")
+            if prof_ver and prof_ver not in allowed_prof_ver:
+                raise PreflightError(
+                    f"Profile version '{prof_ver}' not in allowed_profile_versions: {set(allowed_prof_ver)}"
+                )
+        # Workspace ID must match policy
+        if policy_ws and workspace_id and policy_ws != workspace_id:
+            raise PreflightError(
+                f"Workspace mismatch: policy.workspace_id='{policy_ws}' != persisted workspace_id='{workspace_id}'"
+            )
+
+    # ── R3-S02 (legacy): Candidate-level Provider allow-list (retained for
+    #    backward compat when policy=None, e.g. dry-run tests) ──────────────
+    if policy is None and allowed_providers is not None:
         for c in bundle.candidates:
             pid = getattr(c, "provider_id", None)
             if pid and pid not in allowed_providers:
@@ -154,8 +193,7 @@ def validate_bundle_preflight(
                     f"disallowed provider_id={pid}"
                 )
 
-    # ── R2-B02: Profile allow-list ──────────────────────────────────────
-    if allowed_profiles is not None:
+    if policy is None and allowed_profiles is not None:
         for c in bundle.candidates:
             pid = getattr(c, "profile_id", None)
             if pid and pid not in allowed_profiles:

@@ -105,8 +105,15 @@ def map_entity(cid: str, candidate: EntityCandidate) -> Entity:
     )
 
 
-def map_data_point(cid: str, candidate: DataPointCandidate) -> DataPoint:
-    """R2-B04: period from candidate only — no default current time."""
+def map_data_point(
+    cid: str,
+    candidate: DataPointCandidate,
+    candidate_to_core: dict[str, str] | None = None,
+) -> DataPoint:
+    """R2-B04 + R3-04: period from candidate only, entity_id resolved via candidate_to_core.
+
+    R3-04: entity_id is rewritten from candidate ID to deterministic core object ID.
+    """
     # R2-B04: Try to convert period from candidate
     period = None
     if hasattr(candidate, "period_time_range") and candidate.period_time_range:
@@ -117,11 +124,16 @@ def map_data_point(cid: str, candidate: DataPointCandidate) -> DataPoint:
     if isinstance(period, str):
         period = _parse_period_string(period)
 
+    # R3-04: Convert entity_id from candidate ID → core object ID
+    eid = candidate.entity_id or ""
+    if candidate_to_core and eid and eid in candidate_to_core:
+        eid = candidate_to_core[eid]
+
     kwargs = {
         "metric": candidate.metric or "",
         "value": candidate.value,
         "unit": candidate.unit or "",
-        "entity_id": candidate.entity_id or "",
+        "entity_id": eid,
         "source_ref": f"candidate:{cid}",
         "period": period,
     }
@@ -130,12 +142,28 @@ def map_data_point(cid: str, candidate: DataPointCandidate) -> DataPoint:
     return DataPoint(**kwargs)
 
 
-def map_claim(cid: str, candidate: ClaimCandidate) -> Claim:
-    """R2-B04: claim_type=None when unrecognized (upstream validation fails).
+def map_claim(
+    cid: str,
+    candidate: ClaimCandidate,
+    candidate_to_core: dict[str, str] | None = None,
+) -> Claim:
+    """R2-B04 + R3-04: claim_type=None when unrecognized (upstream validation fails).
     time_horizon from candidate only — no empty default for prediction claims.
+
+    R3-04: subject_entity_ids are rewritten from candidate IDs to deterministic core IDs.
     """
     ct = _safe_enum(ClaimType, candidate.claim_type)
     th = _convert_time_horizon(candidate.time_horizon) if candidate.time_horizon else None
+
+    # R3-04: Convert subject_entity_ids from candidate IDs → core object IDs
+    subj_ids: list[str] = []
+    raw_subj = getattr(candidate, "subject_entity_ids", None) or []
+    for seid in raw_subj:
+        if candidate_to_core and seid in candidate_to_core:
+            subj_ids.append(candidate_to_core[seid])
+        else:
+            subj_ids.append(seid)
+
     return Claim(
         claim_type=ct,
         statement=candidate.statement or "",
@@ -143,6 +171,7 @@ def map_claim(cid: str, candidate: ClaimCandidate) -> Claim:
         source_ref=f"candidate:{cid}",
         epistemic_status=EpistemicStatus.UNDER_REVIEW,
         time_horizon=th,
+        subject_entity_ids=subj_ids,
     )
 
 
@@ -152,11 +181,10 @@ def map_evidence(
     candidate_to_core: dict[str, str] | None = None,
     independence_group: str = "",
 ) -> Evidence:
-    """R2-B05: target_object_id resolved via candidate_id→core_object_id map.
+    """R2-B05 + R3-03: target_object_id resolved via candidate_id→core_object_id map.
 
-    R3-03: independence_group can be passed from caller (resolved via SourceGraph).
-    Falls back to "pending_source_graph" placeholder when not provided — validation
-    in draft_service blocks this from reaching DB when policy.require_source_graph is True.
+    R3-03: independence_group must come from SourceGraph resolution in draft_service.
+    Empty/placeholder values raise ValueError — no "pending_source_graph" fallback.
     evidence_role/evidence_type=None when unrecognized (upstream fails).
     """
     target = ""
@@ -168,7 +196,12 @@ def map_evidence(
     er = _safe_enum(EvidenceRole, candidate.evidence_role)
     et = _safe_enum(EvidenceType, candidate.evidence_type)
 
-    ig = independence_group if independence_group else "pending_source_graph"
+    # R3-03: No pending_source_graph placeholder — independence_group must be resolved
+    if not independence_group:
+        raise ValueError(
+            f"Evidence {cid}: independence_group not resolved — "
+            f"SourceGraph resolution must precede map_evidence"
+        )
 
     return Evidence(
         evidence_role=er,
@@ -176,7 +209,7 @@ def map_evidence(
         target_object_id=target,
         source_ref=f"candidate:{cid}",
         summary=candidate.source_quote or candidate.note or "pending_summary",
-        independence_group=ig,
+        independence_group=independence_group,
         directness=EvidenceDirectness.UNKNOWN,
         source_quality_tier=SourceQualityTier.S5,
         evidence_strength=EvidenceStrength.E1,
@@ -187,11 +220,15 @@ def map_accepted_candidates(
     accepted_candidate_ids: list[str],
     candidates: list[Any],
     existing_object_resolver: Callable[..., Any] | None = None,
+    independence_group_map: dict[str, str] | None = None,
 ) -> tuple[list[Entity], list[DataPoint], list[Claim], list[Evidence], dict[str, str]]:
-    """R2-B05: Map accepted candidates in dependency order.
+    """R2-B05 + R3-03: Map accepted candidates in dependency order.
 
     Build order: Entity → DataPoint → Claim → Evidence.
     Returns (entities, data_points, claims, evidence_list, candidate_to_core).
+
+    R3-03: independence_group_map maps source_unit_id → resolved independence_group.
+    Evidence candidates that lack a resolved group raise ValueError.
 
     candidate_to_core maps candidate_id → deterministic core object ID
     for reference resolution in Evidence.target_object_id.
@@ -229,21 +266,23 @@ def map_accepted_candidates(
         candidate_to_core[cid] = e.id
         entities.append(e)
 
-    # Phase 2: DataPoint (depends on Entity)
+    # Phase 2: DataPoint (depends on Entity, R3-04: entity_id → core ID)
     for cid, c in cand_by_type["data_point"]:
-        dp = map_data_point(cid, c)
+        dp = map_data_point(cid, c, candidate_to_core)
         candidate_to_core[cid] = dp.id
         data_points.append(dp)
 
-    # Phase 3: Claim
+    # Phase 3: Claim (R3-04: subject_entity_ids → core IDs)
     for cid, c in cand_by_type["claim"]:
-        cl = map_claim(cid, c)
+        cl = map_claim(cid, c, candidate_to_core)
         candidate_to_core[cid] = cl.id
         claims.append(cl)
 
-    # Phase 4: Evidence (depends on all above)
+    # Phase 4: Evidence (depends on all above + SourceGraph resolution, R3-03)
     for cid, c in cand_by_type["evidence"]:
-        ev = map_evidence(cid, c, candidate_to_core)
+        suid = getattr(c, "source_unit_id", "")
+        ig = (independence_group_map or {}).get(suid, "")
+        ev = map_evidence(cid, c, candidate_to_core, independence_group=ig)
         candidate_to_core[cid] = ev.id
         evidence_list.append(ev)
 
