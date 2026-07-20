@@ -22,17 +22,23 @@ from aurora.extraction.context_window import ContextWindow
 from aurora.extraction.envelope import ProviderMetadata
 from aurora.extraction.providers.base import ExtractionProvider, ProviderResponse
 
-PROVIDER_FIXTURE_DIR = (
-    Path(__file__).parents[4] / "tests" / "fixtures" / "m2_003" / "provider_responses"
-)
-
 PROVIDER_CASE_FILES = {
     "case_a_web": "case_a_web_provider.json",
     "case_b_video": "case_b_video_provider.json",
     "case_c_pdf": "case_c_pdf_provider.json",
+    # Adversarial cases (Gate 2/3)
+    "prediction_pollution": "prediction_pollution_provider.json",
+    "valuation_recommendation": "valuation_recommendation_provider.json",
+    "prompt_injection": "prompt_injection_provider.json",
+    "fake_quote": "fake_quote_provider.json",
+    "forged_or_outside_unit": "forged_or_outside_unit_provider.json",
+    "high_confidence_pollution": "high_confidence_pollution_provider.json",
+    "provider_independence_override": "provider_independence_override_provider.json",
 }
 
-# Frozen candidate type ordering for G1-6 stability
+PROVIDER_FIXTURE_DIR = (
+    Path(__file__).parents[4] / "tests" / "fixtures" / "m2_003" / "provider_responses"
+)# Frozen candidate type ordering for G1-6 stability
 _CANDIDATE_TYPE_ORDER: tuple[str, ...] = (
     "entity",
     "data_point",
@@ -73,7 +79,12 @@ class FixtureProvider(ExtractionProvider):
             )
         file_path = self._fixture_dir / file_name
         if not file_path.exists():
-            raise FileNotFoundError(f"Provider fixture not found: {file_path}")
+            # Try adversarial subdirectory
+            alt_path = self._fixture_dir.parent / "adversarial" / "provider_responses" / file_name
+            if alt_path.exists():
+                file_path = alt_path
+            else:
+                raise FileNotFoundError(f"Provider fixture not found: {file_path}")
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
@@ -100,9 +111,24 @@ class FixtureProvider(ExtractionProvider):
         warnings: list[str] = list(fixture.get("warnings", []))
         errors: list[str] = list(fixture.get("errors", []))
 
+        # OPT-069: Scan for provider-owned epistemic fields in raw payload
+        _FORBIDDEN_EPISTEMIC = ("independence_group", "promotable", "promotable_to_fact")
+
         candidates: list[Any] = []
         for raw in raw_candidates:
             c_type = raw.get("candidate_type", "")
+            cid = raw.get("candidate_id", "")
+
+            # OPT-069: Detect provider-owned epistemic fields in raw payload
+            for field in _FORBIDDEN_EPISTEMIC:
+                if field in raw and raw[field] not in (None, "", [], {}, False):
+                    warnings.append(
+                        f"Provider raw payload sets forbidden field "
+                        f"'{field}={raw[field]!r}' on candidate {cid} — "
+                        f"field was dropped at DTO construction, "
+                        f"SafetyGate will flag it as PROVIDER_OVERRIDE_FIELD"
+                    )
+
             candidate = self._build_candidate(raw, c_type)
             if candidate is not None:
                 # Resolve source_unit_id against the actual ContextWindow
@@ -271,7 +297,8 @@ class FixtureProvider(ExtractionProvider):
                 claimant_name=raw.get("claimant_name", ""),
                 asserted_by=raw.get("asserted_by", ""),
                 time_horizon=raw.get("time_horizon"),
-                promotable_to_fact=raw.get("promotable_to_fact", False),
+                # OPT-069: promotable_to_fact NOT read from Provider
+                # SafetyGate catches it in raw_payload if present
                 source_quote=raw.get("source_quote", ""),
                 quote_locator_hint=raw.get("quote_locator_hint", ""),
                 quote_match_mode=raw.get("quote_match_mode", "literal"),
@@ -284,7 +311,8 @@ class FixtureProvider(ExtractionProvider):
                 evidence_type=raw.get("evidence_type", ""),
                 evidence_role=raw.get("evidence_role", ""),
                 target_object_id=raw.get("target_object_id", ""),
-                independence_group=raw.get("independence_group", ""),
+                # OPT-069: independence_group NOT read from Provider
+                # SafetyGate catches it in raw_payload if present
                 source_quote=raw.get("source_quote", ""),
                 quote_match_mode=raw.get("quote_match_mode", "literal"),
                 source_unit_id=raw.get("source_unit_id", ""),
@@ -294,7 +322,8 @@ class FixtureProvider(ExtractionProvider):
             return FactCandidate(
                 candidate_id=raw.get("candidate_id", ""),
                 statement=raw.get("statement", ""),
-                promotable=raw.get("promotable", False),
+                # OPT-069: promotable NOT read from Provider
+                # SafetyGate catches it in raw_payload if present
                 target_data_point_id=raw.get("target_data_point_id"),
                 target_claim_id=raw.get("target_claim_id"),
                 supporting_evidence_ids=raw.get("supporting_evidence_ids", []),

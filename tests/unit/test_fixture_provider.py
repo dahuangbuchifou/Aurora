@@ -104,19 +104,21 @@ class TestFixtureProviderV2:
                 )
 
     def test_no_auto_fact_promotion(self):
-        """G1-3: code must not auto-set promotable=True — must match provider fixture."""
+        """OPT-069: FactCandidate.promotable is NEVER set from Provider.
+
+        FixtureProvider drops promotable at DTO construction.
+        SafetyGate catches it in raw_payload as PROVIDER_OVERRIDE_FIELD.
+        Only ReviewDecision can set promotable=True.
+        """
         window = _make_window("case_a_web")
         provider = FixtureProvider()
         response = provider.extract_for_case("case_a_web", window)
 
         for fc in response.candidates:
             if isinstance(fc, FactCandidate):
-                if fc.candidate_id == "fc_cand_case_a_009":
-                    assert fc.promotable is True
-                else:
-                    assert fc.promotable is False, (
-                        f"{fc.candidate_id}: should not be auto-promoted"
-                    )
+                assert fc.promotable is False, (
+                    f"{fc.candidate_id}: OPT-069 — Provider must not set promotable"
+                )
 
     def test_independent_from_expected_results(self):
         """Provider fixture dir is independent — not reading from expected/."""

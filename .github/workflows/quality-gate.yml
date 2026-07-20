@@ -1,0 +1,135 @@
+name: quality-gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,parsers]"
+          python -c "import bs4, lxml, httpx, pdfplumber, webvtt; print('Parser dependencies verified')"
+
+      - name: pytest
+        id: pytest
+        run: python -m pytest -q --tb=short
+
+      - name: coverage
+        id: coverage
+        run: python -m pytest --cov=aurora --cov-branch --cov-fail-under=90 -q
+
+      - name: frozen-assets
+        id: frozen-assets
+        run: |
+          manifest="docs/qa/M2-003B_Gate2_frozen_assets.sha256"
+          if [ ! -f "$manifest" ]; then
+            echo "FAIL: No frozen asset manifest — refusing to proceed"
+            echo "The frozen asset manifest must be present for Gate checks."
+            exit 1
+          fi
+          python3 -c "
+          import hashlib, sys, os
+          mismatches = 0
+          with open('$manifest') as f:
+              for line in f:
+                  line = line.strip()
+                  if not line or line.startswith('#'):
+                      continue
+                  parts = line.split(None, 1)
+                  if len(parts) != 2:
+                      continue
+                  expected, filepath = parts
+                  if os.path.exists(filepath):
+                      with open(filepath, 'rb') as ff:
+                          actual = hashlib.sha256(ff.read()).hexdigest()
+                      if actual != expected:
+                          print(f'MISMATCH: {filepath}')
+                          mismatches += 1
+                  else:
+                      print(f'MISSING: {filepath}')
+                      mismatches += 1
+          if mismatches:
+              print(f'FAIL: {mismatches} frozen asset violations')
+              sys.exit(1)
+          print('Frozen assets: all verified')
+          "
+
+      - name: schema-diff
+        id: schema-diff
+        run: |
+          base_ref="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base_ref" ] || [ "$base_ref" = "0000000000000000000000000000000000000000" ]; then
+            echo "Schema: no base ref (first push) — hard check against schemas/"
+            changes=$(git diff --name-only HEAD~1 HEAD -- schemas/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
+            if [ "$changes" -gt 0 ]; then
+              echo "FAIL: Unauthorized schema changes detected (first push):"
+              git diff --name-only HEAD~1 HEAD -- schemas/ 2>/dev/null
+              exit 1
+            fi
+            echo "Schema: no changes (first push)"
+            exit 0
+          fi
+          changes=$(git diff --name-only "$base_ref" HEAD -- schemas/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
+          if [ "$changes" -eq 0 ]; then
+            echo "Schema: no changes"
+          else
+            echo "FAIL: Unauthorized schema changes detected:"
+            git diff --name-only "$base_ref" HEAD -- schemas/ 2>/dev/null
+            exit 1
+          fi
+
+      - name: alembic-check
+        id: alembic-check
+        run: |
+          base_ref="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base_ref" ] || [ "$base_ref" = "0000000000000000000000000000000000000000" ]; then
+            echo "Alembic: no base ref — hard check for new migrations"
+            new_migrations=$(git diff --name-only --diff-filter=A HEAD~1 HEAD -- alembic/versions/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
+            if [ "$new_migrations" -gt 0 ]; then
+              echo "FAIL: Unauthorized Alembic migrations (first push):"
+              git diff --name-only --diff-filter=A HEAD~1 HEAD -- alembic/versions/ 2>/dev/null
+              exit 1
+            fi
+            echo "Alembic: no new migrations (first push)"
+            exit 0
+          fi
+          new_migrations=$(git diff --name-only --diff-filter=A "$base_ref" HEAD -- alembic/versions/ 2>/dev/null | grep -v '^$' | wc -l || echo 0)
+          if [ "$new_migrations" -eq 0 ]; then
+            echo "Alembic: no new migrations"
+          else
+            echo "FAIL: Unauthorized Alembic migrations:"
+            git diff --name-only --diff-filter=A "$base_ref" HEAD -- alembic/versions/ 2>/dev/null
+            exit 1
+          fi
+
+      - name: summary
+        if: always()
+        run: |
+          echo "=== Quality Gate ==="
+          echo "pytest .......... ${{ steps.pytest.outcome }}"
+          echo "coverage ........ ${{ steps.coverage.outcome }}"
+          echo "frozen-assets ... ${{ steps.frozen-assets.outcome }}"
+          echo "schema-diff ..... ${{ steps.schema-diff.outcome }}"
+          echo "alembic-check ... ${{ steps.alembic-check.outcome }}"
