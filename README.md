@@ -3,10 +3,7 @@
 > **个人认知增强与知识操作系统**  
 > Personal Cognitive Augmentation & Knowledge Operating System
 
-```
-████░░░░░░░░░░░░░░░░ 24%
-M0 ✅ | M1 🔄 70% | M2 ⏸️ | M3 ⏸️ | M4 ⏸️
-```
+> 当前状态：M2-003C Gate 3 已由项目负责人条件关闭；PR #1 尚未合并，Gate 4 尚未启动。
 
 Aurora 是一个面向个人长期使用的 AI 知识基础设施。
 
@@ -131,27 +128,31 @@ Feedback
 
 Aurora 当前处于：
 
-> **个人化优先、MVP 认知闭环设计阶段**
+> **M2：MVP 认知闭环验证阶段**
 
-现阶段优先完成：
+当前治理状态：
 
 ```text
-多来源输入
-→ 自动解析
-→ 事实 / 观点 / 预测提取
-→ 结构化知识卡片
-→ 正反观点整理
-→ 个人观点草案
-→ Markdown 输出
+当前阶段：M2
+当前节点：M2-003C Gate 3
+Gate 3：CONDITIONALLY_CLOSED_BY_OWNER
+Closure：CLOSE_WITH_FOLLOW_UPS
+PR #1：NOT_MERGED
+Gate 4：NOT_STARTED
+Gate 4 唯一强制前置：mapper.py Coverage ≥90%
 ```
 
-当前重点不是扩大数据源，而是验证：
+Gate 3 的条件关闭不改变 PR #1 与 Gate 4 的未执行状态，后续技术债务继续按治理清单跟踪。G3-7 最终数据库 payload 全字段扫描测试属于非阻塞建议，不是 Gate 4 强制前置。
 
-- 对象模型是否合理；
-- 事实与观点是否能稳定区分；
-- 来源和证据是否可追溯；
-- 不同声音是否能有效比较；
-- 系统是否真的帮助用户形成自己的观点。
+### 权威治理入口
+
+- [项目总进度与资源看板](docs/00_project/03_Aurora_项目总进度与资源看板_V1.7.md)
+- [待优化事项清单](docs/00_project/05_Aurora_待优化事项清单_V1.7.md)
+- [M2-003C Gate 3 正式任务卡](docs/01_requirements/16_M2-003C_Gate3_草案持久化验证_任务卡_V1.0.md)
+- [M2-003C Gate 3 独立 QA 报告](docs/qa/M2-003C_Gate3_独立QA报告_V1.3.md)
+- [M2-003C Gate 3 Evidence](docs/qa/M2-003C_Gate3_Evidence_V1.3.md)
+- [M2-003C Gate 3 Review Closure](docs/qa/20260719_M2-003C_Gate3_Review_Closure_V1.3.md)
+- [CHANGELOG](CHANGELOG.md)
 
 ---
 
@@ -390,7 +391,7 @@ Aurora 可能处理个人笔记、研究资料、音视频、API 数据和敏感
 
 ## 项目状态
 
-Aurora 仍处于早期设计与验证阶段。
+Aurora 当前处于 M2 认知闭环验证阶段。
 
 当前目标不是快速堆积功能，而是建立一个：
 

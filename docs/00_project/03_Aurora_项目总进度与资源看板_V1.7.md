@@ -1,17 +1,20 @@
-# Aurora 项目总进度与资源看板 V1.10
+# Aurora 项目总进度与资源看板 V1.11
 
-> 更新时间：2026-07-14 17:30 CST
-> 当前验证基线：Python 3.11.13 / Aurora 0.5.0 / 455 tests / 91.93% coverage
-> Gate 2：CONDITIONALLY_CLOSED_BY_OWNER
-> Gate 3：IMPLEMENTED (G3-1~G3-7 all passing, awaiting review)
+> 更新时间：2026-07-19 / Asia/Shanghai（UTC+08:00）
+> 权威路径：`docs/00_project/03_Aurora_项目总进度与资源看板_V1.7.md`
+> 版本说明：因历史兼容继续保留 V1.7 文件名；正文按原位维护惯例更新为 V1.11；历史 V1.0～V1.6 保持只读。
+> 当前代码基线：`44c875e632c4f12dcc67dbbf47ef4ef6180ddaf1`
+> Gate 3：CONDITIONALLY_CLOSED_BY_OWNER
+> PR #1：NOT_MERGED
+> Gate 4：NOT_STARTED
 
 ## 1. 总体进度
 
 ```text
-总体治理进度：46%
+总体治理进度：46%（沿用 V1.10 已确认值；本次不重新估算）
+当前阶段：M2
+当前节点：M2-003C Gate 3 条件关闭后的治理同步
 ```
-
-Gate 3 草案持久化主实现完成。从44%→46%。
 
 ## 2. 里程碑状态
 
@@ -23,54 +26,84 @@ M2-002：CLOSED
 M2-003A / Gate 0：CLOSED / FINAL_PASS
 M2-003B / Gate 1：CLOSED
 M2-003B / Gate 2：CONDITIONALLY_CLOSED_BY_OWNER
-M2-003C / Gate 3：IMPLEMENTED · 455 PASS · 91.93% coverage
+M2-003C / Gate 3：CONDITIONALLY_CLOSED_BY_OWNER
+M2-003C / Gate 4：NOT_STARTED
 M2-003D：BLOCKED
 ```
 
-## 3. Gate 3 交付
+## 3. M2-003C Gate 3 治理结论
+
+| 字段 | 当前状态 |
+|---|---|
+| 独立 QA | `COMPLETED` |
+| 独立裁决 | `CONDITIONAL_PASS` |
+| Closure 决定 | `CLOSE_WITH_FOLLOW_UPS` |
+| Owner 决定 | `APPROVE_CLOSE_WITH_FOLLOW_UPS` |
+| Gate 3 生命周期状态 | `CONDITIONALLY_CLOSED_BY_OWNER` |
+| G3-1～G3-7 | 全部 PASS |
+| BLOCKER | 0 |
+| PR #1 | `NOT_MERGED` |
+| Gate 4 | `NOT_STARTED` |
+
+## 4. 正式 CI 基线
+
+| 字段 | 结果 |
+|---|---|
+| Workflow | `quality-gate` |
+| Run | `#14` |
+| Run database ID | `29635417889` |
+| HEAD | `44c875e632c4f12dcc67dbbf47ef4ef6180ddaf1` |
+| 普通 pytest | `644 passed / 0 failed / 0 skipped`；4.72s |
+| Coverage pytest | `644 passed / 0 failed / 0 skipped`；7.79s |
+| Total Coverage | 92.64% |
+| Coverage threshold | 90% |
+| Python | 3.11.15 |
+| Runner OS | Ubuntu 24.04 |
+| frozen-assets | success |
+| schema-diff | success |
+| alembic-check | success |
+
+## 5. Gate 3 交付
 
 | 模块 | 文件 | 说明 |
-|------|------|------|
-| contracts | persistence/contracts.py | DraftRecord, DraftTransaction |
-| identity | persistence/identity.py | M-C3-01 stable IDs |
-| validation | persistence/validation.py | ReviewBundle preflight |
-| mapper | persistence/mapper.py | Candidate→Entity/DP/Claim/Evidence |
-| draft_service | persistence/draft_service.py | 事务+幂等+ProcessingRun |
-| workflow | workflow/draft_persistence.py | 完整编排链路 |
-| tests | test_m2_003c_gate3_draft_persistence.py | 24 test, full coverage |
+|---|---|---|
+| contracts | `persistence/contracts.py` | DraftRecord、DraftTransaction |
+| identity | `persistence/identity.py` | M-C3-01 stable IDs |
+| validation | `persistence/validation.py` | ReviewBundle preflight |
+| mapper | `persistence/mapper.py` | Candidate → Entity/DataPoint/Claim/Evidence |
+| draft_service | `persistence/draft_service.py` | 事务、幂等、ProcessingRun |
+| workflow | `workflow/draft_persistence.py` | 完整编排链路 |
+| tests | Gate 3 persistence suites | G3-1～G3-7 全部 PASS |
 
-### 硬门禁验证
+## 6. 后续条件与已知限制
 
-| 门禁 | 状态 |
-|------|------|
-| G3-1 事务残留=0 | ✅ |
-| G3-2 自动Fact=0 | ✅ |
-| G3-3 Claim UNDER_REVIEW | ✅ |
-| G3-4 悬空Candidate=0 | ✅ |
-| G3-5 悬空核心对象=0 | ✅ |
-| G3-6 幂等无重复 | ✅ (10x verified) |
-| G3-7 Provider越权字段不入持久化 | ✅ |
+### MAJOR-01
 
-## 4. 服务器资源
+`src/aurora/persistence/mapper.py` 当前 Coverage 为 88%。不阻塞 Gate 3 Closure，但进入 Gate 4 前必须通过增加边界测试提升至 ≥90%，不得删除防御性代码换取 Coverage。
 
-```text
-仓库：/home/admin/.openclaw/workspace/Aurora
-Python：3.11.13
-pytest：455 passed
-Coverage：91.93%
-Git分支：feature/m2-003c-gate3-draft-persistence
-Commit：332ad95（已推送）
-```
+### RECOMMENDATION-01
 
-## 5. 下一节点
+建议增加 G3-7 最终数据库 payload 全字段扫描测试。G3-7 当前已 PASS，组合证据链已被独立 QA 认定充分；该建议不阻塞 Closure，也不是 Gate 4 强制前置。
 
-```text
-等待 CI gate (3.11) 变绿
-→ 大G Review
-→ 大黄裁断 merge
-→ M2-003D
-```
+### MINOR-01
+
+E12-B / E12-C PNG 未取得原文件独立复算。日志 ZIP、测试结果和 Coverage 已从原始日志独立确认，风险已接受，不阻塞 Closure。
+
+## 7. 当前资源
+
+- GitHub Actions `quality-gate`；
+- Python 3.11.15 / Ubuntu 24.04 正式 CI；
+- SQLite 与仓库内测试资产；
+- 不需要 GPU、真实 LLM、远程 Provider 或向量数据库。
+
+## 8. 下一节点
+
+1. 完成治理文档与 QA 包同步；
+2. 提交并推送文档；
+3. 等待新的 GitHub Actions CI；
+4. CI 成功后再决定 PR #1 合并；
+5. Gate 4 仍不得启动，直至 `mapper.py` Coverage ≥90%。
 
 ---
 
-_婉儿维护 · 2026-07-14_ 🎋
+_受控同步 · 2026-07-19_
