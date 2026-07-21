@@ -35,6 +35,18 @@ from aurora.persistence.mapper import (
 )
 
 
+class _MapperClaimCandidateDouble:
+    """Minimal mapper input for Claim subject ID reference tests."""
+
+    def __init__(self, subject_entity_ids: list[str]) -> None:
+        self.claim_type = "fact_claim"
+        self.time_horizon = None
+        self.subject_entity_ids = subject_entity_ids
+        self.statement = "Subject reference mapping"
+        self.asserted_by = "Mapper test"
+        self.claimant_name = ""
+
+
 # ── _safe_enum across all enum types ─────────────────────────────────────────
 
 
@@ -267,6 +279,22 @@ class TestMapClaim:
         assert cl.source_ref == "candidate:cl1"
         assert cl.time_horizon is not None
 
+    def test_map_claim_rewrites_known_and_preserves_unmapped_subject_ids(self):
+        # Arrange
+        candidate = _MapperClaimCandidateDouble(
+            subject_entity_ids=["ent_candidate", "existing_entity"]
+        )
+
+        # Act
+        claim = map_claim(
+            "cl_subjects",
+            candidate,
+            candidate_to_core={"ent_candidate": "ent_core"},
+        )
+
+        # Assert
+        assert claim.subject_entity_ids == ["ent_core", "existing_entity"]
+
     def test_no_time_horizon_non_prediction(self):
         """Claim of non-prediction type without time_horizon passes."""
         c = ClaimCandidate(
@@ -338,6 +366,21 @@ class TestMapEvidence:
         assert ev.target_object_id == "target1"
         assert ev.source_ref == "candidate:ev1"
         assert ev.independence_group == "ig_test"
+
+    def test_map_evidence_rejects_unresolved_independence_group_with_empty_target(self):
+        # Arrange
+        candidate = EvidenceCandidate(
+            candidate_id="ev_unresolved_group",
+            evidence_role="support",
+            evidence_type="direct_quote",
+            target_object_id="",
+            independence_group="",
+            source_quote="Source text",
+        )
+
+        # Act / Assert
+        with pytest.raises(ValueError, match="independence_group not resolved"):
+            map_evidence("ev_unresolved_group", candidate, independence_group="")
 
     def test_with_candidate_to_core_map(self):
         """target_object_id resolved via candidate_to_core map."""
@@ -412,6 +455,56 @@ class TestMapAcceptedCandidates:
         assert claims == []
         assert evs == []
         assert c2c == {}
+
+    def test_map_accepted_candidates_rejects_unresolved_datapoint_entity(self):
+        # Arrange
+        dangling_entity_id = "missing_entity"
+        candidate = DataPointCandidate(
+            candidate_id="dp_dangling_entity",
+            metric="revenue",
+            value=100.0,
+            unit="CNY",
+            entity_id=dangling_entity_id,
+            period="2025",
+            measurement_context={},
+            source_quote="Revenue was reported",
+        )
+
+        # Act / Assert
+        with pytest.raises(
+            ValueError,
+            match=rf"references entity_id={dangling_entity_id}",
+        ):
+            map_accepted_candidates(
+                [candidate.candidate_id],
+                [candidate],
+                existing_object_resolver=lambda _object_id: None,
+            )
+
+    def test_map_accepted_candidates_rejects_unresolved_evidence_target(self):
+        # Arrange
+        dangling_target_id = "missing_target"
+        candidate = EvidenceCandidate(
+            candidate_id="ev_dangling_target",
+            evidence_role="support",
+            evidence_type="direct_quote",
+            target_object_id=dangling_target_id,
+            independence_group="",
+            source_quote="Evidence text",
+            source_unit_id="source_unit_1",
+        )
+
+        # Act / Assert
+        with pytest.raises(
+            ValueError,
+            match=rf"references target_object_id={dangling_target_id}",
+        ):
+            map_accepted_candidates(
+                [candidate.candidate_id],
+                [candidate],
+                existing_object_resolver=lambda _object_id: None,
+                independence_group_map={"source_unit_1": "resolved_group"},
+            )
 
     def test_all_types(self):
         """Full mapping with all candidate types."""
