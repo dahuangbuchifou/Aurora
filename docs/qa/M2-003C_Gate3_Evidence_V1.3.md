@@ -193,6 +193,8 @@
 
 ## E11 G3-1～G3-7 测试映射与独立裁决
 
+> **权威定义引用**：G3-1～G3-7 的唯一规范来源是 [16 号 Gate 3 正式任务卡](../01_requirements/16_M2-003C_Gate3_草案持久化验证_任务卡_V1.0.md)，冲突解释见 [Governance Authority Clarification V1.0](../00_project/06_M2-003C_Gate3_Governance_Authority_Clarification_V1.0.md)。本 Evidence 只证明 Gate 并记录证据边界，不定义或重定义 Gate。
+
 | Gate / Evidence ID | 关键测试与断言语义 | 路径 | 婉儿裁决 |
 |---|---|---|---|
 | G3-1 / E11-G3-1 | `test_fault_injection_rollback`、`test_forced_mid_transaction_failure`；失败后业务对象为 0，FAILED ProcessingRun 保留 | [Gate 3 integration](../../tests/integration/test_m2_003c_gate3_draft_persistence.py)、[R3-S06](../../tests/unit/persistence/test_draft_service_r3s06.py) | PASS |

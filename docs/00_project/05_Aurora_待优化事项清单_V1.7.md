@@ -239,18 +239,20 @@ Provider不得设置任何晋级授权。`fact_claim`只表示类型上具备进
 状态：DEFERRED
 ```
 
-#### 当前结论
+> **正式规范**：[18_OPT-073_M2.1_Persistence_Boundary_Hardening_V1.0.md](../01_requirements/18_OPT-073_M2.1_Persistence_Boundary_Hardening_V1.0.md)。以下内容仅保留为历史规划摘要，已由正式规范 superseded；本清单只维护事项索引与状态，不再独立维护验收语义。
+
+#### 历史结论摘要（superseded）
 
 - G3-7 已 PASS；
 - 组合证据链已被独立 QA 认定充分；
 - 当前不是 Gate 4 强制前置；
 - 不阻塞 Gate 3 Closure。
 
-#### 建议实现
+#### 历史建议摘要（superseded）
 
 增加一个端到端测试，扫描最终数据库持久化 payload，一次性断言 Provider 越权字段为零。
 
-#### 完成标准
+#### 历史完成标准摘要（superseded）
 
 - 新测试通过；
 - 不改变当前对象模型语义；
