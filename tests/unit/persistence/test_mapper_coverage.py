@@ -443,6 +443,27 @@ class TestMapEvidence:
         assert ev2.summary == "Only note"
 
 
+    def test_evidence_summary_final_fallback(self):
+        candidate = EvidenceCandidate(
+            candidate_id="ev_summary_fallback",
+            evidence_role="support",
+            evidence_type="direct_quote",
+            target_object_id="target_claim",
+            independence_group="",
+            source_quote="",
+            note="",
+        )
+
+        evidence = map_evidence(
+            "ev_summary_fallback",
+            candidate,
+            independence_group="resolved_group",
+        )
+
+        assert evidence.summary == "pending_summary"
+        assert evidence.summary != ""
+        assert evidence.summary is not None
+
 # ── map_accepted_candidates ──────────────────────────────────────────────────
 
 

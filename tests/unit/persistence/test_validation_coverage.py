@@ -335,6 +335,22 @@ class TestWorkspaceConsistency:
             _call_preflight(bundle, workspace_id="ws_test")
 
 
+    def test_policy_workspace_mismatch(self):
+        bundle = _make_bundle(workspace_id="ws_request")
+        policy = _mk_policy(workspace_id="ws_policy")
+
+        with pytest.raises(PreflightError) as exc_info:
+            validate_bundle_preflight(
+                bundle,
+                workspace_id="ws_request",
+                policy=policy,
+            )
+
+        message = str(exc_info.value)
+        assert "Workspace mismatch" in message
+        assert "policy.workspace_id='ws_policy'" in message
+        assert "persisted workspace_id='ws_request'" in message
+
 # ── Provider / Profile checks via Policy ─────────────────────────────────────
 
 
@@ -603,6 +619,50 @@ class TestDependencyChecks:
 
 
 class TestR302ProviderValidation:
+    def test_disallowed_provider_version(self):
+        bundle = _make_bundle(
+            provider_version="9.9.9",
+            profile_version="1.0.0",
+        )
+        policy = _mk_policy(
+            allowed_provider_versions=frozenset({"1.0.0"}),
+            allowed_profile_versions=frozenset({"1.0.0"}),
+        )
+
+        with pytest.raises(
+            PreflightError,
+            match=(
+                "Provider version '9.9.9' not in allowed_provider_versions"
+            ),
+        ):
+            validate_bundle_preflight(
+                bundle,
+                workspace_id="ws_test",
+                policy=policy,
+            )
+
+    def test_disallowed_profile_version(self):
+        bundle = _make_bundle(
+            provider_version="1.0.0",
+            profile_version="9.9.9",
+        )
+        policy = _mk_policy(
+            allowed_provider_versions=frozenset({"1.0.0"}),
+            allowed_profile_versions=frozenset({"1.0.0"}),
+        )
+
+        with pytest.raises(
+            PreflightError,
+            match=(
+                "Profile version '9.9.9' not in allowed_profile_versions"
+            ),
+        ):
+            validate_bundle_preflight(
+                bundle,
+                workspace_id="ws_test",
+                policy=policy,
+            )
+
     def test_empty_provider_version_fails(self):
         """R3-02: Empty provider_version → PreflightError."""
         bundle = _make_bundle(provider_version="")
