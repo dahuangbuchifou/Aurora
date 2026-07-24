@@ -63,6 +63,7 @@ class ClaimCandidate(AuroraModel):
     claimant_id: str | None = None
     claimant_name: str = ""
     asserted_by: str = ""
+    subject_entity_ids: list[str] = Field(default_factory=list)
     time_horizon: dict[str, Any] | None = None
     promotable_to_fact: bool = False
     source_quote: str

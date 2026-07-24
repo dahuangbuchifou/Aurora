@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from aurora.extraction.candidates import Candidate
+from aurora.extraction.candidates import Candidate, ClaimCandidate
 from aurora.extraction.context_window import ContentUnitRef
 from aurora.extraction.findings import ValidationFinding
 
@@ -37,7 +37,10 @@ class ExtractionError:
 def _candidate_to_serializable(c: Candidate) -> dict[str, Any]:
     """Serialize a candidate to a JSON-safe dict for hash computation."""
     if hasattr(c, "model_dump"):
-        return c.model_dump()
+        payload = c.model_dump()
+        if isinstance(c, ClaimCandidate) and not c.subject_entity_ids:
+            payload.pop("subject_entity_ids", None)
+        return payload
     return dict(c.__dict__)
 
 
