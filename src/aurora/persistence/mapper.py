@@ -157,8 +157,7 @@ def map_claim(
 
     # R3-04: Convert subject_entity_ids from candidate IDs → core object IDs
     subj_ids: list[str] = []
-    raw_subj = getattr(candidate, "subject_entity_ids", None) or []
-    for seid in raw_subj:
+    for seid in candidate.subject_entity_ids:
         if candidate_to_core and seid in candidate_to_core:
             subj_ids.append(candidate_to_core[seid])
         else:
@@ -173,6 +172,19 @@ def map_claim(
         time_horizon=th,
         subject_entity_ids=subj_ids,
     )
+
+
+def _resolved_core_object_id(resolved: Any) -> str | None:
+    """Return the core ID exposed by an existing-object resolver result."""
+    if resolved is None:
+        return None
+    if isinstance(resolved, str):
+        return resolved or None
+    if isinstance(resolved, dict):
+        resolved_id = resolved.get("id")
+    else:
+        resolved_id = getattr(resolved, "id", None)
+    return resolved_id if isinstance(resolved_id, str) and resolved_id else None
 
 
 def map_evidence(
@@ -240,6 +252,8 @@ def map_accepted_candidates(
     claims: list[Claim] = []
     evidence_list: list[Evidence] = []
     candidate_to_core: dict[str, str] = {}
+    resolved_subject_core_ids: set[str] = set()
+    claim_candidate_ids_by_core_id: dict[str, str] = {}
 
     accepted = set(accepted_candidate_ids)
     cand_by_id = {getattr(c, "candidate_id", ""): c for c in candidates}
@@ -274,8 +288,23 @@ def map_accepted_candidates(
 
     # Phase 3: Claim (R3-04: subject_entity_ids → core IDs)
     for cid, c in cand_by_type["claim"]:
-        cl = map_claim(cid, c, candidate_to_core)
+        subject_reference_map = dict(candidate_to_core)
+        for subject_candidate_id in c.subject_entity_ids:
+            if subject_candidate_id in subject_reference_map:
+                continue
+            resolved = (
+                existing_object_resolver(subject_candidate_id)
+                if existing_object_resolver is not None
+                else None
+            )
+            resolved_core_id = _resolved_core_object_id(resolved)
+            if resolved_core_id is not None:
+                subject_reference_map[subject_candidate_id] = resolved_core_id
+                resolved_subject_core_ids.add(resolved_core_id)
+
+        cl = map_claim(cid, c, subject_reference_map)
         candidate_to_core[cid] = cl.id
+        claim_candidate_ids_by_core_id[cl.id] = cid
         claims.append(cl)
 
     # Phase 4: Evidence (depends on all above + SourceGraph resolution, R3-03)
@@ -288,7 +317,11 @@ def map_accepted_candidates(
 
     # ── R3-04: Final consistency check for core ID references ──────────
     # Collect all known core IDs + candidate IDs
-    known_ids: set[str] = set(candidate_to_core.values()) | set(candidate_to_core.keys())
+    known_ids: set[str] = (
+        set(candidate_to_core.values())
+        | set(candidate_to_core.keys())
+        | resolved_subject_core_ids
+    )
 
     # Check DataPoint.entity_id
     for dp in data_points:
@@ -315,10 +348,12 @@ def map_accepted_candidates(
         seids = getattr(cl, "subject_entity_ids", None) or []
         for seid in seids:
             if seid not in known_ids:
-                if existing_object_resolver is None or existing_object_resolver(seid) is None:
-                    raise ValueError(
-                        f"Claim {cl.id} references subject_entity_id={seid} "
-                        f"which cannot be resolved to a core object"
-                    )
+                raise ValueError(
+                    f"ClaimCandidate "
+                    f"{claim_candidate_ids_by_core_id.get(cl.id, '?')} "
+                    f"maps to Claim {cl.id} and references "
+                    f"subject_entity_id={seid} "
+                    f"which cannot be resolved to a core object"
+                )
 
     return entities, data_points, claims, evidence_list, candidate_to_core

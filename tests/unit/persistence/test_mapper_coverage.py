@@ -35,18 +35,6 @@ from aurora.persistence.mapper import (
 )
 
 
-class _MapperClaimCandidateDouble:
-    """Minimal mapper input for Claim subject ID reference tests."""
-
-    def __init__(self, subject_entity_ids: list[str]) -> None:
-        self.claim_type = "fact_claim"
-        self.time_horizon = None
-        self.subject_entity_ids = subject_entity_ids
-        self.statement = "Subject reference mapping"
-        self.asserted_by = "Mapper test"
-        self.claimant_name = ""
-
-
 # ── _safe_enum across all enum types ─────────────────────────────────────────
 
 
@@ -279,21 +267,24 @@ class TestMapClaim:
         assert cl.source_ref == "candidate:cl1"
         assert cl.time_horizon is not None
 
-    def test_map_claim_rewrites_known_and_preserves_unmapped_subject_ids(self):
-        # Arrange
-        candidate = _MapperClaimCandidateDouble(
-            subject_entity_ids=["ent_candidate", "existing_entity"]
+    def test_map_claim_rewrites_known_subject_ids(self):
+        candidate = ClaimCandidate(
+            candidate_id="cl_subjects",
+            claim_type="fact_claim",
+            statement="Subject reference mapping",
+            asserted_by="Mapper test",
+            claim_dimension="factual",
+            subject_entity_ids=["ent_candidate"],
+            source_quote="Subject reference mapping",
         )
 
-        # Act
         claim = map_claim(
-            "cl_subjects",
+            candidate.candidate_id,
             candidate,
             candidate_to_core={"ent_candidate": "ent_core"},
         )
 
-        # Assert
-        assert claim.subject_entity_ids == ["ent_core", "existing_entity"]
+        assert claim.subject_entity_ids == ["ent_core"]
 
     def test_no_time_horizon_non_prediction(self):
         """Claim of non-prediction type without time_horizon passes."""
@@ -526,6 +517,131 @@ class TestMapAcceptedCandidates:
                 existing_object_resolver=lambda _object_id: None,
                 independence_group_map={"source_unit_1": "resolved_group"},
             )
+
+    def test_claim_subject_candidate_id_maps_to_new_core_id(self):
+        entity = EntityCandidate(
+            candidate_id="ent_cand_subject",
+            canonical_name="Subject entity",
+            entity_type="company",
+        )
+        claim = ClaimCandidate(
+            candidate_id="cl_cand_subject",
+            claim_type="fact_claim",
+            statement="Subject mapping claim",
+            asserted_by="Mapper test",
+            claim_dimension="factual",
+            subject_entity_ids=[entity.candidate_id],
+            source_quote="Subject mapping claim",
+        )
+
+        entities, _, claims, _, candidate_to_core = (
+            map_accepted_candidates(
+                [entity.candidate_id, claim.candidate_id],
+                [entity, claim],
+            )
+        )
+
+        assert claims[0].subject_entity_ids == [entities[0].id]
+        assert claims[0].subject_entity_ids == [
+            candidate_to_core[entity.candidate_id]
+        ]
+        assert entity.candidate_id not in claims[0].subject_entity_ids
+
+    def test_claim_subject_resolver_maps_to_existing_core_id(self):
+        claim = ClaimCandidate(
+            candidate_id="cl_cand_existing_subject",
+            claim_type="fact_claim",
+            statement="Existing subject mapping",
+            asserted_by="Mapper test",
+            claim_dimension="factual",
+            subject_entity_ids=["ent_cand_existing"],
+            source_quote="Existing subject mapping",
+        )
+        resolver = lambda candidate_id: (
+            {"id": "ent_core_existing"}
+            if candidate_id == "ent_cand_existing"
+            else None
+        )
+
+        _, _, claims, _, _ = map_accepted_candidates(
+            [claim.candidate_id],
+            [claim],
+            existing_object_resolver=resolver,
+        )
+
+        assert claims[0].subject_entity_ids == ["ent_core_existing"]
+        assert "ent_cand_existing" not in claims[0].subject_entity_ids
+
+    def test_claim_multiple_subjects_preserve_input_order(self):
+        first = EntityCandidate(
+            candidate_id="ent_cand_first",
+            canonical_name="First subject",
+            entity_type="company",
+        )
+        second = EntityCandidate(
+            candidate_id="ent_cand_second",
+            canonical_name="Second subject",
+            entity_type="company",
+        )
+        claim = ClaimCandidate(
+            candidate_id="cl_cand_multiple_subjects",
+            claim_type="fact_claim",
+            statement="Ordered subject mapping",
+            asserted_by="Mapper test",
+            claim_dimension="factual",
+            subject_entity_ids=[second.candidate_id, first.candidate_id],
+            source_quote="Ordered subject mapping",
+        )
+
+        _, _, claims, _, candidate_to_core = map_accepted_candidates(
+            [first.candidate_id, second.candidate_id, claim.candidate_id],
+            [first, second, claim],
+        )
+
+        assert claims[0].subject_entity_ids == [
+            candidate_to_core[second.candidate_id],
+            candidate_to_core[first.candidate_id],
+        ]
+
+    def test_claim_empty_subjects_map_to_empty_list(self):
+        claim = ClaimCandidate(
+            candidate_id="cl_cand_no_subjects",
+            claim_type="fact_claim",
+            statement="No subject mapping",
+            asserted_by="Mapper test",
+            claim_dimension="factual",
+            subject_entity_ids=[],
+            source_quote="No subject mapping",
+        )
+
+        _, _, claims, _, _ = map_accepted_candidates(
+            [claim.candidate_id],
+            [claim],
+        )
+
+        assert claims[0].subject_entity_ids == []
+
+    def test_mapper_rejects_unresolved_claim_subject(self):
+        claim = ClaimCandidate(
+            candidate_id="cl_cand_unresolved_subject",
+            claim_type="fact_claim",
+            statement="Unresolved subject mapping",
+            asserted_by="Mapper test",
+            claim_dimension="factual",
+            subject_entity_ids=["ent_cand_missing"],
+            source_quote="Unresolved subject mapping",
+        )
+
+        with pytest.raises(ValueError) as exc_info:
+            map_accepted_candidates(
+                [claim.candidate_id],
+                [claim],
+                existing_object_resolver=lambda _candidate_id: None,
+            )
+
+        message = str(exc_info.value)
+        assert claim.candidate_id in message
+        assert "subject_entity_id=ent_cand_missing" in message
 
     def test_all_types(self):
         """Full mapping with all candidate types."""

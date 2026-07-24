@@ -42,6 +42,18 @@ from aurora.extraction.request import ExtractionRequest
 from aurora.extraction.review_bundle import ExtractionError, ReviewBundle, BUNDLE_SCHEMA_VERSION
 
 
+def _provider_claim_payload(**overrides: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "candidate_id": "cl_cand_provider_subject_001",
+        "statement": "Revenue increased year over year.",
+        "claim_type": "interpretation",
+        "claim_dimension": "financial_performance",
+        "source_quote": "Revenue increased year over year.",
+    }
+    payload.update(overrides)
+    return payload
+
+
 def _make_claim_candidate_with_subjects(
     subject_entity_ids: object | None = None,
 ) -> ClaimCandidate:
@@ -253,6 +265,40 @@ class TestQuoteGateV2Extra:
 # ── FixtureProvider additional tests ─────────────────────────────────────────
 
 class TestFixtureProviderV2Extra:
+    def test_claim_subject_entity_ids_default_to_empty(self):
+        candidate = FixtureProvider._build_candidate(
+            _provider_claim_payload(),
+            "claim",
+        )
+
+        assert isinstance(candidate, ClaimCandidate)
+        assert candidate.subject_entity_ids == []
+
+    def test_claim_subject_entity_ids_are_preserved(self):
+        candidate = FixtureProvider._build_candidate(
+            _provider_claim_payload(
+                subject_entity_ids=["ent_cand_b", "ent_cand_a"]
+            ),
+            "claim",
+        )
+
+        assert isinstance(candidate, ClaimCandidate)
+        assert candidate.subject_entity_ids == [
+            "ent_cand_b",
+            "ent_cand_a",
+        ]
+
+    def test_claim_subject_entity_ids_invalid_type_is_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            FixtureProvider._build_candidate(
+                _provider_claim_payload(subject_entity_ids="ent_cand_a"),
+                "claim",
+            )
+
+        assert exc_info.value.errors()[0]["loc"] == (
+            "subject_entity_ids",
+        )
+
     def test_unknown_case_id_raises(self):
         provider = FixtureProvider()
         units = [
