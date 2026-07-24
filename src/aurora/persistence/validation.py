@@ -199,6 +199,11 @@ def validate_bundle_preflight(
     # ── R2-B02: Candidate references within accepted set ─────────────────
     accepted_ids = set(bundle.accepted_candidate_ids)
     candidate_ids = {getattr(c, "candidate_id", "") for c in bundle.candidates}
+    entity_candidate_ids = {
+        getattr(c, "candidate_id", "")
+        for c in bundle.candidates
+        if c.__class__.__name__ == "EntityCandidate"
+    }
     for cid in accepted_ids:
         if cid not in candidate_ids:
             raise PreflightError(f"Accepted candidate {cid} not found in bundle candidates")
@@ -241,14 +246,20 @@ def validate_bundle_preflight(
         if cid not in accepted_ids:
             continue
         if c.__class__.__name__ == "ClaimCandidate":
-            subj = getattr(c, "subject_entity_ids", None) or []
-            for seid in subj:
-                if seid not in accepted_ids and seid not in candidate_ids:
-                    if existing_object_resolver is None or existing_object_resolver(seid) is None:
-                        raise PreflightError(
-                            f"Claim {cid} references subject_entity_id={seid} "
-                            f"which is neither accepted, present as candidate, nor pre-existing"
-                        )
+            for seid in c.subject_entity_ids:
+                if seid in entity_candidate_ids:
+                    continue
+                resolved = (
+                    existing_object_resolver(seid)
+                    if existing_object_resolver is not None
+                    else None
+                )
+                if resolved is None:
+                    raise PreflightError(
+                        f"Claim {cid} references subject_entity_id={seid} "
+                        f"which is neither an EntityCandidate in the bundle "
+                        f"nor a pre-existing core Entity"
+                    )
 
     # ── R3-02: Validate provider_name/provider_version/profile_version ──
     provider_name = getattr(bundle, "provider_name", "")

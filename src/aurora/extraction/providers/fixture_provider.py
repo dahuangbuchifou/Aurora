@@ -296,6 +296,7 @@ class FixtureProvider(ExtractionProvider):
                 claim_dimension=raw.get("claim_dimension", ""),
                 claimant_name=raw.get("claimant_name", ""),
                 asserted_by=raw.get("asserted_by", ""),
+                subject_entity_ids=raw.get("subject_entity_ids", []),
                 time_horizon=raw.get("time_horizon"),
                 # OPT-069: promotable_to_fact NOT read from Provider
                 # SafetyGate catches it in raw_payload if present

@@ -335,6 +335,22 @@ class TestWorkspaceConsistency:
             _call_preflight(bundle, workspace_id="ws_test")
 
 
+    def test_policy_workspace_mismatch(self):
+        bundle = _make_bundle(workspace_id="ws_request")
+        policy = _mk_policy(workspace_id="ws_policy")
+
+        with pytest.raises(PreflightError) as exc_info:
+            validate_bundle_preflight(
+                bundle,
+                workspace_id="ws_request",
+                policy=policy,
+            )
+
+        message = str(exc_info.value)
+        assert "Workspace mismatch" in message
+        assert "policy.workspace_id='ws_policy'" in message
+        assert "persisted workspace_id='ws_request'" in message
+
 # ── Provider / Profile checks via Policy ─────────────────────────────────────
 
 
@@ -490,46 +506,100 @@ class TestDataPointEntityId:
 # ── Claim subject_entity_ids ─────────────────────────────────────────────────
 
 
+def _make_public_claim(
+    candidate_id: str,
+    subject_entity_ids: list[str],
+) -> ClaimCandidate:
+    return ClaimCandidate(
+        candidate_id=candidate_id,
+        statement="Revenue increased year over year.",
+        claim_type="fact_claim",
+        claim_dimension="financial_performance",
+        asserted_by="Aurora test",
+        subject_entity_ids=subject_entity_ids,
+        source_quote="Revenue increased year over year.",
+    )
+
+
 class TestClaimSubjectEntities:
     def test_claim_subject_unresolvable(self):
-        """Claim subject_entity_id not found anywhere."""
-        cl = _make_mock_accepted("ClaimCandidate", "cl_1", subject_entity_ids=["nonexistent_se"])
+        claim = _make_public_claim("cl_1", ["missing_subject"])
         bundle = _make_bundle(
-            candidates=(cl,),
-            accepted_candidate_ids=("cl_1",),
+            candidates=(claim,),
+            accepted_candidate_ids=(claim.candidate_id,),
         )
-        with pytest.raises(PreflightError, match="references subject_entity_id="):
+
+        with pytest.raises(PreflightError) as exc_info:
             _call_preflight(bundle)
 
-    def test_claim_subject_found_in_candidates(self):
-        """Claim subject_entity_id matches a candidate → passes."""
-        cl = _make_mock_accepted("ClaimCandidate", "cl_1", subject_entity_ids=["ent_cand_1"])
-        ent = EntityCandidate(canonical_name="Subject", entity_type="company")
-        ent.candidate_id = "ent_cand_1"
-        bundle = _make_bundle(
-            candidates=(cl, ent),
-            accepted_candidate_ids=("cl_1",),
+        message = str(exc_info.value)
+        assert claim.candidate_id in message
+        assert "subject_entity_id=missing_subject" in message
+
+    def test_claim_subject_found_in_entity_candidates(self):
+        entity = EntityCandidate(
+            candidate_id="ent_cand_1",
+            canonical_name="Subject",
+            entity_type="company",
         )
+        claim = _make_public_claim("cl_1", [entity.candidate_id])
+        bundle = _make_bundle(
+            candidates=(claim, entity),
+            accepted_candidate_ids=(
+                claim.candidate_id,
+                entity.candidate_id,
+            ),
+        )
+
         _call_preflight(bundle)
 
     def test_claim_subject_resolved_by_existing_object_resolver(self):
-        """Claim subject resolved via existing_object_resolver → passes."""
-        cl = _make_mock_accepted("ClaimCandidate", "cl_1", subject_entity_ids=["core_ent_1"])
+        claim = _make_public_claim("cl_1", ["ent_cand_existing"])
         bundle = _make_bundle(
-            candidates=(cl,),
-            accepted_candidate_ids=("cl_1",),
+            candidates=(claim,),
+            accepted_candidate_ids=(claim.candidate_id,),
         )
-        resolver = lambda oid: {"id": oid} if oid == "core_ent_1" else None
+        resolver = lambda candidate_id: (
+            {"id": "ent_core_existing"}
+            if candidate_id == "ent_cand_existing"
+            else None
+        )
+
         _call_preflight(bundle, existing_object_resolver=resolver)
 
     def test_claim_no_subject_entity_ids(self):
-        """Claim with empty subject_entity_ids → passes."""
-        cl = _make_mock_accepted("ClaimCandidate", "cl_1", subject_entity_ids=[])
+        claim = _make_public_claim("cl_1", [])
         bundle = _make_bundle(
-            candidates=(cl,),
-            accepted_candidate_ids=("cl_1",),
+            candidates=(claim,),
+            accepted_candidate_ids=(claim.candidate_id,),
         )
+
         _call_preflight(bundle)
+
+    def test_claim_rejects_when_any_subject_is_unresolved(self):
+        entity = EntityCandidate(
+            candidate_id="ent_cand_valid",
+            canonical_name="Valid subject",
+            entity_type="company",
+        )
+        claim = _make_public_claim(
+            "cl_multiple_subjects",
+            [entity.candidate_id, "ent_cand_missing"],
+        )
+        bundle = _make_bundle(
+            candidates=(claim, entity),
+            accepted_candidate_ids=(
+                claim.candidate_id,
+                entity.candidate_id,
+            ),
+        )
+
+        with pytest.raises(PreflightError) as exc_info:
+            _call_preflight(bundle)
+
+        message = str(exc_info.value)
+        assert claim.candidate_id in message
+        assert "subject_entity_id=ent_cand_missing" in message
 
 
 # ── Dependency checks (accepted dependencies) ───────────────────────────────
@@ -603,6 +673,50 @@ class TestDependencyChecks:
 
 
 class TestR302ProviderValidation:
+    def test_disallowed_provider_version(self):
+        bundle = _make_bundle(
+            provider_version="9.9.9",
+            profile_version="1.0.0",
+        )
+        policy = _mk_policy(
+            allowed_provider_versions=frozenset({"1.0.0"}),
+            allowed_profile_versions=frozenset({"1.0.0"}),
+        )
+
+        with pytest.raises(
+            PreflightError,
+            match=(
+                "Provider version '9.9.9' not in allowed_provider_versions"
+            ),
+        ):
+            validate_bundle_preflight(
+                bundle,
+                workspace_id="ws_test",
+                policy=policy,
+            )
+
+    def test_disallowed_profile_version(self):
+        bundle = _make_bundle(
+            provider_version="1.0.0",
+            profile_version="9.9.9",
+        )
+        policy = _mk_policy(
+            allowed_provider_versions=frozenset({"1.0.0"}),
+            allowed_profile_versions=frozenset({"1.0.0"}),
+        )
+
+        with pytest.raises(
+            PreflightError,
+            match=(
+                "Profile version '9.9.9' not in allowed_profile_versions"
+            ),
+        ):
+            validate_bundle_preflight(
+                bundle,
+                workspace_id="ws_test",
+                policy=policy,
+            )
+
     def test_empty_provider_version_fails(self):
         """R3-02: Empty provider_version → PreflightError."""
         bundle = _make_bundle(provider_version="")

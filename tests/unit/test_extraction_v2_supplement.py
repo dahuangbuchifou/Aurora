@@ -4,6 +4,8 @@ import json
 import pytest
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from aurora.core.models.common import SourceLocator
 from aurora.core.models.document import ContentUnit
 from aurora.core.models.enums import ContentUnitType
@@ -38,6 +40,61 @@ from aurora.extraction.quote_gate import (
 )
 from aurora.extraction.request import ExtractionRequest
 from aurora.extraction.review_bundle import ExtractionError, ReviewBundle, BUNDLE_SCHEMA_VERSION
+
+
+def _provider_claim_payload(**overrides: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "candidate_id": "cl_cand_provider_subject_001",
+        "statement": "Revenue increased year over year.",
+        "claim_type": "interpretation",
+        "claim_dimension": "financial_performance",
+        "source_quote": "Revenue increased year over year.",
+    }
+    payload.update(overrides)
+    return payload
+
+
+def _make_claim_candidate_with_subjects(
+    subject_entity_ids: object | None = None,
+) -> ClaimCandidate:
+    payload: dict[str, object] = {
+        "candidate_id": "cl_cand_subject_contract_001",
+        "statement": "Revenue increased year over year.",
+        "claim_type": "interpretation",
+        "claim_dimension": "financial_performance",
+        "source_quote": "Revenue increased year over year.",
+    }
+    if subject_entity_ids is not None:
+        payload["subject_entity_ids"] = subject_entity_ids
+    return ClaimCandidate(**payload)
+
+
+def test_claim_candidate_subject_entity_ids_default_is_independent():
+    first = _make_claim_candidate_with_subjects()
+    second = _make_claim_candidate_with_subjects()
+
+    assert first.subject_entity_ids == []
+    assert second.subject_entity_ids == []
+    assert first.subject_entity_ids is not second.subject_entity_ids
+    assert first.model_dump()["subject_entity_ids"] == []
+
+    first.subject_entity_ids.append("ent_cand_a")
+    assert second.subject_entity_ids == []
+
+
+def test_claim_candidate_accepts_explicit_subject_entity_ids():
+    candidate = _make_claim_candidate_with_subjects(
+        ["ent_cand_a", "ent_cand_b"]
+    )
+
+    assert candidate.subject_entity_ids == ["ent_cand_a", "ent_cand_b"]
+
+
+def test_claim_candidate_rejects_invalid_subject_entity_ids_type():
+    with pytest.raises(ValidationError) as exc_info:
+        _make_claim_candidate_with_subjects("ent_cand_a")
+
+    assert exc_info.value.errors()[0]["loc"] == ("subject_entity_ids",)
 
 
 # ── ContextWindow additional tests ───────────────────────────────────────────
@@ -208,6 +265,40 @@ class TestQuoteGateV2Extra:
 # ── FixtureProvider additional tests ─────────────────────────────────────────
 
 class TestFixtureProviderV2Extra:
+    def test_claim_subject_entity_ids_default_to_empty(self):
+        candidate = FixtureProvider._build_candidate(
+            _provider_claim_payload(),
+            "claim",
+        )
+
+        assert isinstance(candidate, ClaimCandidate)
+        assert candidate.subject_entity_ids == []
+
+    def test_claim_subject_entity_ids_are_preserved(self):
+        candidate = FixtureProvider._build_candidate(
+            _provider_claim_payload(
+                subject_entity_ids=["ent_cand_b", "ent_cand_a"]
+            ),
+            "claim",
+        )
+
+        assert isinstance(candidate, ClaimCandidate)
+        assert candidate.subject_entity_ids == [
+            "ent_cand_b",
+            "ent_cand_a",
+        ]
+
+    def test_claim_subject_entity_ids_invalid_type_is_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            FixtureProvider._build_candidate(
+                _provider_claim_payload(subject_entity_ids="ent_cand_a"),
+                "claim",
+            )
+
+        assert exc_info.value.errors()[0]["loc"] == (
+            "subject_entity_ids",
+        )
+
     def test_unknown_case_id_raises(self):
         provider = FixtureProvider()
         units = [

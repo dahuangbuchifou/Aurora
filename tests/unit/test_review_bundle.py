@@ -1,6 +1,8 @@
 """Unit tests for ReviewBundle V2 — immutability, canonicalized JSON hash, validation_findings."""
 
 import dataclasses
+import hashlib
+import json
 
 from aurora.core.models.common import SourceLocator
 from aurora.core.models.document import ContentUnit
@@ -320,3 +322,108 @@ class TestReviewBundleProperties:
         assert bundle.rejected_count == 1
         assert bundle.accepted_candidate_ids == ("good_cand",)
         assert bundle.rejected_candidate_ids == ("bad_cand",)
+
+
+def _make_subject_hash_claim(
+    subject_entity_ids: list[str] | None = None,
+) -> ClaimCandidate:
+    payload: dict[str, object] = {
+        "candidate_id": "cl_cand_subject_hash_001",
+        "statement": "Revenue increased year over year.",
+        "claim_type": "interpretation",
+        "claim_dimension": "financial_performance",
+        "asserted_by": "issuer",
+        "source_quote": "Revenue increased year over year.",
+        "source_unit_id": "cu_doc_subject_hash_0",
+    }
+    if subject_entity_ids is not None:
+        payload["subject_entity_ids"] = subject_entity_ids
+    return ClaimCandidate(**payload)
+
+
+def _make_subject_hash_bundle(candidate: ClaimCandidate) -> ReviewBundle:
+    return ReviewBundle.create(
+        document_id="doc_subject_hash",
+        provider_name="fixture",
+        provider_version="2.0",
+        deterministic_mode=True,
+        candidates=(candidate,),
+        content_unit_window=_make_window_units("doc_subject_hash"),
+        run_id="run_subject_hash",
+        case_id="case_subject_hash",
+    )
+
+
+def test_empty_claim_subject_preserves_legacy_bundle_hash() -> None:
+    candidate = _make_subject_hash_claim()
+    bundle = _make_subject_hash_bundle(candidate)
+    legacy_candidate = candidate.model_dump()
+    assert legacy_candidate.pop("subject_entity_ids") == []
+
+    legacy_payload = {
+        "run_id": bundle.run_id,
+        "document_id": bundle.document_id,
+        "provider_name": bundle.provider_name,
+        "provider_version": bundle.provider_version,
+        "deterministic_mode": bundle.deterministic_mode,
+        "schema_version": bundle.schema_version,
+        "case_id": bundle.case_id,
+        "prompt_version": bundle.prompt_version,
+        "profile_version": bundle.profile_version,
+        "provider_response_hash": bundle.provider_response_hash,
+        "candidates": [legacy_candidate],
+        "validation_findings": [],
+        "context_hashes": {},
+        "content_unit_ids": sorted(
+            unit.unit_id for unit in bundle.content_unit_window
+        ),
+        "errors": [],
+    }
+    legacy_bytes = json.dumps(
+        legacy_payload,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        default=str,
+    ).encode("utf-8")
+    legacy_hash = hashlib.sha256(legacy_bytes).hexdigest()
+
+    assert bundle.bundle_sha256 == legacy_hash
+
+
+def test_missing_and_explicit_empty_claim_subject_have_same_bundle_hash() -> None:
+    omitted = _make_subject_hash_bundle(_make_subject_hash_claim())
+    explicit_empty = _make_subject_hash_bundle(_make_subject_hash_claim([]))
+
+    assert omitted.bundle_sha256 == explicit_empty.bundle_sha256
+
+
+def test_nonempty_claim_subject_changes_bundle_hash() -> None:
+    empty = _make_subject_hash_bundle(_make_subject_hash_claim())
+    nonempty = _make_subject_hash_bundle(
+        _make_subject_hash_claim(["ent_cand_a"])
+    )
+
+    assert empty.bundle_sha256 != nonempty.bundle_sha256
+
+
+def test_claim_subject_order_changes_bundle_hash() -> None:
+    first = _make_subject_hash_bundle(
+        _make_subject_hash_claim(["ent_cand_a", "ent_cand_b"])
+    )
+    reversed_order = _make_subject_hash_bundle(
+        _make_subject_hash_claim(["ent_cand_b", "ent_cand_a"])
+    )
+
+    assert first.bundle_sha256 != reversed_order.bundle_sha256
+
+
+def test_claim_subject_duplicates_change_bundle_hash() -> None:
+    unique = _make_subject_hash_bundle(
+        _make_subject_hash_claim(["ent_cand_a"])
+    )
+    duplicated = _make_subject_hash_bundle(
+        _make_subject_hash_claim(["ent_cand_a", "ent_cand_a"])
+    )
+
+    assert unique.bundle_sha256 != duplicated.bundle_sha256

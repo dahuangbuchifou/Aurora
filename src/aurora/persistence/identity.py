@@ -7,6 +7,7 @@ object natural keys. Excludes all provider-owned epistemic fields.
 from __future__ import annotations
 
 import hashlib
+import json
 from typing import Any
 
 from aurora.extraction.candidates import (
@@ -49,6 +50,14 @@ def _stable_provider_payload(candidate: Candidate) -> str:
         parts.append(candidate.claim_dimension or "")
         parts.append(candidate.statement or "")
         parts.append(candidate.asserted_by or "")
+        subject_entity_ids = sorted(set(candidate.subject_entity_ids))
+        if subject_entity_ids:
+            canonical_subject_ids = json.dumps(
+                subject_entity_ids,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+            parts.append(f"subject_entity_ids={canonical_subject_ids}")
     elif isinstance(candidate, EvidenceCandidate):
         parts.append(candidate.evidence_type or "")
         parts.append(candidate.evidence_role or "")
